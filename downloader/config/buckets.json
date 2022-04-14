@@ -1,0 +1,10 @@
+{
+  "buckets": {
+    "tappas": {
+      "url": "https://hailo-tappas.s3.eu-west-2.amazonaws.com"
+    },
+    "model_zoo": {
+      "url": "https://hailo-model-zoo.s3.eu-west-2.amazonaws.com"
+    }
+  }
+}

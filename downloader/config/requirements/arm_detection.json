@@ -1,0 +1,10 @@
+{
+  "path": "apps/gstreamer/arm/detection",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "arm/hefs/yolov5m_yuv.hef",
+      "destination": "yolov5m_yuv.hef"
+    }
+  ]
+}

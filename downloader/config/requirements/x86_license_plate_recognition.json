@@ -1,0 +1,35 @@
+{
+  "path": "apps/gstreamer/x86/license_plate_recognition/resources",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "x86/hefs/joined_tiny_yolov4_license_plates_lprnet_200fps.hef",
+      "destination": "joined_tiny_yolov4_license_plates_lprnet_200fps.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/hefs/yolov5m_vehicles_79FPS.hef",
+      "destination": "yolov5m_vehicles_79FPS.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/media/lpr.mp4",
+      "destination": "lpr.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/media/lpr_loop.mp4",
+      "destination": "lpr_loop.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/media/lpr_ayalon.mp4",
+      "destination": "lpr_ayalon.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/media/lpr_ayalon_loop.mp4",
+      "destination": "lpr_ayalon_loop.mp4"
+    }
+  ]
+}

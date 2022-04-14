@@ -1,0 +1,44 @@
+ 
+# set gstreamer debug
+gst_set_debug() {
+  export GST_SHARK_LOCATION=/tmp/profile
+  export GST_DEBUG="GST_TRACER:7"
+  export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;graphic"
+  echo 'Options for TRACERS:"'
+  echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;graphic"'
+}
+
+# set gstreamer queuelevel
+gst_set_queuelevel() {
+  export GST_SHARK_LOCATION=/tmp/profile
+  export GST_DEBUG="GST_TRACER:7"
+  export GST_TRACERS="queuelevel"
+  echo 'Options for TRACERS:"'
+  echo 'export GST_TRACERS="queuelevel"'
+}
+
+# set gst-shark graph at runtime
+gst_set_graphic() {
+  export GST_SHARK_LOCATION=/tmp/profile
+  export GST_DEBUG_DUMP_DOT_DIR=/tmp/
+  export GST_DEBUG="GST_TRACER:7"
+  export GST_TRACERS="graphic"
+  echo 'export GST_TRACERS="graphic"'
+}
+
+# Unset all debug
+gst_unset_debug() {
+  unset GST_TRACERS
+  unset GST_DEBUG
+  unset GST_DEBUG_DUMP_DOT_DIR
+  unset GST_SHARK_LOCATION
+}
+
+# plot the gst-shark dump files
+gst_plot_debug() {
+  cd $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics
+  ./gstshark-plot $GST_SHARK_LOCATION -p
+  cd -
+}
+
+figlet -t WELCOME to TAPPAS container!

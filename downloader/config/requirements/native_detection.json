@@ -1,0 +1,16 @@
+{
+  "path": "apps/native/detection/",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "x86/hefs/yolov5m.hef",
+      "destination": "yolov5m.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/media/yolov5m_bmp_images/input_images.tar.gz",
+      "destination": "input_images.tar.gz",
+      "should_extract": true
+    }
+  ]
+}

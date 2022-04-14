@@ -1,0 +1,15 @@
+{
+  "path": "apps/gstreamer/raspberrypi/face_detection/resources",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "raspberrypi/hefs/lightface_slim.hef",
+      "destination": "lightface_slim.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "raspberrypi/media/face_detection.mp4",
+      "destination": "face_detection.mp4"
+    }
+  ]
+}

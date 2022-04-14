@@ -1,0 +1,13 @@
+# Package Information for pkg-config
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib/<ARCH>-linux-gnu/
+includedir=${prefix}/include/<ARCH>-linux-gnu/opencv4
+
+Name: OpenCV
+Description: Open Source Computer Vision Library
+Version: 4.5.2
+Libs: -L${exec_prefix}/lib -lopencv_imgproc -lopencv_core -lopencv_imgcodecs
+Libs.private: -ldl -lm -lpthread -lrt
+Cflags: -I${includedir}

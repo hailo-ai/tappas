@@ -1,0 +1,12 @@
+diff --git a/hailort/include/hailo/expected.hpp b/hailort/include/hailo/expected.hpp
+index 4af816c98..60b16ee9d 100644
+--- a/hailort/include/hailo/expected.hpp
++++ b/hailort/include/hailo/expected.hpp
+@@ -417,7 +417,7 @@ public:
+         assert(has_value());
+         T tmp = std::move(m_value);
+         make_unexpected(HAILO_UNINITIALIZED);
+-        return std::move(tmp);
++        return tmp;
+     }
+

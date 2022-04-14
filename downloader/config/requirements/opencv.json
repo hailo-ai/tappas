@@ -1,0 +1,26 @@
+{
+  "path": "core/open_source/opencv",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "open_source/opencv/<ARCH>/lib/libopencv_core.so.4.5.2",
+      "destination": "lib/libopencv_core.so.4.5.2"
+    },
+    {
+      "bucket": "tappas",
+      "source": "open_source/opencv/<ARCH>/lib/libopencv_imgproc.so.4.5.2",
+      "destination": "lib/libopencv_imgproc.so.4.5.2"
+    },
+    {
+      "bucket": "tappas",
+      "source": "open_source/opencv/<ARCH>/lib/libopencv_imgcodecs.so.4.5.2",
+      "destination": "lib/libopencv_imgcodecs.so.4.5.2"
+    },
+    {
+      "bucket": "tappas",
+      "source": "open_source/opencv/<ARCH>/opencv-include-dir.tar.gz",
+      "destination": "opencv-include-dir.tar.gz",
+      "should_extract": true
+    }
+  ]
+}
