@@ -36,7 +36,7 @@ IMAGE_INSTALL_append = "hailo-firmware libhailort hailortcli hailo-pci libgsthai
 Add the following to your image in your `conf/bblayers.conf`:
 
 ```sh
-BBLAYERS += "${BSPDIR}/sources/meta-hailo/meta-hailo-tappas"
+BBLAYERS += "${BSPDIR}/sources/meta-hailo-tappas/meta-hailo-tappas"
 ```
 
 Add the following to your image in your `conf/local.conf`:

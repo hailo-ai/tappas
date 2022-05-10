@@ -1,10 +1,11 @@
 # Project Declaration
+
 project('gst-hailo-tools', 'c', 'cpp',
-  version : '3.17.0',
-  default_options : [ 'warning_level=1',
-                      'buildtype=debugoptimized',
-                      'c_std=c11', 'cpp_std=c++17']
-            )
+        version : '3.18.0',
+        default_options : [ 'warning_level=1',
+                            'buildtype=debugoptimized',
+                            'c_std=c11', 'cpp_std=c++17']
+       )
 
 # Project Configuration
 core_conf = configuration_data()
@@ -26,9 +27,11 @@ endif
 # Include Directories
 configinc = include_directories('.')
 plugins_inc = include_directories(get_option('libgst_plugins_path'))
+metadata_inc = include_directories('./metadata/')
 hailo_general_inc = [include_directories(get_option('libgeneral_path'))]
-project_inc = [configinc, plugins_inc] + hailo_general_inc
+project_inc = [configinc, plugins_inc, metadata_inc] + hailo_general_inc
 
+cxxopts_inc_dir = get_option('libcxxopts')
 
 # Xtensor Include Directories
 xtensor_base_inc = include_directories(get_option('libxtensor'), is_system: true)
@@ -36,12 +39,6 @@ xtensor_inc = [xtensor_base_inc]
 if get_option('include_blas')
   xtensor_blas_inc = include_directories(get_option('libblas'), is_system: true)
   xtensor_inc += [xtensor_blas_inc]
-endif
-
-# cxxopts Include Directories
-if get_option('include_network_switch_app')
-  # cxxopts Include Directories
-  cxxopts_inc = [include_directories(get_option('libcxxopts'), is_system: true)]
 endif
 
 # Extra Compiler Arguments
@@ -113,6 +110,29 @@ endif
 # Library Arguments
 hailo_lib_args = get_option('libargs') + common_args
 
+tappas_workspace =  meson.current_source_dir() + '/../../../'
+
+post_proc_install_dir = get_option('post_processes_install_dir')
+if post_proc_install_dir == ''
+  # By default install for x86 workspace
+  post_proc_install_dir = tappas_workspace + '/apps/gstreamer/x86/libs'
+endif
+
+target = get_option('target')
 # Project Subdirectories
-subdir('plugins')
-subdir('libs')
+
+if target == 'all'
+  subdir('metadata')
+  subdir('plugins')
+  subdir('libs')
+  subdir('apps')
+
+elif target == 'apps'
+  subdir('metadata')
+  subdir(target)
+elif target == 'plugins'
+  subdir('metadata')
+  subdir(target)
+elif target == 'libs'
+  subdir(target)
+endif

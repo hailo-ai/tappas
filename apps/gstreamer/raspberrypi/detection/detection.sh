@@ -13,7 +13,7 @@ function init_variables() {
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m.hef"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
 
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
@@ -45,7 +45,7 @@ function print_usage() {
     echo "Options:"
     echo "  -h --help                  Show this help"
     echo "  --network NETWORK          Set network to use. choose from [yolov5, mobilenet_ssd], default is yolov5"
-    echo "  -i INPUT --input INPUT     Set the input video file path (default $input_source)"
+    echo "  -i INPUT --input INPUT     Set the input source (default $input_source)"
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
     echo "  --print-device-stats       Print the power and temperature measured"
@@ -95,22 +95,21 @@ parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    echo "Received invalid argument: $input_source. Live input sources are currently not supported."
-    exit 1
+    source_element="v4l2src device=$input_source name=src_0 ! videoflip video-direction=horiz"
 else
-    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 "
+    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 max_threads=2 "
 fi
 
 PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     $source_element ! \
-    videoscale n-threads=8 ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert n-threads=8 ! \
+    videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert n-threads=2 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=$batch_size ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter2 function-name=$network_name so-path=$postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! \
-    videoconvert n-threads=8 ! \
+    videoconvert ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
 
 echo "Running $network_name"

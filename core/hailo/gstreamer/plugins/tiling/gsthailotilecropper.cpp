@@ -19,7 +19,7 @@ GST_DEBUG_CATEGORY_STATIC(gst_hailotilecropper_debug);
 #define DEFAULT_OVERLAP_X_AXIS 0
 #define DEFAULT_OVERLAP_Y_AXIS 0
 #define DEFAULT_MULTI_SCALE_LEVEL 2
-static const uint scales_template[][2] {{1, 1}, {2,2}, {3, 3}};
+static const uint scales_template[][2]{{1, 1}, {2, 2}, {3, 3}};
 
 enum
 {
@@ -287,7 +287,7 @@ static std::vector<HailoROIPtr> gst_hailotilecropper_prepare_crops(GstHailoBaseC
     if (hailotilecropper->tiling_mode == MULTI_SCALE)
     {
         // In multi-scale mode - calculate the proper number of tiles referring to scales
-        for(uint i = 0; i < num_of_scales; i++)
+        for (uint i = 0; i < num_of_scales; i++)
             total_num_of_tiles += (scales_template[i][0] * scales_template[i][1]);
     }
 
@@ -295,13 +295,13 @@ static std::vector<HailoROIPtr> gst_hailotilecropper_prepare_crops(GstHailoBaseC
     crop_rois.reserve(total_num_of_tiles);
 
     // Prepare tiles for the main scale
-    prepare_tiles(hailo_roi, crop_rois, hailotilecropper->tiles_along_x_axis, hailotilecropper->tiles_along_y_axis, \
+    prepare_tiles(hailo_roi, crop_rois, hailotilecropper->tiles_along_x_axis, hailotilecropper->tiles_along_y_axis,
                   hailotilecropper->overlap_x_axis, hailotilecropper->overlap_y_axis, 0, hailotilecropper->tiling_mode);
 
     // Prepare tiles for every scale requsted as multi scale
     if (hailotilecropper->tiling_mode == MULTI_SCALE)
         for (uint i = 0; i < num_of_scales; i++)
-            prepare_tiles(hailo_roi, crop_rois, scales_template[i][0], scales_template[i][1], hailotilecropper->overlap_x_axis, hailotilecropper->overlap_y_axis, (i+1), (hailo_tiling_mode_t)hailotilecropper->tiling_mode);
+            prepare_tiles(hailo_roi, crop_rois, scales_template[i][0], scales_template[i][1], hailotilecropper->overlap_x_axis, hailotilecropper->overlap_y_axis, (i + 1), (hailo_tiling_mode_t)hailotilecropper->tiling_mode);
 
     return crop_rois;
 }

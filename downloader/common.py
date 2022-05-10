@@ -1,25 +1,39 @@
+import argparse
+from abc import ABC, abstractmethod
+from enum import Enum
 import hashlib
 import logging
 import os
+from pathlib import Path
 import subprocess
 import tarfile
-from abc import ABC, abstractmethod
-from pathlib import Path
 
 from config import config
 from models import FolderRequirements
 
+class Platform(Enum):
+    X86 = 'x86'
+    ARM = 'arm'
+    RaspberryPI = 'rpi'
+    ANY = 'any'
+
+    def __str__(self):
+        return self.value
 
 class Downloader(ABC):
     COMMON_SUFFIX = ['.hef', '.mp4']
     COMMON_RESOURCES_PATH = Path(__file__).parent.parent.resolve() / Path("apps/gstreamer/resources")
     TAPPAS_BUCKET = 'tappas'
     MODEL_ZOO_BUCKET = 'model_zoo'
+    DEFAULT_APP_REQUIREMENT_FILE = "download_requirements.txt"
 
-    def __init__(self, root_path=None):
+    def __init__(self, root_path=None, platform=Platform.X86, dump_requirements=False):
         self._md5_cache_dict = dict()
         self._logger = logging.getLogger(__file__)
         self._root_path = root_path or config.ROOT_PATH
+        self.dump_requirements = dump_requirements
+        self.requirements_dump_file = Path(self.DEFAULT_APP_REQUIREMENT_FILE)
+        self.platform = platform
 
     @abstractmethod
     def _download(self, requirement, destination, remote_md5):
@@ -29,13 +43,20 @@ class Downloader(ABC):
     def _get_md5(self, path):
         pass
 
+    def _dump_requirement(self, requirement, destination):
+        pass
+
     @staticmethod
-    def get_folders_requirements():
+    def get_folders_requirements(platform):
         requirements = []
 
         for requirements_file in config.REQUIREMENTS_FILES:
-            requirements_file_content = (config.REQUIREMENTS_PATH / requirements_file).read_text()
-            requirements.append(FolderRequirements.parse_raw(requirements_file_content))
+            req_path = config.REQUIREMENTS_PATH / requirements_file
+            is_platform_req = str(requirements_file).startswith(f'{str(platform)}/')
+            include_common = str(requirements_file).startswith('common/') and (platform != Platform.ARM)
+            if platform == Platform.ANY or is_platform_req or include_common:
+                requirements_file_content = req_path.read_text()
+                requirements.append(FolderRequirements.parse_raw(requirements_file_content))
 
         return requirements
 
@@ -43,18 +64,31 @@ class Downloader(ABC):
         pass
 
     def run(self, init_common_dir=True):
-        requirements = self.get_folders_requirements()
+        requirements = self.get_folders_requirements(self.platform)
         self._requirements_manipulation(requirements)
 
-        if init_common_dir:
-            self._download_common_resources(requirements)
+        if self.dump_requirements:
+            if self.requirements_dump_file.exists():
+                self.requirements_dump_file.open('w')
 
-        for requirement in requirements:
-            self._download_folder_requirements(requirement)
+            # Dump mode only - dump requirements into text file
+            for requirement in requirements:
+                self._dump_folder_requirements(requirement)
+        else:
+            # Default download mnode
+            if init_common_dir:
+                self._download_common_resources(requirements)
+
+            for requirement in requirements:
+                self._download_folder_requirements(requirement)
 
     def _extract_tar(self, tar_path, extract_to):
         with tarfile.open(tar_path, "r:gz") as tar_file:
             tar_file.extractall(path=extract_to)
+
+    def _dump_folder_requirements(self, folder_requirements: FolderRequirements):
+        for requirement in folder_requirements.requirements:
+            self._dump_requirement(requirement=requirement, destination=folder_requirements.path)
 
     def _download_folder_requirements(self, folder_requirements: FolderRequirements):
         project_dir = self._root_path / folder_requirements.path
@@ -139,3 +173,9 @@ class Downloader(ABC):
             for requirement in requirements:
                 destination_path = current_suffix_resources_dir / Path(requirement.destination).name
                 self._download_file(destination_path=destination_path, requirement=requirement)
+
+def parse_downloader_args():
+    parser = argparse.ArgumentParser(description='Downloader tool')
+    parser.add_argument('platform', type=Platform, choices=list(Platform), default=Platform.X86.value, help='Build and compilation type')
+    parser.add_argument('--dump-requirements', action='store_true', default=False, help='Dump mode only - dump apps requirements into text file into download_requirements.txt (includes hef files and media)')
+    return parser.parse_args()

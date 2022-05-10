@@ -9,7 +9,6 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/pose_estimation/resources"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libcenterpose_post.so"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
     readonly DEFAULT_NETWORK_NAME="centerpose"
     readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/centerpose_regnetx_1.6gf_fpn.hef"
@@ -18,7 +17,6 @@ function init_variables() {
     network_name=$DEFAULT_NETWORK_NAME
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    draw_so=$DEFAULT_DRAW_SO
     network_name=$DEFAULT_NETWORK_NAME
     sync_pipeline=false
 
@@ -97,9 +95,9 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$postprocess_so qos=false debug=False function-name=$network_name ! \
+    hailofilter2 so-path=$postprocess_so qos=false function-name=$network_name ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$draw_so qos=false debug=False ! \
+    hailooverlay qos=false ! \
     videoconvert ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
 

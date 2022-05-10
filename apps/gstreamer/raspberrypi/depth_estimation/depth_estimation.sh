@@ -7,13 +7,14 @@ function init_variables() {
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdepth_estimation.so"
+    readonly DEFAULT_POST_SO="$POSTPROCESS_DIR/libdepth_estimation.so"
     readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/depth_estimation/resources/instance_segmentation.mp4"
     readonly DEFAULT_HEF_PATH="$TAPPAS_WORKSPACE/apps/gstreamer/x86/depth_estimation/resources/fast_depth.hef"
 
+
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    draw_so=$DEFAULT_DRAW_SO
+    post_so=$DEFAULT_POST_SO
     print_gst_launch_only=false
     additonal_parameters=""
     
@@ -25,7 +26,7 @@ function print_usage() {
     echo ""
     echo "Options:"
     echo "  --help                   Show this help"
-    echo "  -i INPUT --input INPUT   Set the input video file path (default $input_source)"
+    echo "  -i INPUT --input INPUT   Set the video source (default $input_source)"
     echo "  --show-fps               Print fps"
     echo "  --print-gst-launch       Print the ready gst-launch command without running it"
     exit 0
@@ -66,24 +67,24 @@ parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    echo "Received invalid argument: $input_source. Live input sources are currently not supported."
-    exit 1
+    source_element="v4l2src device=$input_source name=src_0 ! videoflip video-direction=horiz"
 else
     source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 "
-    sync_pipeline=true
 fi
 
 PIPELINE="gst-launch-1.0 \
-    $source_element ! queue ! videoconvert n-threads=8 ! queue ! \
+    $source_element ! queue ! videoconvert n-threads=2 ! queue ! \
     tee name=t ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     aspectratiocrop aspect-ratio=1/1 ! queue ! videoscale ! queue ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$draw_so qos=false debug=False ! videoconvert n-threads=8 ! \
+    hailofilter2 so-path=$post_so qos=false ! videoconvert ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoconvert n-threads=8 ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=false text-overlay=false \
+    hailooverlay qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=false text-overlay=false \
     t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoscale n-threads=8 ! video/x-raw, width=300, height=300 ! queue ! videoconvert n-threads=8 ! \
+    videoscale ! video/x-raw, width=300, height=300 ! queue ! videoconvert ! \
     ximagesink sync=false ${additonal_parameters}"
 
 echo "Running"

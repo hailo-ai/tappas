@@ -12,7 +12,7 @@ function init_variables() {
 
     video_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    depth_estimation_draw_so="$POSTPROCESS_DIR/libdepth_estimation.so"
+    depth_estimation_post_so="$POSTPROCESS_DIR/libdepth_estimation.so"
     detection_post_so="$POSTPROCESS_DIR/libmobilenet_ssd_post.so"
 
     depth_estimation_net_name="joined_fast_depth_ssd_mobilenet_v1_no_alls/fast_depth"
@@ -88,7 +88,9 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true net-name=$depth_estimation_net_name qos=false batch-size=1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$depth_estimation_draw_so qos=false debug=False ! videoconvert ! \
+    hailofilter2 so-path=$depth_estimation_post_so qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    hailooverlay qos=false ! videoconvert ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
     t. ! \
     videoscale ! queue ! \
@@ -96,7 +98,7 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter2 so-path=$detection_post_so function-name=mobilenet_ssd_merged qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailooverlay ! videoconvert ! \
+    hailooverlay qos=false ! videoconvert ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display2 sync=false text-overlay=false ${additonal_parameters} "
 
 echo "Running"

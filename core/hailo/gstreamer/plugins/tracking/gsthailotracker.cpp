@@ -1,38 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
-/* GStreamer
- * Copyright (C) 2021 FIXME <fixme@example.com>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
- *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Suite 500,
- * Boston, MA 02110-1335, USA.
- */
-/**
- * SECTION:element-gsthailotracker
- *
- * The hailotracker element does FIXME stuff.
- *
- * <refsect2>
- * <title>Example launch line</title>
- * |[
- * gst-launch-1.0 -v fakesrc ! hailotracker ! FIXME ! fakesink
- * ]|
- * FIXME Describe what the pipeline does.
- * </refsect2>
- */
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -143,32 +112,32 @@ gst_hailo_tracker_class_init(GstHailoTrackerClass *klass)
     g_object_class_install_property(gobject_class, PROP_KALMAN_DIST_THR,
                                     g_param_spec_float("kalman-dist-thr", "Kalman Distance Threshold",
                                                        "Threshold used in Kalman filter to compare Mahalanobis cost matrix. Closer to 1.0 is looser.",
-                                                       0.0, 1.0, 0.7,
+                                                       0.0, 1.0, DEFAULT_KALMAN_DISTANCE,
                                                        (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     g_object_class_install_property(gobject_class, PROP_IOU_THR,
                                     g_param_spec_float("iou-thr", "IOU Distance Threshold",
                                                        "Threshold used in Kalman filter to compare IOU cost matrix. Closer to 1.0 is looser.",
-                                                       0.0, 1.0, 0.8,
+                                                       0.0, 1.0, DEFAULT_IOU_THRESHOLD,
                                                        (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     g_object_class_install_property(gobject_class, PROP_INIT_IOU_THR,
                                     g_param_spec_float("init-iou-thr", "Initial IOU Distance Threshold",
                                                        "Threshold used in Kalman filter to compare IOU cost matrix of newly found instances. Closer to 1.0 is looser.",
-                                                       0.0, 1.0, 0.9,
+                                                       0.0, 1.0, DEFAULT_INIT_IOU_THRESHOLD,
                                                        (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     g_object_class_install_property(gobject_class, PROP_KEEP_TRACKED_FRAMES,
                                     g_param_spec_int("keep-tracked-frames", "Keep tracked frames",
                                                      "Number of frames to keep without a successful match before a 'tracked' instance is considered 'lost'.",
-                                                     0, G_MAXINT, 2,
+                                                     0, G_MAXINT, DEFAULT_KEEP_FRAMES,
                                                      (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     g_object_class_install_property(gobject_class, PROP_KEEP_NEW_FRAMES,
                                     g_param_spec_int("keep-new-frames", "Keep new frames",
                                                      "Number of frames to keep without a successful match before a 'new' instance is removed from the tracking record.",
-                                                     0, G_MAXINT, 2,
+                                                     0, G_MAXINT, DEFAULT_KEEP_FRAMES,
                                                      (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     g_object_class_install_property(gobject_class, PROP_KEEP_LOST_FRAMES,
                                     g_param_spec_int("keep-lost-frames", "Keep lost frames",
                                                      "Number of frames to keep without a successful match before a 'lost' instance is removed from the tracking record.",
-                                                     0, G_MAXINT, 2,
+                                                     0, G_MAXINT, DEFAULT_KEEP_FRAMES,
                                                      (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
     // Set virtual functions
@@ -188,7 +157,13 @@ gst_hailo_tracker_init(GstHailoTracker *hailotracker)
 {
     hailotracker->debug = false;
     hailotracker->class_id = -1;
-    hailotracker->jde_tracker = JDETracker();
+    hailotracker->jde_trackers.clear();
+    hailotracker->tracker_params.kalman_distance = DEFAULT_KALMAN_DISTANCE;
+    hailotracker->tracker_params.iou_threshold = DEFAULT_IOU_THRESHOLD;
+    hailotracker->tracker_params.init_iou_threshold = DEFAULT_INIT_IOU_THRESHOLD;
+    hailotracker->tracker_params.keep_tracked_frames = DEFAULT_KEEP_FRAMES;
+    hailotracker->tracker_params.keep_new_frames = DEFAULT_KEEP_FRAMES;
+    hailotracker->tracker_params.keep_lost_frames = DEFAULT_KEEP_FRAMES;
 }
 
 //******************************************************************
@@ -211,26 +186,35 @@ void gst_hailo_tracker_set_property(GObject *object, guint property_id,
         hailotracker->class_id = g_value_get_int(value);
         break;
     case PROP_KALMAN_DIST_THR:
-        hailotracker->jde_tracker.set_kalman_distance(g_value_get_float(value));
+        hailotracker->tracker_params.kalman_distance = g_value_get_float(value);
         break;
     case PROP_IOU_THR:
-        hailotracker->jde_tracker.set_iou_threshold(g_value_get_float(value));
+        hailotracker->tracker_params.iou_threshold = g_value_get_float(value);
         break;
     case PROP_INIT_IOU_THR:
-        hailotracker->jde_tracker.set_init_iou_threshold(g_value_get_float(value));
+        hailotracker->tracker_params.init_iou_threshold = g_value_get_float(value);
         break;
     case PROP_KEEP_TRACKED_FRAMES:
-        hailotracker->jde_tracker.set_keep_tracked_frames(g_value_get_int(value));
+        hailotracker->tracker_params.keep_tracked_frames = g_value_get_int(value);
         break;
     case PROP_KEEP_NEW_FRAMES:
-        hailotracker->jde_tracker.set_keep_new_frames(g_value_get_int(value));
+        hailotracker->tracker_params.keep_new_frames = g_value_get_int(value);
         break;
     case PROP_KEEP_LOST_FRAMES:
-        hailotracker->jde_tracker.set_keep_lost_frames(g_value_get_int(value));
+        hailotracker->tracker_params.keep_lost_frames = g_value_get_int(value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
+    }
+    for (auto & [streamid,tracker] : hailotracker->jde_trackers)
+    {
+        tracker.set_kalman_distance(hailotracker->tracker_params.kalman_distance);
+        tracker.set_iou_threshold(hailotracker->tracker_params.iou_threshold);
+        tracker.set_init_iou_threshold(hailotracker->tracker_params.init_iou_threshold);
+        tracker.set_keep_tracked_frames(hailotracker->tracker_params.keep_tracked_frames);
+        tracker.set_keep_new_frames(hailotracker->tracker_params.keep_new_frames);
+        tracker.set_keep_lost_frames(hailotracker->tracker_params.keep_lost_frames);
     }
 }
 
@@ -251,22 +235,22 @@ void gst_hailo_tracker_get_property(GObject *object, guint property_id,
         g_value_set_int(value, hailotracker->class_id);
         break;
     case PROP_KALMAN_DIST_THR:
-        g_value_set_float(value, hailotracker->jde_tracker.get_kalman_distance());
+        g_value_set_float(value, hailotracker->tracker_params.kalman_distance);
         break;
     case PROP_IOU_THR:
-        g_value_set_float(value, hailotracker->jde_tracker.get_iou_threshold());
+        g_value_set_float(value, hailotracker->tracker_params.iou_threshold);
         break;
     case PROP_INIT_IOU_THR:
-        g_value_set_float(value, hailotracker->jde_tracker.get_init_iou_threshold());
+        g_value_set_float(value, hailotracker->tracker_params.init_iou_threshold);
         break;
     case PROP_KEEP_TRACKED_FRAMES:
-        g_value_set_int(value, hailotracker->jde_tracker.get_keep_tracked_frames());
+        g_value_set_int(value, hailotracker->tracker_params.keep_tracked_frames);
         break;
     case PROP_KEEP_NEW_FRAMES:
-        g_value_set_int(value, hailotracker->jde_tracker.get_keep_new_frames());
+        g_value_set_int(value, hailotracker->tracker_params.keep_new_frames);
         break;
     case PROP_KEEP_LOST_FRAMES:
-        g_value_set_int(value, hailotracker->jde_tracker.get_keep_lost_frames());
+        g_value_set_int(value, hailotracker->tracker_params.keep_lost_frames);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -277,7 +261,7 @@ void gst_hailo_tracker_get_property(GObject *object, guint property_id,
 //******************************************************************
 // ELEMENT LIFECYCLE MANAGEMENT
 //******************************************************************
-/* Release any references to resources when the object first knows it will be destroyed. 
+/* Release any references to resources when the object first knows it will be destroyed.
    Can be called any number of times. */
 void gst_hailo_tracker_dispose(GObject *object)
 {
@@ -353,11 +337,11 @@ gst_hailo_tracker_transform_frame_ip(GstVideoFilter *filter, GstVideoFrame *fram
     for (auto obj : hailo_roi->get_objects_typed(HAILO_DETECTION))
     {
         NewHailoDetectionPtr detection = std::dynamic_pointer_cast<NewHailoDetection>(obj);
-        if ( (hailotracker->class_id == -1) || (detection->get_class_id() == hailotracker->class_id) )
+        if ((hailotracker->class_id == -1) || (detection->get_class_id() == hailotracker->class_id))
             detections.push_back(detection);
         hailo_roi->remove_object(detection);
     }
-    std::vector<STrack> online_stracks = hailotracker->jde_tracker.update(detections);
+    std::vector<STrack> online_stracks = hailotracker->jde_trackers[std::string(hailotracker->stream_id)].update(detections);
 
     // // Swap the detections in the roi with just the online tracked detections
     GST_OBJECT_LOCK(hailotracker);
@@ -392,6 +376,17 @@ gst_hailo_tracker_sink_event(GstBaseTransform *trans,
         {
             GST_DEBUG_OBJECT(hailotracker, "filtering stream %s", stream_id);
             hailotracker->stream_id = strdup(stream_id);
+            // If streamid is new create a new JDETracker
+            if (hailotracker->jde_trackers.find(std::string(hailotracker->stream_id)) == hailotracker->jde_trackers.end())
+            {
+                hailotracker->jde_trackers.emplace(std::string(hailotracker->stream_id),
+                                                                  JDETracker(hailotracker->tracker_params.kalman_distance,
+                                                                             hailotracker->tracker_params.iou_threshold,
+                                                                             hailotracker->tracker_params.init_iou_threshold,
+                                                                             hailotracker->tracker_params.keep_tracked_frames,
+                                                                             hailotracker->tracker_params.keep_new_frames,
+                                                                             hailotracker->tracker_params.keep_lost_frames));
+            }
         }
     default:
         return GST_BASE_TRANSFORM_CLASS(gst_hailo_tracker_parent_class)->sink_event(trans, event);
@@ -401,7 +396,7 @@ gst_hailo_tracker_sink_event(GstBaseTransform *trans,
 /* Handle src events. */
 static gboolean
 gst_hailo_tracker_src_event(GstBaseTransform *trans,
-                             GstEvent *event)
+                            GstEvent *event)
 {
     GstHailoTracker *hailotracker = GST_HAILO_TRACKER(trans);
     switch (GST_EVENT_TYPE(event))
@@ -410,7 +405,7 @@ gst_hailo_tracker_src_event(GstBaseTransform *trans,
         const GstStructure *event_structure;
         event_structure = gst_event_get_structure(event);
         // OCR label event
-        if(event_structure && gst_event_has_name(event, OCR_EVENT_NAME))
+        if (event_structure && gst_event_has_name(event, OCR_EVENT_NAME))
         {
             gboolean event_handled = gst_hailo_tracker_ocr_event(hailotracker, event_structure);
             return event_handled;
@@ -431,9 +426,9 @@ gst_hailo_tracker_ocr_event(GstHailoTracker *hailotracker,
     gst_structure_get_int(event_structure, "track_id", &track_id);
     const gchar *ocr_label = gst_structure_get_string(event_structure, "label");
     gst_structure_get(event_structure, "confidence", G_TYPE_FLOAT, &confidence, NULL);
-    STrack *tracked_detection = hailotracker->jde_tracker.get_detection_with_id(track_id);
+    STrack *tracked_detection = hailotracker->jde_trackers[std::string(hailotracker->stream_id)].get_detection_with_id(track_id);
 
-    if(nullptr != tracked_detection)
+    if (nullptr != tracked_detection)
     {
         tracked_detection->add_classification(std::make_shared<HailoClassification>("ocr", ocr_label, confidence));
     }

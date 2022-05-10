@@ -36,9 +36,9 @@ enum
 G_DEFINE_TYPE_WITH_CODE(GstHailoTileAggregator, gst_hailotileaggregator, GST_TYPE_HAILO_AGGREGATOR, _do_init);
 
 static void gst_hailotileaggregator_set_property(GObject *object,
-                                                guint prop_id, const GValue *value, GParamSpec *pspec);
+                                                 guint prop_id, const GValue *value, GParamSpec *pspec);
 static void gst_hailotileaggregator_get_property(GObject *object,
-                                                guint prop_id, GValue *value, GParamSpec *pspec);
+                                                 guint prop_id, GValue *value, GParamSpec *pspec);
 
 static void gst_hailotileaggregator_dispose(GObject *object);
 static void gst_hailotileaggregator_finalize(GObject *object);
@@ -73,15 +73,15 @@ gst_hailotileaggregator_class_init(GstHailoTileAggregatorClass *klass)
 
     g_object_class_install_property(gobject_class, PROP_IOU_THRESHOLD,
                                     g_param_spec_float("iou-threshold", "NMS IOU Threshold", "threshold", 0, 1, DEFAULT_IOU_THRESHOLD,
-                                                      (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
+                                                       (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
 
     g_object_class_install_property(gobject_class, PROP_BORDER_THRESHOLD,
                                     g_param_spec_float("border-threshold", "Multi-scale remove exceeded objects functionality border threshold", "border threshold", 0, 1, DEFAULT_BORDER_THRESHOLD,
-                                                      (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
+                                                       (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
 
     g_object_class_install_property(gobject_class, PROP_REMOVE_LARGE_LANDSCAPE,
-                                g_param_spec_boolean("remove-large-landscape", "Remove large landscape", "remove large landscape objects when running in multi-scale mode", true,
-                                                    (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
+                                    g_param_spec_boolean("remove-large-landscape", "Remove large landscape", "remove large landscape objects when running in multi-scale mode", true,
+                                                         (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
 }
 
 static void
@@ -111,18 +111,18 @@ static void gst_hailotileaggregator_set_property(GObject *object, guint prop_id,
     GstHailoTileAggregator *hailotileaggregator = GST_HAILO_TILE_AGGREGATOR(object);
     switch (prop_id)
     {
-        case PROP_IOU_THRESHOLD:
-            hailotileaggregator->iou_threshold = g_value_get_float(value);
-            break;
-        case PROP_BORDER_THRESHOLD:
-            hailotileaggregator->border_threshold = g_value_get_float(value);
-            break;
-        case PROP_REMOVE_LARGE_LANDSCAPE:
-            hailotileaggregator->remove_large_landscape = g_value_get_boolean(value);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-            break;
+    case PROP_IOU_THRESHOLD:
+        hailotileaggregator->iou_threshold = g_value_get_float(value);
+        break;
+    case PROP_BORDER_THRESHOLD:
+        hailotileaggregator->border_threshold = g_value_get_float(value);
+        break;
+    case PROP_REMOVE_LARGE_LANDSCAPE:
+        hailotileaggregator->remove_large_landscape = g_value_get_boolean(value);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
     }
 }
 
@@ -131,18 +131,18 @@ static void gst_hailotileaggregator_get_property(GObject *object, guint prop_id,
     GstHailoTileAggregator *hailotileaggregator = GST_HAILO_TILE_AGGREGATOR(object);
     switch (prop_id)
     {
-        case PROP_IOU_THRESHOLD:
-            g_value_set_float(value, hailotileaggregator->iou_threshold);
-            break;
-        case PROP_BORDER_THRESHOLD:
-            g_value_set_float(value, hailotileaggregator->border_threshold);
-            break;
-        case PROP_REMOVE_LARGE_LANDSCAPE:
-            g_value_set_boolean(value, hailotileaggregator->remove_large_landscape);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-            break;
+    case PROP_IOU_THRESHOLD:
+        g_value_set_float(value, hailotileaggregator->iou_threshold);
+        break;
+    case PROP_BORDER_THRESHOLD:
+        g_value_set_float(value, hailotileaggregator->border_threshold);
+        break;
+    case PROP_REMOVE_LARGE_LANDSCAPE:
+        g_value_set_boolean(value, hailotileaggregator->remove_large_landscape);
+        break;
+    default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
     }
 }
 
@@ -159,7 +159,7 @@ static void gst_hailotileaggregator_get_property(GObject *object, guint prop_id,
 static void remove_large_landscape(HailoROIPtr hailo_roi, int &frame_width, int &frame_height)
 {
     auto detections = hailo_common::get_hailo_detections(hailo_roi);
-    for( const NewHailoDetectionPtr &detection : detections )
+    for (const NewHailoDetectionPtr &detection : detections)
     {
         HailoBBox bbox = detection->get_bbox();
         float width = bbox.width() * frame_width;
@@ -175,7 +175,7 @@ static void remove_large_landscape(HailoROIPtr hailo_roi, int &frame_width, int 
 /**
  * Remove detections close to the boundary of the tile.
  * Not including tile borders that located on one of the borders of the full frame.
- * 
+ *
  * @param[in] hailo_tile_roi  HailoTileROIPtr taken from the buffer.
  * @param[in] border_threshold    float.  threshold - 0 - 1 value of 'close to border' ratio.
  * @return void.
@@ -185,15 +185,15 @@ static void remove_exceeded_bboxes(HailoTileROIPtr hailo_tile_roi, float border_
     auto detections = hailo_common::get_hailo_detections(hailo_tile_roi);
     HailoBBox tile_bbox = hailo_tile_roi->get_bbox();
 
-    for( const NewHailoDetectionPtr &detection : detections )
+    for (const NewHailoDetectionPtr &detection : detections)
     {
         HailoBBox bbox = detection->get_bbox();
-        bool exceed_xmin = (tile_bbox.xmin() != 0 &&  bbox.xmin() < border_threshold);
+        bool exceed_xmin = (tile_bbox.xmin() != 0 && bbox.xmin() < border_threshold);
         bool exceed_xmax = (tile_bbox.xmax() != 1 && (1 - bbox.xmax()) < border_threshold);
         bool exceed_ymin = (tile_bbox.ymin() != 0 && bbox.ymin() < border_threshold);
         bool exceed_ymax = (tile_bbox.ymax() != 1 && (1 - bbox.ymax()) < border_threshold);
 
-        if(exceed_xmin || exceed_xmax || exceed_ymin || exceed_ymax)
+        if (exceed_xmin || exceed_xmax || exceed_ymin || exceed_ymax)
             hailo_tile_roi->remove_object(detection);
     }
 }

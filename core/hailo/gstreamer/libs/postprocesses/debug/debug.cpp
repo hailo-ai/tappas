@@ -182,6 +182,19 @@ void generate_bottom_detection(HailoROIPtr roi)
     hailo_common::add_detection(roi, r_bbox, "debug_generated", r_confidence);
 }
 
+void print_roi_bboxs(HailoROIPtr roi)
+{
+    for(NewHailoDetectionPtr &detection : hailo_common::get_hailo_detections(roi))
+    {
+        HailoBBox bbox = detection->get_bbox();
+
+        std::cout << "-------" << std::endl;
+        std::cout << "Confidence: " << detection->get_confidence() << " Label: " << detection->get_label() << std::endl;
+        std::cout << "X: " << bbox.xmin() << " Y:" << bbox.ymin() <<  " Width:" << bbox.width() <<  " Height: " << bbox.height() << std::endl;
+        std::cout << "-------" << std::endl;
+    }
+}
+
 // Do Nothing
 void identity(HailoROIPtr roi)
 {

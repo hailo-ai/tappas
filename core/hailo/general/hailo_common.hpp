@@ -1,14 +1,16 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 /* __BEGIN_DECLS should be used at the beginning of your declarations,
    so that C++ compilers don't mangle their names.  Use __END_DECLS at
    the end of C declarations. */
 
 #pragma once
 #include "hailo_objects.hpp"
-#include <string>
+// #include <stdlib.h>
+// #include <string>
+// #include <cstring>
 
 #undef __BEGIN_DECLS
 #undef __END_DECLS

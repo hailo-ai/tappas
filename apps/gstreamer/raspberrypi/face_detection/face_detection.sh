@@ -32,7 +32,8 @@ function print_usage() {
     echo ""
     echo "Options:"
     echo "  --help                  Show this help"
-    echo "  -i INPUT --input INPUT  Set the input video file path (default $input_source)"
+    echo "  --network NETWORK       Set network to use. choose from [lightface], default is lightface"
+    echo "  -i INPUT --input INPUT  Set the input source (default $input_source)"
     echo "  --show-fps              Print fps"
     echo "  --print-gst-launch      Print the ready gst-launch command without running it"
     exit 0
@@ -53,6 +54,13 @@ function parse_args() {
         if [ "$1" = "--help" ] || [ "$1" == "-h" ]; then
             print_usage
             exit 0
+        elif [ $1 == "--network" ]; then
+            if [ $2 != "lightface" ]; then
+                echo "Received invalid network: $2. See expected arguments below:"
+                print_usage
+                exit 1
+            fi
+            shift
         elif [ "$1" = "--print-gst-launch" ]; then
             print_gst_launch_only=true
         elif [ "$1" = "--show-fps" ]; then
@@ -76,23 +84,22 @@ parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    echo "Received invalid argument: $input_source. Live input sources are currently not supported."
-    exit 1
+    source_element="v4l2src device=$input_source name=src_0 ! videoflip video-direction=horiz"
 else
     source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 "
 fi
 
 PIPELINE="gst-launch-1.0 \
-    $source_element ! videoconvert n-threads=8 ! tee name=t hailomuxer name=mux \
+    $source_element ! videoconvert n-threads=2 ! tee name=t hailomuxer name=mux \
     t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! mux. \
-    t. ! videoscale n-threads=8 ! \
+    t. ! videoscale ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter2 function-name=$network_name so-path=$postprocess_so qos=false ! mux. \
     mux. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoconvert n-threads=8 ! \
+    videoconvert ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
 
 echo "Running $network_name"

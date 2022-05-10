@@ -7,13 +7,13 @@ function init_variables() {
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdepth_estimation.so"
+    readonly DEFAULT_POST_SO="$POSTPROCESS_DIR/libdepth_estimation.so"
     readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/depth_estimation/resources/instance_segmentation.mp4"
     readonly DEFAULT_HEF_PATH="$TAPPAS_WORKSPACE/apps/gstreamer/x86/depth_estimation/resources/fast_depth.hef"
 
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    draw_so=$DEFAULT_DRAW_SO
+    post_so=$DEFAULT_POST_SO
     print_gst_launch_only=false
     additonal_parameters=""
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
@@ -79,7 +79,9 @@ PIPELINE="gst-launch-1.0 \
     aspectratiocrop aspect-ratio=1/1 ! queue ! videoscale ! queue ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$draw_so qos=false debug=False ! videoconvert ! \
+    hailofilter2 so-path=$post_so qos=false ! videoconvert ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    hailooverlay qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert ! fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
     t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

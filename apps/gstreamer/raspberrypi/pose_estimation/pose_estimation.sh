@@ -9,7 +9,6 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/pose_estimation/resources"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libcenterpose_post.so"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
     readonly DEFAULT_NETWORK_NAME="centerpose"
     readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/centerpose_regnetx_1.6gf_fpn.hef"
@@ -18,7 +17,6 @@ function init_variables() {
     network_name=$DEFAULT_NETWORK_NAME
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    draw_so=$DEFAULT_DRAW_SO
     network_name=$DEFAULT_NETWORK_NAME
     sync_pipeline=false
 
@@ -85,22 +83,21 @@ parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    echo "Received invalid argument: $input_source. Live input sources are currently not supported."
-    exit 1
+    source_element="v4l2src device=$input_source name=src_0 ! videoflip video-direction=horiz"
 else
     source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264"
 fi
 
 PIPELINE="gst-launch-1.0 \
     $source_element ! \
-    videoscale n-threads=8 ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert n-threads=8 ! \
+    videoscale n-threads=8 ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert n-threads=2 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$postprocess_so qos=false debug=False function-name=$network_name ! \
+    hailofilter2 so-path=$postprocess_so qos=false function-name=$network_name ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$draw_so qos=false debug=False ! \
-    videoconvert n-threads=8 ! \
+    hailooverlay qos=false ! \
+    videoconvert ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
 
 echo ${PIPELINE}

@@ -10,8 +10,10 @@ det_draw_lib = shared_library('3ddfa',
   face_crop_sources,
   cpp_args : hailo_lib_args,
   include_directories: [hailo_general_inc],
-  dependencies : post_deps + [opencv_dep] + hailo_deps,
+  dependencies : post_deps + [opencv_dep],
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir + '/cropping_algorithms/',
 )
 
 ################################################
@@ -26,6 +28,8 @@ lpr_croppers_lib = shared_library('lpr_croppers',
   lpr_croppers_sources,
   cpp_args : hailo_lib_args,
   include_directories: [hailo_general_inc],
-  dependencies : post_deps + [opencv_dep] + hailo_deps,
+  dependencies : post_deps + [opencv_dep],
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir + '/cropping_algorithms/',
 )

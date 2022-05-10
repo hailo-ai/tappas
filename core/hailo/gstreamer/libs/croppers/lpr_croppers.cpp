@@ -24,7 +24,7 @@
  *         The variance of edges in the image.
  */
 float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float crop_ratio = 0.1)
-{
+{   
     // Crop the center of the roi from the image, avoid cropping out of bounds
     float roi_width = roi.width();
     float roi_height = roi.height();
@@ -49,9 +49,19 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     cv::Rect center_crop(cropped_xmin, cropped_ymin, cropped_width, cropped_height);
     cv::Mat cropped_image = image(center_crop);
 
+    // If the image is in yuy2 format, then adjust to BGR
+    cv::Mat bgr_image;
+    if (image.type() == CV_8UC4)
+    {
+        cv::Mat yuy2_image = cv::Mat(cropped_image.rows, cropped_image.cols*2, CV_8UC2, (char *)cropped_image.data, cropped_image.step);
+        cv::cvtColor(yuy2_image, bgr_image, cv::COLOR_YUV2BGR_YUY2);
+    } else {
+        bgr_image = cropped_image;
+    }
+
     // Resize the frame
     cv::Mat resized_image;
-    cv::resize(cropped_image, resized_image, cv::Size(200, 40), cv::INTER_AREA);
+    cv::resize(bgr_image, resized_image, cv::Size(200, 40), cv::INTER_AREA);
 
     // Gaussian Blur
     cv::Mat gaussian_image;
@@ -79,6 +89,7 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     float variance = stddev.val[0] * stddev.val[0]; 
 
     // Release resources
+    bgr_image.release();
     gray_image_normalized.release();
     gaussian_image.release();
     resized_image.release();
@@ -106,6 +117,7 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
 std::vector<HailoROIPtr> license_plate_quality_estimation(cv::Mat image, HailoROIPtr roi)
 {
     std::vector<HailoROIPtr> crop_rois;
+    float variance;
     // Get all detections.
     std::vector<NewHailoDetectionPtr> detections_ptrs = hailo_common::get_hailo_detections(roi);
     for (NewHailoDetectionPtr &detection : detections_ptrs)
@@ -119,7 +131,8 @@ std::vector<HailoROIPtr> license_plate_quality_estimation(cv::Mat image, HailoRO
             HailoBBox license_plate_box = hailo_common::create_flattened_bbox(inner_detection->get_bbox(), inner_detection->get_scaling_bbox());
 
             // Get the variance of the image, only add ROIs that are above threshold.
-            float variance = quality_estimation(image, license_plate_box, CROP_RATIO);
+            variance = quality_estimation(image, license_plate_box, CROP_RATIO);
+
             if (variance >= QUALITY_THRESHOLD)
             {
                 crop_rois.emplace_back(inner_detection);

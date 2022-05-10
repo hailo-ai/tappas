@@ -8,13 +8,13 @@ function init_variables() {
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/segmentation/resources"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libsegmentation_draw.so"
+    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libsemantic_segmentation.so"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/full_mov_slow.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/fcn8_resnet_v1_18.hef"
 
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    draw_so=$DEFAULT_DRAW_SO
+    post_so=$DEFAULT_POSTPROCESS_SO
 
     print_gst_launch_only=false
     additonal_parameters=""
@@ -78,7 +78,10 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$draw_so qos=false debug=False ! \
+    hailofilter2 so-path=$post_so qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    hailooverlay qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false ${additonal_parameters}"
 

@@ -1,18 +1,5 @@
 # Using Dockers
 
-- [Using Dockers](#using-dockers)
-  - [Install Docker](#install-docker)
-  - [Running TAPPAS container from pre-built Docker image](#running-tappas-container-from-pre-built-docker-image)
-    - [Preparations](#preparations)
-    - [Running for the first time](#running-for-the-first-time)
-    - [Resuming (Second time and on)](#resuming-second-time-and-on)
-    - [Flags and advanced use-cases](#flags-and-advanced-use-cases)
-      - [Use-cases](#use-cases)
-  - [Upgrade Version](#upgrade-version)
-  - [Troubleshooting](#troubleshooting)
-    - [Hailo containers are taking to much space](#hailo-containers-are-taking-to-much-space)
-    - [Running out of disk space](#running-out-of-disk-space)
-
 ## Install Docker
 
 The section below would help you with the installation of Docker.
@@ -38,9 +25,9 @@ sudo reboot
 
 ### Preparations
 
-HailoRT PCIe driver is required - install instructions are provided in HailoRT documentations. make sure that the driver is installed correctly by: [Verify Hailo installation](./verify_hailoRT.md).
+[HailoRT PCIe driver](https://github.com/hailo-ai/hailort-drivers) is required - install instructions are provided in HailoRT documentations. make sure that the driver is installed correctly by: [Verify Hailo installation](./verify_hailoRT.md).
 
-Unzip the `tappas_VERSION_ARCH_docker.zip` file, it should contain the following files:
+Download from Hailo developer zone `tappas_VERSION_ARCH_docker.zip` and unzip the file, it should contain the following files:
 
 - **hailo_docker_tappas_VERSION.tar**: the pre-built docker image
 - **run_tappas_docker.sh**: Script that loads and runs the docker image

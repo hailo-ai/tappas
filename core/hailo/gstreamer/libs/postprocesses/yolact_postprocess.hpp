@@ -4,10 +4,12 @@
 **/
 #ifndef _HAILO_YOLACT_POST_HPP_
 #define _HAILO_YOLACT_POST_HPP_
-#include "hailo_frame.hpp"
+#include "hailo_objects.hpp"
+#include "hailo_common.hpp"
+#include "common/tensors.hpp"
 
-G_BEGIN_DECLS
-void yolact(HailoFramePtr hailo_frame);
-void filter(HailoFramePtr hailo_frame);
-G_END_DECLS
+__BEGIN_DECLS
+void yolact(HailoROIPtr roi);
+void filter(HailoROIPtr roi);
+__END_DECLS
 #endif

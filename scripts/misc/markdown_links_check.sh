@@ -7,5 +7,5 @@ tappas_workspace_path=$(realpath $script_dir/../..)
 
  for file in $(ag -g ".md" $tappas_workspace_path)
  do
- 	markdown-link-check $file || exit 1;
+ 	markdown-link-check -p -a 200,403 $file || exit 1;
  done

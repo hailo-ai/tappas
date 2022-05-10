@@ -3,19 +3,19 @@ set -e
 
 function init_variables() {
     print_help_if_needed $@
+    
     script_dir=$(dirname $(realpath "$0"))
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/multistream_multidevice/resources"
-    readonly DETECTION_HEF_PATH="$RESOURCES_DIR/yolov5m.hef"
+    readonly DETECTION_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
     readonly POSE_ESTIMATION_HEF_PATH="$RESOURCES_DIR/centerpose_regnetx_1.6gf_fpn.hef"
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
-    readonly DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libnew_yolo_post.so"
     readonly POSE_ESTIMATION_POSTPROCESS_SO="$POSTPROCESS_DIR/libcenterpose_post.so"
     readonly POSE_ESTIMATION_POSTPROCESS_FUNCTION_NAME="centerpose"
     readonly DETECTION_POSTPROCESS_FUNCTION_NAME="yolov5_no_persons"
-    readonly DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
 
     num_of_src=8
     debug=false
@@ -108,15 +108,15 @@ function main() {
     pipeline="$gst_top_command ${debug_stats_export} gst-launch-1.0 ${stats_elements} \
          funnel name=fun ! queue name=hailo_pre_split leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
          hailomuxer name=hailomuxer ! queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-         hailofilter so-path=$DRAW_SO qos=false debug=False ! streamiddemux name=sid \
+         hailooverlay qos=false ! streamiddemux name=sid \
          splitter. ! queue name=hailo_pre_infer_q_1 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
          hailonet hef-path=$DETECTION_HEF_PATH debug=False qos=false is-active=true device-id=$DEVICE1 ! \
          queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-         hailofilter so-path=$DETECTION_POSTPROCESS_SO function-name=$DETECTION_POSTPROCESS_FUNCTION_NAME qos=false debug=False ! hailomuxer. \
+         hailofilter2 so-path=$DETECTION_POSTPROCESS_SO function-name=$DETECTION_POSTPROCESS_FUNCTION_NAME qos=false ! hailomuxer. \
          splitter. ! queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
          hailonet hef-path=$POSE_ESTIMATION_HEF_PATH debug=False qos=false is-active=true device-id=$DEVICE2 ! \
          queue name=hailo_postprocess1 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-         hailofilter so-path=$POSE_ESTIMATION_POSTPROCESS_SO function-name=$POSE_ESTIMATION_POSTPROCESS_FUNCTION_NAME qos=false debug=False ! hailomuxer. \
+         hailofilter2 so-path=$POSE_ESTIMATION_POSTPROCESS_SO function-name=$POSE_ESTIMATION_POSTPROCESS_FUNCTION_NAME qos=false ! hailomuxer. \
          compositor name=comp start-time-selection=0 $compositor_locations ! \
 	     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \

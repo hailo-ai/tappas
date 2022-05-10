@@ -1,5 +1,13 @@
 # Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
-<div align="center"><img src="./apps/gstreamer/x86/cascading_networks/readme_resources/cascading_app.gif"/></div>
+
+<div align="center"><img width="600px" height="300px" src="./resources/TAPPAS.png"/></div>
+
+<br>
+
+<div align="center">
+<img src="./apps/gstreamer/x86/cascading_networks/readme_resources/cascading_app.gif"/>
+</div>
+
 ---
 
 ## Overview
@@ -29,19 +37,19 @@ TAPPAS comes packaged with a rich set of example applications built on top of TA
 - HailoRT PCIe driver installed
 - At least 6GB's of free disk space
 
-> Note: This version runs and is tested with HailoRT version 4.6.0.
+> Note: This version runs and is tested with HailoRT version 4.7.0.
 
 ### Installation
 
-| Option                      |                           Instructions                           |                   Supported OS                   |
-| --------------------------- | :--------------------------------------------------------------: | :----------------------------------------------: |
-| **Hailo SW Suite*** [^1]    | [SW Suite Install guide](docs/installation/sw-suite-install.md)  | Ubuntu x86 18.04, Ubuntu x86 20.04, Ubuntu 20.04 |
-| Pre-built Docker image [^1] |   [Docker install guide](docs/installation/docker-install.md)    | Ubuntu x86 18.04, Ubuntu x86 20.04, Ubuntu 20.04 |
-| Manual install [^2]         |   [Manual install guide](docs/installation/manual-install.md)    | Ubuntu x86 18.04, Ubuntu x86 20.04, Ubuntu 20.04 |
-| Yocto installation [^2]     | [Read more about Yocto installation](docs/installation/yocto.md) |              Yocto supported BSP's               |
-| Offline Install [^1]        |  [Offline install guide](docs/installation/offline-install.md)   |         Same as: Pre-built Docker image          |
+| Option                      |                           Instructions                           |                           Supported OS                            |
+| --------------------------- | :--------------------------------------------------------------: | :---------------------------------------------------------------: |
+| **Hailo SW Suite*** [^1]    | [SW Suite Install guide](docs/installation/sw-suite-install.md)  |         Ubuntu x86 18.04, Ubuntu x86 20.04, Ubuntu 20.04          |
+| Pre-built Docker image [^1] |   [Docker install guide](docs/installation/docker-install.md)    | Ubuntu x86 18.04, Ubuntu x86 20.04, Ubuntu aarch64 20.04 (64-bit) |
+| Manual install [^2]         |   [Manual install guide](docs/installation/manual-install.md)    |     Ubuntu x86 18.04, Ubuntu x86 20.04, Ubuntu aarch64 20.04      |
+| Yocto installation [^2]     | [Read more about Yocto installation](docs/installation/yocto.md) |                       Yocto supported BSP's                       |
+| Offline Install [^1]        |         [Offline install guide](docs/offline-install.md)         |                  Same as: Pre-built Docker image                  |
 
-**`* It is recommended to start your development journey by first installing the Hailo SW Suite`**
+* It is recommended to start your development journey by first installing the Hailo SW Suite
 [^1]: Requires [hailo.ai](https://hailo.ai/developer-zone/) login and download.
 [^2]: Can be installed directly from the [TAPPAS GitHub](https://github.com/hailo-ai/tappas)
 
@@ -59,6 +67,10 @@ TAPPAS comes packaged with a rich set of example applications built on top of TA
 
 TAPPAS comes with a rich set of pre-configured pipelines optimized for different common hosts.
 
+> **NOTE:** The x86 application examples can be run on various processor architectures, since these examples are built intentionally without the use of hardware accelerators.
+
+> **NOTE:** Architecture-specific app examples (i.MX, Raspberry PI, etc..) use platform-specific hardware accelerators and are not compatible with different architectures.
+
 ### Basic Single Network Pipelines
 
 Pipelines that run a single network. The diagram below shows the pipeline data-flow.
@@ -66,14 +78,14 @@ Pipelines that run a single network. The diagram below shows the pipeline data-f
 
 The following table details the currently availble examples.
 
-|                       | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/arm/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
+|                       | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/imx/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
 | :-------------------: | :---------------------------------: | :----------------------------------: | :----------------------------------------------------: |
 |   Object Detection    |         :heavy_check_mark:          |          :heavy_check_mark:          |                   :heavy_check_mark:                   |
 |    Pose Estimation    |         :heavy_check_mark:          |                                      |                   :heavy_check_mark:                   |
 | Semantic Segmentation |         :heavy_check_mark:          |                                      |                                                        |
 |   Depth Estimation    |         :heavy_check_mark:          |                                      |                   :heavy_check_mark:                   |
 |    Face Detection     |         :heavy_check_mark:          |                                      |                   :heavy_check_mark:                   |
-|    Facial landmark    |         :heavy_check_mark:          |                                      |                                                        |
+|    Facial landmark    |         :heavy_check_mark:          |          :heavy_check_mark:          |                                                        |
 |  HD Object Detection  |         :heavy_check_mark:          |                                      |                                                        |
 | Instance segmentation |         :heavy_check_mark:          |                                      |                                                        |
 
@@ -86,7 +98,7 @@ The parallel networks pipeline is an simple extension of the single network pipe
 The cascaded (serial) flow shows two networks running in series. This example pipeline is of the popular configuration where the first network is a detector which finds some Region-of-Interest (ROI) in the input image and the second network processes the cropped ROI (a face-detection-and-landmarking use case of this pipeline is shown at the top of this guide). The pipeline is shown in the following diagram:
 <div align="left"><img src="resources/cascaded_nets_pipeline.png"/></div>
 
-|                                          | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/arm/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
+|                                          | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/imx/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
 | :--------------------------------------: | :---------------------------------: | :----------------------------------: | :----------------------------------------------------: |
 | Parallel - Object Det + Depth Estimation |         :heavy_check_mark:          |                                      |                   :heavy_check_mark:                   |
 | Parallel - Object Det + Pose Estimation  |         :heavy_check_mark:          |                                      |                                                        |
@@ -94,14 +106,20 @@ The cascaded (serial) flow shows two networks running in series. This example pi
 
 ### Multi-Stream Pipelines
 
-|                                            | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/arm/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
+<div align="left"><img src="docs/resources/one_network_multi_stream.png"/></div>
+
+
+|                                            | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/imx/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
 | :----------------------------------------: | :---------------------------------: | :----------------------------------: | :----------------------------------------------------: |
 |       Multi-stream Object Detection        |         :heavy_check_mark:          |                                      |                                                        |
 | Multi-stream Multi-Device Object Detection |         :heavy_check_mark:          |                                      |
 
 ### Pipelines for High-Resolution Processing Via Tiling
 
-|                     | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/arm/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
+<div align="left"><img src="docs/resources/tiling-example.png"/></div>
+
+
+|                     | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/imx/README.md) | [Raspberry Pi 4](apps/gstreamer/raspberrypi/README.md) |
 | :-----------------: | :---------------------------------: | :----------------------------------: | :----------------------------------------------------: |
 | HD Object Detection |         :heavy_check_mark:          |                                      |                                                        |
 
@@ -112,13 +130,23 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
 
 <div align="left"><img src="resources/lpr_pipeline.png"/></div>
 
-|       | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/arm/README.md) |
+|       | [x86](apps/gstreamer/x86/README.md) | [iMX8](apps/gstreamer/imx/README.md) |
 | :---: | :---------------------------------: | :----------------------------------: |
-|  LPR  |         :heavy_check_mark:          |                                      |
+|  LPR  |         :heavy_check_mark:          |          :heavy_check_mark:          |
 
 ---
 
 ## Changelog
+
+<details>
+<summary> v3.18.0 (April 2022) </summary>
+
+- New Apps:
+  - LPR (License Plate Recognition) pipeline and facial landmark pipeline for [i.MX Pipelines](apps/gstreamer/imx/README.md)
+- Added the ability of compiling a specific TAPPAS target (post-processes, elements)
+- Improved the performance of Raspberry Pi example applications
+
+</details>
 
 <details>
 <summary> v3.17.0 (March 2022) </summary>
@@ -141,7 +169,7 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
   - Tracking element "HailoTracker" - Add tracking capabilities
   - Python element "HailoPyFilter" - Enables to write post-processes using Python
 - Yocto Hardknott is now supported
-- Raspberrypi 4 Ubuntu dedicated apps
+- Raspberry Pi 4 Ubuntu dedicated apps
 - HailoCropper cropping bug fixes
 - HailoCropper now accepts cropping method as a shared object (.so)
 
@@ -216,4 +244,4 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
 - Hailofilter gstreamer element
 - Pose Estimation app
 
-</details>
+</details>.

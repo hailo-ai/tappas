@@ -1,35 +1,11 @@
-################################################
-# DETECTION DRAWING
-################################################
-# sources used to compile this plug-in
-detection_draw_sources = [
-  'postprocesses/detection_draw.cpp',
-]
 
-det_draw_lib = shared_library('detection_draw',
-  detection_draw_sources,
-  cpp_args : hailo_lib_args,
-  include_directories: project_inc + xtensor_inc,
-  dependencies : plugin_deps + [opencv_dep] + hailo_deps,
-  gnu_symbol_visibility : 'default',
-)
+post_proc_dep = declare_dependency(
+  include_directories: [include_directories('./postprocesses/')])
+hailo_post_proc_dep = [post_proc_dep]
 
-################################################
-# DETECTION SOURCES
-################################################
-detection_post_sources = [
-  'postprocesses/yolo_postprocess.cpp',
-  'postprocesses/common/detection.cpp',
-  'postprocesses/yolo_output.cpp',
-]
-
-det_post_lib = shared_library('yolo_post',
-  detection_post_sources,
-  cpp_args : hailo_lib_args,
-  include_directories: project_inc + xtensor_inc,
-  dependencies : plugin_deps + hailo_deps ,
-  gnu_symbol_visibility : 'default',
-)
+install_subdir('post_processes_data', install_dir: post_proc_install_dir)
+install_data('postprocesses/post_processes_data/w_exp_base.npy', install_dir: post_proc_install_dir+'/post_processes_data/')
+install_data('postprocesses/post_processes_data/w_shp_base.npy', install_dir: post_proc_install_dir+'/post_processes_data/')
 
 ################################################
 # DETECTION SOURCES - MobilenetSSD
@@ -44,6 +20,8 @@ mobilenet_ssd_post_lib = shared_library('mobilenet_ssd_post',
   include_directories: [hailo_general_inc],
   dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
@@ -59,21 +37,25 @@ centerpose_post_lib = shared_library('face_detection_post',
   include_directories: [hailo_general_inc] + xtensor_inc,
   dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
-# SEGMENTATION SOURCES
+# SEMANTIC SEGMENTATION SOURCES
 ################################################
-segmentation_draw_sources = [
-  'postprocesses/segmentation_draw.cpp',
-]
+semantic_segmentation_sources = [
+  'postprocesses/semantic_segmentation.cpp'
+  ]
 
-seg_draw_lib = shared_library('segmentation_draw',
-  segmentation_draw_sources,
+seg_draw_lib = shared_library('semantic_segmentation',
+  semantic_segmentation_sources,
   cpp_args : hailo_lib_args,
-  include_directories: project_inc,
-  dependencies : plugin_deps + hailo_deps,
+  include_directories: [hailo_general_inc] + xtensor_inc,
+  dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
@@ -86,10 +68,13 @@ depth_estimation_sources = [
 depth_estimation_lib = shared_library('depth_estimation',
   depth_estimation_sources,
   cpp_args : hailo_lib_args,
-  include_directories: project_inc + xtensor_inc,
-  dependencies : plugin_deps + [opencv_dep] + hailo_deps,
+  include_directories: [hailo_general_inc] + xtensor_inc,
+  dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
+
 
 ################################################
 # CENTERPOSE SOURCES
@@ -101,9 +86,11 @@ centerpose_post_sources = [
 centerpose_post_lib = shared_library('centerpose_post',
   centerpose_post_sources,
   cpp_args : hailo_lib_args,
-  include_directories: project_inc + xtensor_inc,
-  dependencies : plugin_deps + hailo_deps,
+  include_directories: [hailo_general_inc] + xtensor_inc,
+  dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
@@ -120,10 +107,12 @@ facial_landmarks_post_lib = shared_library('facial_landmarks_post',
     include_directories: [hailo_general_inc] + xtensor_inc,
     dependencies : post_deps,
     gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
 )
 
 ################################################
-# INSTANCE SEGMENTATION SOURCES
+# YOLACT SOURCES
 ################################################
 yolact_post_sources = [
   'postprocesses/yolact_postprocess.cpp',
@@ -132,9 +121,11 @@ yolact_post_sources = [
 seg_draw_lib = shared_library('yolact_post',
   yolact_post_sources,
   cpp_args : hailo_lib_args + xtensor_args,
-  include_directories: project_inc + xtensor_inc,
-  dependencies : plugin_deps + hailo_deps,
+    include_directories: [hailo_general_inc] + xtensor_inc,
+    dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
@@ -148,8 +139,10 @@ classification_post_lib = shared_library('classification',
   classification_sources,
   cpp_args : hailo_lib_args,
   include_directories: [hailo_general_inc] + xtensor_inc,
-  dependencies : post_deps + hailo_deps,
+  dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
@@ -165,23 +158,8 @@ debug_lib = shared_library('debug',
   include_directories: project_inc,
   dependencies : post_deps,
   gnu_symbol_visibility : 'default',
-
-)
-
-################################################
-# DETECTION_COUNTER SOURCES
-################################################
-detection_counter_post_sources = [
-  'postprocesses/detection_counter.cpp',
-  'postprocesses/detection_counter.hpp',
-]
-
-detection_counter_post_lib = shared_library('detection_counter_draw',
-  detection_counter_post_sources,
-  cpp_args : hailo_lib_args,
-  include_directories: project_inc,
-  dependencies : plugin_deps + [opencv_dep] + hailo_deps,
-  gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
@@ -195,8 +173,10 @@ ocr_post_lib = shared_library('ocr_post',
   ocr_sources,
   cpp_args : hailo_lib_args,
   include_directories: [hailo_general_inc, include_directories('./postprocesses/')] + xtensor_inc,
-  dependencies : post_deps + hailo_deps,
+  dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
 ################################################
@@ -213,22 +193,8 @@ new_det_post_lib = shared_library('new_yolo_post',
   include_directories: [hailo_general_inc, include_directories('./postprocesses/')] + xtensor_inc,
   dependencies : post_deps,
   gnu_symbol_visibility : 'default',
+  install: true,
+  install_dir: post_proc_install_dir,
 )
 
-################################################
-# LPR OVERLAY SOURCES
-################################################
-lpr_overlay_sources = [
-  'postprocesses/lpr_overlay/lpr_overlay.cpp',
-]
-
-lpr_overlay_lib = shared_library('lpr_overlay',
-  lpr_overlay_sources,
-  cpp_args : hailo_lib_args,
-  include_directories: project_inc,
-  dependencies : plugin_deps + [opencv_dep] + hailo_deps,
-  gnu_symbol_visibility : 'default',
-)
-
-subdir('apps')
 subdir('croppers')

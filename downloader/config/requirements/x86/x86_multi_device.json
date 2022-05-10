@@ -1,0 +1,26 @@
+{
+  "path": "apps/gstreamer/x86/multistream_multidevice/resources",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "x86/hefs/yolov5m_wo_spp_60p.hef",
+      "destination": "yolov5m_wo_spp_60p.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/hefs/joined_centerpose_repvgg_a0_center_nms_joint_nms.hef",
+      "destination": "joined_centerpose_repvgg_a0_center_nms_joint_nms.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "x86/hefs/centerpose_regnetx_1.6gf_fpn.hef",
+      "destination": "centerpose_regnetx_1.6gf_fpn.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "x86/media/multi_device/input_files.tar.gz",
+      "destination": "input_files.tar.gz",
+      "should_extract": true
+    }
+  ]
+}

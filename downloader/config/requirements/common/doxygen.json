@@ -1,0 +1,10 @@
+{
+  "path": "tools/build_tools/docs_generator/",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "open_source/doxygen/<ARCH>/doxygen",
+      "destination": "doxygen"
+    }
+  ]
+}

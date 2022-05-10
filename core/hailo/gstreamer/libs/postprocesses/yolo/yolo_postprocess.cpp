@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -10,7 +10,7 @@
 #include "common/nms.hpp"
 #include "common/labels/coco_eighty.hpp"
 
-static const int DEFAULT_MAX_BOXES = 100;
+static const int DEFAULT_MAX_BOXES = 200;
 constexpr float DEFAULT_IOU_THRESHOLD = 0.45f;
 constexpr float DEFAULT_DETECTION_THRESHOLD = 0.35f;
 
@@ -110,6 +110,15 @@ public:
     {
         yolov5_init();
     };
+
+    Yolov5(HailoROIPtr roi,
+           float threshold,
+           int max_boxes)
+        : YoloPost(threshold, DEFAULT_IOU_THRESHOLD, max_boxes), _tensors(roi->get_tensors())
+    {
+        yolov5_init();
+    };
+
     Yolov5(HailoROIPtr roi,
            std::map<uint8_t, std::string> dataset,
            float threshold)

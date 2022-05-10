@@ -9,7 +9,7 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/multistream_detection/resources"
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
     readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libnew_yolo_post.so"
-    readonly HEF_PATH="$RESOURCES_DIR/yolov5m.hef"
+    readonly HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
 
     num_of_src=8
     live_src=""
@@ -24,11 +24,11 @@ function print_usage() {
     echo "Multistream Detection hailo - pipeline usage:"
     echo ""
     echo "Options:"
-    echo "  --help                  Show this help"
-    echo "  --show-fps              Printing fps"
-    echo "  --set-live-source       Use the live source given (example: /dev/video2). this flag is optional. if it's in use, num_of_sources is limited to 4."
-    echo "  --num-of-sources NUM    Setting number of sources to given input (default value is 8)"
-    echo "  --print-gst-launch      Print the ready gst-launch command without running it"
+    echo "  --help                          Show this help"
+    echo "  --show-fps                      Printing fps"
+    echo "  --set-live-source LIVE_SOURCE   Use the live source given (example: /dev/video2). this flag is optional. if it's in use, num_of_sources is limited to 4."
+    echo "  --num-of-sources NUM            Setting number of sources to given input (default value is 8)"
+    echo "  --print-gst-launch              Print the ready gst-launch command without running it"
     exit 0
 }
 
@@ -102,12 +102,6 @@ function main() {
     create_sources
 
     hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
-
-    # Check if an adapter that are accessible through the X-Video extension is found
-    if xvinfo | grep -q 'no adaptors present'; then
-        echo "No XV adaptors found, using ximagesink instead"
-        video_sink_element="ximagesink"
-    fi
 
     pipeline="gst-launch-1.0 \
            funnel name=fun ! \

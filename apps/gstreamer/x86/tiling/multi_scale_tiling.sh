@@ -48,7 +48,7 @@ function print_usage() {
     echo "  --overlap-y-axis OVERLAP-Y           Set overlap in percentage between tiles along y axis (rows) (default is $overlap_y_axis)"
     echo "  --iou-threshold IOU-THRESHOLD        Set iou threshold for NMS (default is $iou_threshold)"
     echo "  --border-threshold BORDER-THRESHOLD  Set border threshold to Remove tile's exceeded objects (default is $border_threshold)"
-    echo "  --scale-level SCALE-LEVEL            set scales (layers of tiles) in addition to the main layer 1: [(1 X 1)] 2: [(1 X 1), (2 X 2)] 3: [(1 X 1), (2 X 2), (3 X 3)]] (default is 2)"
+    echo "  --scale-level SCALE-LEVEL            set scales (layers of tiles) in addition to the main layer [1,2,3] 1: {(1 X 1)} 2: {(1 X 1), (2 X 2)} 3: {(1 X 1), (2 X 2), (3 X 3)} (default is 2)"
     echo "  --show-fps                           Print fps"
     echo "  --print-gst-launch                   Print the ready gst-launch command without running it"
     exit 0
@@ -118,13 +118,11 @@ else
 fi
 
 # Detection section
-# *note - a queue between hailotilecropper and hailonet is not included here.
-#   performance wise a queue here is important, but we have an open issue
-#   related to the communication between the three.
 DETECTION_PIPELINE="\
+    queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id is-active=true qos=false ! \
-	queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-	hailofilter2 function-name=$postprocess_func_name so-path=$detection_postprocess_so qos=false ! \
+    queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
+    hailofilter2 function-name=$postprocess_func_name so-path=$detection_postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"
 
 TILE_CROPPER_ELEMENT="hailotilecropper internal-offset=$internal_offset name=cropper tiling-mode=1 scale-level=$scale_level \

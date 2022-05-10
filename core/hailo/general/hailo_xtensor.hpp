@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #pragma once
 
 #include "hailo_objects.hpp"
@@ -15,7 +15,8 @@ namespace hailo_common
     inline void add_landmarks_to_detection(NewHailoDetection &detection,
                                            std::string landmarks_type,
                                            xt::xarray<float> landmarks,
-                                           float threshold = 1.0f)
+                                           float threshold = 1.0f,
+                                           const std::vector<std::pair<int, int>> pairs = {})
     {
         HailoBBox bbox = detection.get_bbox();
         std::vector<HailoPoint> points;
@@ -55,6 +56,6 @@ namespace hailo_common
             }
         }
         // Add HailoLandmarks pointer to the detection.
-        detection.add_object(std::make_shared<HailoLandmarks>(landmarks_type, points, threshold));
+        detection.add_object(std::make_shared<HailoLandmarks>(landmarks_type, points, threshold, pairs));
     }
 }

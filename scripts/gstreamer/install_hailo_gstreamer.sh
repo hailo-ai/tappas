@@ -1,13 +1,15 @@
 #!/bin/bash
 set -e
 
-BUILD_DIR=${TAPPAS_WORKSPACE}/core/hailo/gstreamer
-POSTPROCESS_DIR=${TAPPAS_WORKSPACE}/apps/gstreamer/x86/libs
-CROPPING_ALGORITHMS_DIR=${POSTPROCESS_DIR}/cropping_algorithms
+BUILD_DIR="$TAPPAS_WORKSPACE/core/hailo/gstreamer"
+POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs"
 BUILD_MODE=release
 SKIP_HAILORT=false
 COMPILE_LIBGSTHAILO=false
-PYTHON_VERSION=3.6
+INCLUDE_UNIT_TESTS=true
+PYTHON_VERSION=$(python3 --version | awk '{print $2}' | awk -F'.' '{print $1"."$2}')
+TARGET="all"
+TARGET_PLATFORM="x86"
 
 function print_usage() {
     echo "Install Hailo GStreamer:"
@@ -19,6 +21,9 @@ function print_usage() {
     echo "  --skip-hailort         Skip compiling HailoRT"
     echo "  --python-version       Python version"
     echo "  --compile-libgsthailo  Compile libgsthailo instead of copying it from the release"
+    echo "  --skip-unit-tests      Skip compilation of unit tests"
+    echo "  --target               Tappas build target [all, plugins, libs, apps] (default = all)"
+    echo "  --target-platform      Target platform, used for installing only required media and hef files [x86, arm] (Default is $TARGET_PLATFORM)"
     exit 1
 }
 
@@ -35,8 +40,16 @@ function parse_args() {
         elif [ "$1" == "--python-version" ]; then
             PYTHON_VERSION=$2
             shift
+        elif [ "$1" == "--target" ]; then
+            TARGET=$2
+            shift
+        elif [ "$1" == "--target-platform" ]; then
+            TARGET_PLATFORM=$2
+            shift
         elif [ "$1" == "--skip-hailort" ]; then
             SKIP_HAILORT=true
+        elif [ "$1" == "--skip-unit-tests" ]; then
+            INCLUDE_UNIT_TESTS=false
         elif [ "$1" == "--compile-libgsthailo" ]; then
             COMPILE_LIBGSTHAILO=true
         else
@@ -61,14 +74,22 @@ function main() {
 
     # Handle the build of gsthailotools
     pushd "$BUILD_DIR"
-    CC=gcc-9 CXX=g++-9 meson build.$BUILD_MODE --buildtype $BUILD_MODE \
+
+    reconfigure_flag=
+    if [ -d "./build.$BUILD_MODE" ]
+    then
+        reconfigure_flag=--reconfigure
+    fi
+    CC=gcc-9 CXX=g++-9 meson build.$BUILD_MODE $reconfigure_flag --prefix '/usr' --buildtype $BUILD_MODE \
+                            -Dtarget=$TARGET \
+                            -Dtarget_platform=$TARGET_PLATFORM \
                             -Dlibargs="-I/usr/include/hailo/,-I/usr/include/gstreamer-1.0/gst/hailo/" \
                              -Dinclude_python=true -Dpython_version=$PYTHON_VERSION
 
     # Occupy all the cores could sometimes freeze the PC
     if [[ $(nproc) -le 4 ]]; then
 	    num_cores_to_use=$(($(nproc)/2))
-    else 
+    else
     	num_cores_to_use=$(($(nproc) - 1))
     fi
 
@@ -79,14 +100,7 @@ function main() {
 
     ninja -j $num_cores_to_use -C build.$BUILD_MODE
     sudo env "PATH=$PATH" ninja install -C build.$BUILD_MODE
-    sudo cp -a build.$BUILD_MODE/plugins/libgsthailometa.so /usr/lib/$(uname -p)-linux-gnu/
-    sudo cp -a build.$BUILD_MODE/plugins/libgsthailotools.so /usr/lib/$(uname -p)-linux-gnu/gstreamer-1.0/
     sudo cp -a build.$BUILD_MODE/plugins/python/libgsthailopython.so /usr/lib/$(uname -p)-linux-gnu/gstreamer-1.0/
-
-    mkdir -p $POSTPROCESS_DIR
-    cp build.$BUILD_MODE/libs/*.so $POSTPROCESS_DIR
-    mkdir -p $CROPPING_ALGORITHMS_DIR
-    cp build.$BUILD_MODE/libs/croppers/*.so $CROPPING_ALGORITHMS_DIR
 
     site_packages=$(pip show pip | grep Location | cut -d: -f2 | tr -d ' ')
     cp build.$BUILD_MODE/plugins/pyhailotracker.*.so "${site_packages}"

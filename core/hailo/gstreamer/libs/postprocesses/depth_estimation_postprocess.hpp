@@ -5,9 +5,11 @@
 #ifndef _HAILO_DEPTH_ESTIMATION_POST_HPP_
 #define _HAILO_DEPTH_ESTIMATION_POST_HPP_
 
-#include "hailo_frame.hpp"
+#include "hailo_objects.hpp"
+#include "hailo_common.hpp"
 
-G_BEGIN_DECLS
-void filter(HailoFramePtr hailo_frame);
-G_END_DECLS
+__BEGIN_DECLS
+void filter(HailoROIPtr roi);
+__END_DECLS
+
 #endif

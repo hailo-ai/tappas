@@ -73,7 +73,6 @@ class GstreamerInstall:
                          '-Dlibargs={}'.format(self.get_libargs_line()),
                          '-Dprefix={}'.format(usr_path),
                          '-Dinclude_blas=false',
-                         '-Dinclude_network_switch_app=false',
                          '-Dinclude_unit_tests=false',
                          '--cross-file={}'.format(self._cross_file)]
 

@@ -20,7 +20,7 @@
 #define INPUT_COUNT (1)
 #define OUTPUT_COUNT (3)
 #define INPUT_FILES_COUNT (10)
-#define HEF_FILE ("yolov5m.hef")
+#define HEF_FILE ("yolov5m_wo_spp_60p.hef")
 
 #define REQUIRE_ACTION(cond, action, label, ...)                \
     do {                                                        \

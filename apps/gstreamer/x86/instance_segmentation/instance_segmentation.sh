@@ -10,7 +10,6 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/instance_segmentation/resources"
 
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolact_post.so"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
     readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/instance_segmentation/resources/instance_segmentation.mp4"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolact_regnetx_800mf_fpn_20classes.hef"
@@ -19,7 +18,6 @@ function init_variables() {
     video_source=$DEFAULT_VIDEO_SOURCE
     batch_size=$DEFAULT_BATCH_SIZE
     hef_path=$DEFAULT_HEF_PATH
-    draw_so=$DEFAULT_DRAW_SO
 
     print_gst_launch_only=false
     additonal_parameters=""
@@ -85,9 +83,10 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=$batch_size ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$postprocess_so qos=false debug=False ! \
+    hailofilter2 so-path=$postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$draw_so qos=false debug=False ! \
+    hailooverlay qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false ${additonal_parameters}"
 

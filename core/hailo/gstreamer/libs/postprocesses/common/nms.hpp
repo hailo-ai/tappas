@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #pragma once
 
 #include "hailo_objects.hpp"
@@ -26,7 +26,7 @@ namespace common
 
     /**
      * @brief Perform IOU based NMS on a vector of NewHailoDetection objects
-     * 
+     *
      * @param objects  -  std::vector<NewHailoDetection>
      *        The detections to perform NMS on.
      *
@@ -41,22 +41,26 @@ namespace common
         // The network may propose multiple detections of similar size/score,
         // which are actually the same detection. We want to filter out the lesser
         // detections with a simple nms.
-        for (uint index = 0; index < objects.size(); index++)
+        std::sort(objects.begin(), objects.end(),
+                  [](NewHailoDetection a, NewHailoDetection b)
+                  { return a.get_confidence() > b.get_confidence(); });
+
+        for (std::vector<NewHailoDetection>::iterator it1 = objects.begin(); it1 != objects.end(); ++it1)
         {
-            for (uint jindex = index + 1; jindex < objects.size(); jindex++)
+            for (std::vector<NewHailoDetection>::iterator it2 = it1 + 1; it2 != objects.end(); ++it2)
             {
-                if (should_nms_cross_classes || (objects[index].get_class_id() == objects[jindex].get_class_id()))
+                if (should_nms_cross_classes || (it1->get_class_id() == it2->get_class_id()))
                 {
                     // For each detection, calculate the IOU against each following detection.
-                    float iou = iou_calc(objects[index].get_bbox(), objects[jindex].get_bbox());
+                    float iou = iou_calc(it1->get_bbox(), it2->get_bbox());
                     // If the IOU is above threshold, then we have two similar detections,
                     // and want to delete the one.
                     if (iou >= iou_thr)
                     {
                         // The detections are arranged in highest score order,
                         // so we want to erase the latter detection.
-                        objects.erase(objects.begin() + jindex);
-                        jindex--; // Step back jindex since we just erased the current detection.
+                        objects.erase(it2);
+                        it2--; // Step back jindex since we just erased the current detection.
                     }
                 }
             }
@@ -65,7 +69,7 @@ namespace common
 
     /**
      * @brief Perform IOU based NMS on detection objects of HailoRoi
-     * 
+     *
      * @param hailo_roi  -  HailoROIPtr
      *        The HailoROI contains detections to perform NMS on.
      *
@@ -82,6 +86,10 @@ namespace common
         // detections with a simple nms.
 
         std::vector<NewHailoDetectionPtr> objects = hailo_common::get_hailo_detections(hailo_roi);
+        std::sort(objects.begin(), objects.end(),
+                  [](NewHailoDetectionPtr a, NewHailoDetectionPtr b)
+                  { return a->get_confidence() > b->get_confidence(); });
+
         for (uint index = 0; index < objects.size(); index++)
         {
             for (uint jindex = index + 1; jindex < objects.size(); jindex++)
@@ -101,8 +109,8 @@ namespace common
                         jindex--; // Step back jindex since we just erased the current detection.
                     }
                 }
-            
             }
         }
     }
+
 }

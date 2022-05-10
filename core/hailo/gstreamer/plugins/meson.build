@@ -1,21 +1,3 @@
-
-meta_sources = [
-    'metadata/gst_buffer_info_meta.cpp',
-    'metadata/gst_hailo_meta.cpp',
-]
-meta_lib = shared_library('gsthailometa',
-  meta_sources,
-  c_args : hailo_lib_args,
-  cpp_args : hailo_lib_args,
-  include_directories: [hailo_general_inc],
-  dependencies : plugin_deps,
-  gnu_symbol_visibility : 'default',
-)
-
-meta_dep = declare_dependency(
-  include_directories: [include_directories('./metadata')],
-  link_with : meta_lib)
-
 plugin_sources = [
   'gsthailotools.cpp',
   'gsthailofilter.cpp',
@@ -44,13 +26,16 @@ libhailotools = shared_library('gsthailotools',
   plugin_sources,
   c_args : hailo_lib_args,
   cpp_args : hailo_lib_args,
-  include_directories: project_inc + [xtensor_inc, include_directories('./metadata')],
+  include_directories: project_inc + [xtensor_inc],
   dependencies : plugin_deps + [meta_dep, dl_dep, opencv_dep],
   gnu_symbol_visibility : 'default',
+  version: meson.project_version(),
+  install: true,
+  install_dir: get_option('libdir') + '/gstreamer-1.0/',
 )
 
 gst_hailo_dep = declare_dependency(
-  include_directories: [include_directories('./metadata'), include_directories('.')],
+  include_directories: [include_directories('.')],
   link_with : libhailotools)
 hailo_deps = [gst_hailo_dep]
 

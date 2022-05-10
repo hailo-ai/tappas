@@ -1,0 +1,20 @@
+{
+  "path": "apps/gstreamer/arm/license_plate_recognition",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "arm/hefs/yolov5m_vehicles_no_ddr_yuy2.hef",
+      "destination": "yolov5m_vehicles_no_ddr.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "arm/hefs/joined_tiny_yolov4_license_plates_lprnet_yuy2.hef",
+      "destination": "joined_tiny_yolov4_license_plates_lprnet.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "arm/media/lpr.raw",
+      "destination": "lpr.raw"
+    }
+  ]
+}

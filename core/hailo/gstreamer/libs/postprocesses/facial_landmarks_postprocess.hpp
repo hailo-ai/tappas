@@ -12,6 +12,7 @@ void filter(HailoROIPtr roi);
 // Post-process function used to add landmarks on given detection.
 // Used for Face Detection + Face Landmarks app.
 void facial_landmarks_merged(HailoROIPtr roi);
+void facial_landmarks_yuy2(HailoROIPtr roi);
 __END_DECLS
 
 #endif

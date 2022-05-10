@@ -13,7 +13,8 @@ namespace common
     //-------------------------------
     // COMMON TRANSFORMS
     //-------------------------------
-    xt::xarray<float> dequantize(const xt::xarray<uint8_t> &input, const float &qp_scale, const float &qp_zp)
+    template <typename T>
+    xt::xarray<float> dequantize(const xt::xarray<T> &input, const float &qp_scale, const float &qp_zp)
     {
         // Rescale the input using the given scale and zero-point
         auto rescaled_data = (input - qp_zp) * qp_scale;
@@ -24,6 +25,14 @@ namespace common
     {
         // Adapt a HailoTensorPtr to an xarray (quantized)
         xt::xarray<uint8_t> xtensor = xt::adapt(tensor->data(), tensor->size(), xt::no_ownership(), tensor->shape());
+        return xtensor;
+    }
+
+    xt::xarray<uint16_t> get_xtensor_uint16(NewHailoTensorPtr &tensor)
+    {
+        // Adapt a HailoTensorPtr to an xarray (quantized)
+        uint16_t *data = (uint16_t *)(tensor->data());
+        xt::xarray<uint16_t> xtensor = xt::adapt(data, tensor->size(), xt::no_ownership(), tensor->shape());
         return xtensor;
     }
 

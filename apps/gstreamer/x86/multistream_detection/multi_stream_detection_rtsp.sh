@@ -19,7 +19,7 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
     readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libnew_yolo_post.so"
     readonly STREAM_DISPLAY_SIZE=640
-    readonly HEF_PATH="$RESOURCES_DIR/yolov5m.hef"
+    readonly HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
 
     num_of_src=8
     debug=false

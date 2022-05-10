@@ -7,7 +7,6 @@ function init_variables() {
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdepth_estimation.so"
     readonly RESOURCES_PATH="$TAPPAS_WORKSPACE/apps/gstreamer/x86/multinetworks_parallel/resources"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_PATH/detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_PATH/joined_yolov5m_wo_spp_60p_no_alls_centerpose_repvgg_a0_no_alls_center_nms_joint_nms.hef"
@@ -15,7 +14,6 @@ function init_variables() {
     video_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
     pose_estimation_post_so="$POSTPROCESS_DIR/libcenterpose_post.so"
-    pose_estimation_draw_so="$POSTPROCESS_DIR/libdetection_draw.so"
     detection_post_so="$POSTPROCESS_DIR/libnew_yolo_post.so"
     batch_size=4
     vdevice_key=1
@@ -91,9 +89,9 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path batch-size=$batch_size vdevice-key=$vdevice_key is-active=true net-name=$pose_estimation_net_name qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$pose_estimation_post_so  function-name=centerpose_merged qos=false ! \
+    hailofilter2 so-path=$pose_estimation_post_so function-name=centerpose_merged qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$pose_estimation_draw_so qos=false ! videoconvert ! \
+    hailooverlay qos=false ! videoconvert ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display_pose sync=false text-overlay=false \
     t. ! \
     videoscale ! queue ! \

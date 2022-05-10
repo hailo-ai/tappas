@@ -1,12 +1,5 @@
 # Sanity pipeline
 
-## Table of Contents
-
-- [Sanity pipeline](#sanity-pipeline)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-    - [Sanity GStreamer](#sanity-gstreamer)
-
 ## Overview
 
 Sanity apps purpose is to help you verify that all the required components have been installed successfully.

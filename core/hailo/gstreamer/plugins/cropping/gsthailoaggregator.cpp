@@ -310,6 +310,7 @@ gst_hailoaggregator_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
     HailoROIPtr hailo_roi = get_hailo_main_roi(buf);
 
     hailoaggregator->expected_frames = gst_buffer_get_hailo_cropping_meta(buf)->num_of_crops;
+    gst_buffer_remove_hailo_cropping_meta(buf);
 
     if (hailoaggregator->expected_frames != 0)
     {

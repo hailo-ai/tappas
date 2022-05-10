@@ -14,7 +14,7 @@ function init_variables() {
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m.hef"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
     postprocess_so=$DEFAULT_POSTPROCESS_SO

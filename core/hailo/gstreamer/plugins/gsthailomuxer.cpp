@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 /*
  * GStreamer Muxer element
  *
@@ -13,6 +13,7 @@
 #endif
 
 #include "gsthailomuxer.hpp"
+#include "gst_hailo_meta.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_muxer_debug);
 #define GST_CAT_DEFAULT gst_hailo_muxer_debug
@@ -195,18 +196,27 @@ gst_hailo_muxer_collect_pads(GstCollectPads *pads, gpointer user_data)
 
     GST_DEBUG_OBJECT(muxer->collect_data1->pad, "Forwarding sticky events");
     gst_pad_sticky_events_foreach(muxer->collect_data1->pad, forward_events, muxer->srcpad);
+    
     GstBuffer *buffer1 = gst_collect_pads_pop(pads, muxer->collect_data1);
     GstBuffer *buffer2 = gst_collect_pads_pop(pads, muxer->collect_data2);
-    // Create a writable copy of buffer1.
-    GstBuffer *outbuf = gst_buffer_copy(buffer1);
-    // Copy buffer2's metadata to outbuf.
-    gst_buffer_copy_into(outbuf,
-                         buffer2,
-                         GST_BUFFER_COPY_META,
-                         0, -1);
 
-    // Push outbuf forward.
-    GstFlowReturn ret = gst_pad_push(muxer->srcpad, outbuf);
+    // Create a writable copy of buffer1.
+    GstBuffer *out_buffer = gst_buffer_copy(buffer1);
+
+    HailoROIPtr out_buffer_roi = get_hailo_main_roi(out_buffer, true);
+    HailoROIPtr buffer2_roi = get_hailo_main_roi(buffer2, false);
+
+    // Copy all hailo objects from buffer2_roi to buffer1_roi
+    if (buffer2_roi)
+    {
+        for (auto obj : buffer2_roi->get_objects())
+        {
+            out_buffer_roi->add_object(obj);
+        }
+    }
+
+    // Push out_buffer forward.
+    GstFlowReturn ret = gst_pad_push(muxer->srcpad, out_buffer);
 
     // Unref buffer1 and buffer2 which are no longer needed.
     gst_buffer_unref(buffer1);

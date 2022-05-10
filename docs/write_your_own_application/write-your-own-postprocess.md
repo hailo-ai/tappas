@@ -168,7 +168,7 @@ std::cout << " channels: " << first_tensor->shape()[2] << std::endl;
 Recompile with the same [script we used earlier](#compiling-the-so). Run a test pipeline, and this time see actual parameters of the tensor printed out:
 
 ```sh
-gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/yolov5m.hef debug=False is-active=true qos=false device-count=1 vdevice-key=1 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter2 so-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/libmy_post.so qos=false ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
+gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/yolov5m_wo_spp_60p.hef debug=False is-active=true qos=false device-count=1 vdevice-key=1 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter2 so-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/libmy_post.so qos=false ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
 ```
 
 <div align="center">
@@ -264,7 +264,7 @@ The element should be added in the pipeline after the `hailofilter2` element wit
 Now our pipeline should look like:
 
 ```sh
-gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/yolov5m.hef debug=False is-active=true qos=false device-count=1 vdevice-key=1 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter2 so-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/libmy_post.so qos=false ! queue ! hailooverlay ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
+gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/yolov5m_wo_spp_60p.hef debug=False is-active=true qos=false device-count=1 vdevice-key=1 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter2 so-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/libmy_post.so qos=false ! queue ! hailooverlay ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
 ```
 
 Run the expanded pipeline above to see the original video, but this time with the two detection boxes we added!
@@ -305,7 +305,7 @@ __END_DECLS
 Any of the functions declared here can be given as a `function-name` property to the `hailofilter` element. Condsider this pipeline for running the `Yolov5` network:
 
 ```sh
-gst-launch-1.0 filesrc location=/local/workspace/tappas/apps/gstreamer/x86/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailonet hef-path=/local/workspace/tappas/apps/gstreamer/x86/detection/resources/yolov5m.hef device-count=1 vdevice-key=1 debug=False is-active=true qos=false batch-size=1 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter2 function-name=yolov5 so-path=/local/workspace/tappas/apps/gstreamer/x86/libs//libnew_yolo_post.so qos=false ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailooverlay ! videoconvert ! fpsdisplaysink video-sink=xvimagesink name=hailo_display sync=false text-overlay=false
+gst-launch-1.0 filesrc location=/local/workspace/tappas/apps/gstreamer/x86/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailonet hef-path=/local/workspace/tappas/apps/gstreamer/x86/detection/resources/yolov5m_wo_spp_60p.hef device-count=1 vdevice-key=1 debug=False is-active=true qos=false batch-size=1 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter2 function-name=yolov5 so-path=/local/workspace/tappas/apps/gstreamer/x86/libs//libnew_yolo_post.so qos=false ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailooverlay ! videoconvert ! fpsdisplaysink video-sink=xvimagesink name=hailo_display sync=false text-overlay=false
 ```
 
-The `hailofilter2` above that performs the postprecess points to `libyolo_post.so` in the `so-path`, but it also includes the property `function-name=yolov5`. This lets the `hailofilter2` know that instead of the default `filter()` function it should call on the `yolov5` function instead.
+The `hailofilter2` above that performs the postprecess points to `libnew_yolo_post.so` in the `so-path`, but it also includes the property `function-name=yolov5`. This lets the `hailofilter2` know that instead of the default `filter()` function it should call on the `yolov5` function instead.

@@ -1,15 +1,28 @@
 option('libargs', type : 'array', value : [])
-option('libxtensor', type : 'string', value : '../../open_source/xtensor_stack/base')
-option('libcxxopts', type : 'string', value : '../../open_source/cxxopts')
-option('libblas', type : 'string', value : '../../open_source/xtensor_stack/blas')
-option('libopencv', type : 'string', value : '../../../open_source/opencv/include/opencv4')
-option('libcatch2', type : 'string', value : '../../../open_source/catch2')
-option('pybind11', type : 'string', value : '../../open_source/pybind11/')
 option('libgst_plugins_path', type : 'string', value : './plugins/')
-option('include_blas', type : 'boolean', value : false)
-
-option('include_python', type : 'boolean', value : false)
-option('python_version', type : 'string', value : '3.6')
-option('include_network_switch_app', type : 'boolean', value : true)
 option('libgeneral_path', type : 'string', value : '../general')
+option('target', type : 'string', value : 'all')
+option('target_platform', type : 'string', value : 'x86')
+
+# External requirements (default values under)
+option('include_blas', type : 'boolean', value : false)
+option('libblas', type : 'string', value : '../../open_source/xtensor_stack/blas')
+option('libxtensor', type : 'string', value : '../../open_source/xtensor_stack/base')
+
+# Python requirements
+option('include_python', type : 'boolean', value : false)
+option('pybind11', type : 'string', value : '../../open_source/pybind11/')
+option('python_version', type : 'string', value : '3.6')
+
+# Unit tests
+
+option('libcatch2', type : 'string', value : '../../../open_source/catch2')
+
+# APPS
+option('apps_install_dir', type : 'string', value : '')
+option('libcxxopts', type : 'string', value : '../../open_source/cxxopts')
+
+# POST PROCESSES
+option('post_processes_install_dir', type : 'string', value : '')
+
 # option('hailo_python', type : 'string', value : './plugins/hailo_python/')

@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include "hailo_common.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_tensors.hpp"
@@ -112,6 +112,66 @@ public:
     }
 };
 
+class __HailoMaskGlue : public HailoMask,
+                             public std::enable_shared_from_this<__HailoMaskGlue>
+{
+public:
+    using HailoMask::HailoMask;
+
+    hailo_object_t get_type() override
+    {
+        PYBIND11_OVERRIDE_PURE(hailo_object_t, HailoMask, get_type);
+    }
+};
+
+class __HailoDepthMaskGlue : public HailoDepthMask,
+                             public std::enable_shared_from_this<__HailoDepthMaskGlue>
+{
+public:
+    using HailoDepthMask::HailoDepthMask;
+
+    hailo_object_t get_type() override
+    {
+        PYBIND11_OVERRIDE(hailo_object_t, HailoDepthMask, get_type);
+    }
+};
+
+class __HailoClassMaskGlue : public HailoClassMask,
+                             public std::enable_shared_from_this<__HailoClassMaskGlue>
+{
+public:
+    using HailoClassMask::HailoClassMask;
+
+    hailo_object_t get_type() override
+    {
+        PYBIND11_OVERRIDE(hailo_object_t, HailoClassMask, get_type);
+    }
+};
+
+class __HailoConfClassMaskGlue : public HailoConfClassMask,
+                                 public std::enable_shared_from_this<__HailoConfClassMaskGlue>
+{
+public:
+    using HailoConfClassMask::HailoConfClassMask;
+
+    hailo_object_t get_type() override
+    {
+        PYBIND11_OVERRIDE(hailo_object_t, HailoConfClassMask, get_type);
+    }
+};
+
+class __HailoMatrixGlue : public HailoMatrix,
+                          public std::enable_shared_from_this<__HailoMatrixGlue>
+{
+public:
+    using HailoMatrix::HailoMatrix;
+
+    hailo_object_t get_type() override
+    {
+        PYBIND11_OVERRIDE(hailo_object_t, HailoMatrix, get_type);
+    }
+};
+
 class __HailoUniqueIDGlue : public HailoUniqueID,
                             public std::enable_shared_from_this<__HailoUniqueIDGlue>
 {
@@ -133,6 +193,10 @@ __MODULE_GEN_MACRO(hailo, m)
             .value("HAILO_LANDMARKS", HAILO_LANDMARKS)
             .value("HAILO_TILE", HAILO_TILE)
             .value("HAILO_UNIQUE_ID", HAILO_UNIQUE_ID)
+            .value("HAILO_MATRIX", HAILO_MATRIX)
+            .value("HAILO_DEPTH_MASK", HAILO_DEPTH_MASK)
+            .value("HAILO_CLASS_MASK", HAILO_CLASS_MASK)
+            .value("HAILO_CONF_CLASS_MASK", HAILO_CONF_CLASS_MASK)
             .export_values();
     }
 
@@ -293,6 +357,101 @@ __MODULE_GEN_MACRO(hailo, m)
     }
 
     {
+        py::class_<HailoMask, HailoObject, __HailoMaskGlue, std::shared_ptr<HailoMask>>(
+            m, "HailoMask")
+            .def(py::init<int, int, float>(), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"))
+            .def("get_width", &HailoMask::get_width, "Get width")
+            .def("get_height", &HailoMask::get_height, "Get height")
+            .def("__repr__", [](const HailoMask &obj)
+                 { return "<hailo.HailoMask"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+    }
+
+    {
+        py::class_<HailoDepthMask, HailoMask, __HailoDepthMaskGlue, std::shared_ptr<HailoDepthMask>>(
+            m, "HailoDepthMask", py::buffer_protocol())
+            .def(py::init<std::vector<float>, int, int, float>(), py::arg("data_vec"), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"))
+            .def_buffer([](HailoDepthMask &obj) -> py::buffer_info
+                        { return py::buffer_info(
+                              const_cast<float * > (obj.get_data().data()),
+                              sizeof(float),
+                              py::format_descriptor<float>::format(),
+                              2,
+                              {obj.get_height(), obj.get_width()},
+                              {sizeof(float) * obj.get_width(),
+                               sizeof(float)}); })
+            .def("get_type", &HailoDepthMask::get_type, "Get type")
+            .def("get_data", &HailoDepthMask::get_data, "Get data")
+            .def("__repr__", [](const HailoDepthMask &obj)
+                 { return "<hailo.HailoDepthMask"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+    }
+
+    {
+        py::class_<HailoClassMask, HailoMask, __HailoClassMaskGlue, std::shared_ptr<HailoClassMask>>(
+            m, "HailoClassMask", py::buffer_protocol())
+            .def(py::init<std::vector<uint8_t>, int, int, float>(), py::arg("data_vec"), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"))
+            .def_buffer([](HailoClassMask &obj) -> py::buffer_info
+                        { return py::buffer_info(
+                              const_cast<uint8_t * > (obj.get_data().data()),
+                              sizeof(uint8_t),
+                              py::format_descriptor<uint8_t>::format(),
+                              2,
+                              {obj.get_height(), obj.get_width()},
+                              {sizeof(uint8_t) * obj.get_width(),
+                               sizeof(uint8_t)}); })
+            .def("get_type", &HailoClassMask::get_type, "Get type")
+            .def("get_data", &HailoClassMask::get_data, "Get data")
+            .def("__repr__", [](const HailoClassMask &obj)
+                 { return "<hailo.HailoClassMask"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+    }
+
+    {
+        py::class_<HailoConfClassMask, HailoMask, __HailoConfClassMaskGlue, std::shared_ptr<HailoConfClassMask>>(
+            m, "HailoConfClassMask", py::buffer_protocol())
+            .def(py::init<std::vector<float>, int, int, float, int>(), py::arg("data_vec"), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"), py::arg("class_id"))
+            .def_buffer([](HailoConfClassMask &obj) -> py::buffer_info
+                        { return py::buffer_info(
+                              const_cast<float * > (obj.get_data().data()),
+                              sizeof(float),
+                              py::format_descriptor<float>::format(),
+                              2,
+                              {obj.get_height(), obj.get_width()},
+                              {sizeof(float) * obj.get_width(),
+                               sizeof(float)}); })
+            .def("get_type", &HailoConfClassMask::get_type, "Get type")
+            .def("get_data", &HailoConfClassMask::get_data, "Get data")
+            .def("__repr__", [](const HailoConfClassMask &obj)
+                 { return "<hailo.HailoConfClassMask"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+    }
+
+    {
+        py::class_<HailoMatrix, HailoObject, __HailoMatrixGlue, std::shared_ptr<HailoMatrix>>(
+            m, "HailoMatrix", py::buffer_protocol())
+            .def(py::init<float *, uint32_t, uint32_t, uint32_t>(), py::arg("data_ptr"), py::arg("mat_height"), py::arg("mat_width"), py::arg("mat_features"))
+            .def_buffer([](HailoMatrix &obj) -> py::buffer_info
+                        { return py::buffer_info(
+                              obj.get_data_ptr(),
+                              sizeof(float),
+                              py::format_descriptor<float>::format(),
+                              3,
+                              {obj.height(), obj.width(), obj.features()},
+                              {sizeof(float) * obj.features() * obj.width(),
+                               sizeof(float) * obj.features(), sizeof(float)}); })
+            .def("width", &HailoMatrix::width, "Get width")
+            .def("height", &HailoMatrix::height, "Get height")
+            .def("features", &HailoMatrix::features, "Get number of features")
+            .def("size", &HailoMatrix::size, "Get size")
+            .def("shape", &HailoMatrix::shape, "Get shape")
+            .def("get_data_ptr", &HailoMatrix::get_data_ptr, "Get shape")
+            .def("__repr__", [](const HailoMatrix &obj)
+                 { return "<hailo.HailoMatrix"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+    }
+
+    {
         py::class_<HailoUniqueID, HailoObject, __HailoUniqueIDGlue, std::shared_ptr<HailoUniqueID>>(
             m, "HailoUniqueID")
             .def(py::init<>())
@@ -312,7 +471,7 @@ __MODULE_GEN_MACRO(hailo, m)
                         { return py::buffer_info(obj.data(), sizeof(uint8_t),
                                                  py::format_descriptor<uint8_t>::format(), 3,
                                                  {obj.height(), obj.width(), obj.features()},
-                                                 {sizeof(uint8_t)*obj.features()*obj.width(), sizeof(uint8_t)*obj.features(),sizeof(uint8_t)}); })
+                                                 {sizeof(uint8_t) * obj.features() * obj.width(), sizeof(uint8_t) * obj.features(), sizeof(uint8_t)}); })
             .def("name", &NewHailoTensor::name, "Name")
             .def("vstream_info", &NewHailoTensor::vstream_info, "Vstream info")
             .def("data", &NewHailoTensor::data, "Data", py::return_value_policy::reference_internal)

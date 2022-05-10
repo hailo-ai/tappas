@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sys/stat.h>
 
 #include "xtensor/xio.hpp"
 #include "xtensor/xarray.hpp"
@@ -39,12 +40,33 @@ training set of example faces.
 The Basel Face Model is a 3D morphable Face model that is publicly available.
 */
 
+bool is_path_exists(const std::string &s)
+{
+  struct stat buffer;
+  return (stat (s.c_str(), &buffer) == 0);
+}
+
+std::string get_post_proc_data_dir()
+{
+    // check if post processes exists in rootfs under /usr/lib
+    std::string post_proc_data_dir = "/usr/lib/hailo-post-processes/post_processes_data";
+    if(is_path_exists(post_proc_data_dir))
+        return post_proc_data_dir;
+
+    // if not - they should exist in the workspace (x86 structure) - take it from the environment variable
+    std::string tappas_path = std::getenv("TAPPAS_WORKSPACE");
+    if (tappas_path == "")
+        throw std::invalid_argument("TAPPAS_WORKSPACE environment variable is not set, cannot find post_processes_data directory");
+
+    return tappas_path + "/apps/gstreamer/x86/libs/post_processes_data";
+}
+
+std::string post_proc_data_dir = get_post_proc_data_dir();
 // read large const arrays from memory
-std::string tappas_path = std::getenv("TAPPAS_WORKSPACE");
 xt::xarray<float> W_EXP_BASE =
-    xt::load_npy<float>(tappas_path + "/core/hailo/gstreamer/libs/postprocesses/post_processes_data/w_exp_base.npy");
+  xt::load_npy<float>(post_proc_data_dir + "/w_exp_base.npy");
 xt::xarray<float> W_SHP_BASE =
-    xt::load_npy<float>(tappas_path + "/core/hailo/gstreamer/libs/postprocesses/post_processes_data/w_shp_base.npy");
+  xt::load_npy<float>(post_proc_data_dir + "/w_shp_base.npy");
 xt::xarray<float> trans_bfm_u_base = xt::transpose(bfm_u_base);
 
 xt::xarray<float> calc_params_view(xt::xarray<float> face_3dmm_params)
@@ -185,5 +207,11 @@ void filter(HailoROIPtr roi)
 void facial_landmarks_merged(HailoROIPtr roi)
 {
     output_layer_name = "tddfa_mobilenet_v1/fc1";
+    facial_landmark(roi);
+}
+
+void facial_landmarks_yuy2(HailoROIPtr roi)
+{
+    output_layer_name = "tddfa_mobilenet_v1_yuy2/fc1";
     facial_landmark(roi);
 }

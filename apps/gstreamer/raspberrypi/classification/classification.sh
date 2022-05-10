@@ -29,7 +29,7 @@ function print_usage() {
     echo ""
     echo "Options:"
     echo "  --help                  Show this help"
-    echo "  -i INPUT --input INPUT  Set the input video file path (default $input_source)"
+    echo "  -i INPUT --input INPUT  Set the video source (only videos allowed) (default $input_source)"
     echo "  --show-fps              Print fps"
     echo "  --print-gst-launch      Print the ready gst-launch command without running it"
     exit 0
@@ -70,15 +70,15 @@ parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    echo "Received invalid argument: $input_source. Live input sources are currently not supported. "
+    echo "Received invalid video source: $input_source - Only videos are allowed."
     exit 1
 fi
 
 PIPELINE="gst-launch-1.0 \
-    filesrc location=$input_source ! qtdemux ! h264parse ! avdec_h264 ! videoconvert n-threads=8 ! \
+    filesrc location=$input_source ! qtdemux ! h264parse ! avdec_h264 ! videoconvert n-threads=2 ! \
     tee name=t hailomuxer name=hmux \
     t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hmux. \
-    t. ! videoscale n-threads=8 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
+    t. ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -86,7 +86,7 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hmux. \
     hmux. ! hailooverlay ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoconvert n-threads=8 ! \
+    videoconvert ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=false text-overlay=false ${additonal_parameters}"
 
 echo "Running"

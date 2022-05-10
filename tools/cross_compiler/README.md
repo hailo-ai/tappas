@@ -76,7 +76,7 @@ IMAGE_INSTALL_append += "                    \
 "
 
 # Enable trace hooks for GStreamer
-PACKAGECONFIG_append_pn-gstreamer1.0 = "gst-tracer-hooks"
+PACKAGECONFIG_append_pn-gstreamer1.0 += " gst-tracer-hooks"
 
 ```
 
@@ -219,7 +219,7 @@ And the post-processes are stored under plugins
 $ ls aarch64-gsthailotools-build/libs/*.so   
 libcenterpose_post.so  libmobilenet_ssd_post.so
 libclassification.so   libsegmentation_draw.so
-libdebug.so            libyolo_post.so
+libdebug.so            libnew_yolo_post.so
 libdetection_draw.so
 
 ```

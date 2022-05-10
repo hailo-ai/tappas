@@ -4,11 +4,12 @@ Model files downloader from S3
 import logging
 import os
 import sys
+import argparse
 
 import boto3
 from botocore.exceptions import ClientError
 
-from common import Downloader
+from common import Downloader, Platform, parse_downloader_args
 from config import config
 from s3_amazon_downloader import S3AmazonDownloader
 
@@ -19,8 +20,8 @@ class DownloadException(Exception):
 
 class S3Downloader(Downloader):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, platform=Platform.X86, dump_requirements=False):
+        super().__init__(platform=platform, dump_requirements=dump_requirements)
         self._s3_client = boto3.client('s3', aws_access_key_id='', aws_secret_access_key='')
         self._s3_client._request_signer.sign = (lambda *args, **kwargs: None)
 
@@ -35,6 +36,11 @@ class S3Downloader(Downloader):
         except ClientError as e:
             self._logger.warning(f'Failed to find meta for {requirement_key}, file may not exist for this version.')
             raise e
+
+    def _dump_requirement(self, requirement, destination):
+        self._logger.info(f'S3 - dump only mode: {requirement.source} into {destination} added to requirements txt')
+        S3AmazonDownloader.dump_requirement(relative_url=requirement.source, bucket='tappas',
+                                    destination_path=destination, requirements_file=self.requirements_dump_file)
 
     def _download(self, requirement, destination, remote_md5):
         max_retries = 3
@@ -56,9 +62,9 @@ class S3Downloader(Downloader):
 
 
 def main():
+    args = parse_downloader_args()
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
-    S3Downloader().run()
+    S3Downloader(platform=args.platform, dump_requirements=args.dump_requirements).run()
 
 
 if __name__ == '__main__':

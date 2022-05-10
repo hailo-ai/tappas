@@ -1,13 +1,11 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <ctime>
-#include <gst/gst.h>
-#include <iostream>
 #include <iterator>
 #include <list>
 #include <stdexcept>
@@ -15,11 +13,10 @@
 #include <tuple>
 #include <vector>
 
-#include "common/common.hpp"
 #include "common/labels/yolact_twenty.hpp"
+#include "common/math.hpp"
+#include "common/nms.hpp"
 #include "yolact_postprocess.hpp"
-#include "hailo_detection.hpp"
-#include "tensor_meta.hpp"
 #include "xtensor/xadapt.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xbuilder.hpp"
@@ -39,11 +36,10 @@
 #include "xtensor/xstrided_view.hpp"
 #include "xtensor/xview.hpp"
 
-//******************************************************************
-// YOLACT NETWORK SPECIFIC PARAMETERS
-//******************************************************************
+// yolact_networks_specific parameters
 #define SCORE_THRESHOLD 0.5
 #define NMS_THRESHOLD 0.5
+#define IMAGE_SIZE 512
 
 // Output layer names for yolact_regnetx_800mf_fpn_20classes network
 const char *PROTO_LAYER = "yolact_regnetx_800mf_20classes/conv86";
@@ -68,10 +64,13 @@ const char *BBOX_4 = "yolact_regnetx_800mf_20classes/conv67";
 const char *MASK_4 = "yolact_regnetx_800mf_20classes/conv69";
 const char *CONF_4 = "yolact_regnetx_800mf_20classes/conv68";
 
-//******************************************************************
-// SETUP - ANCHOR EXTRACTION
-//******************************************************************
-xt::xarray<float> get_anchors(const gint image_size)
+/**
+ * @brief Extract the anchors
+ *
+ * @param image_size original height/width of image before inference
+ * @return xt::xarray<float> anchors
+ */
+xt::xarray<float> get_anchors(const int image_size)
 {
     // Prepare needed variables
     float x, y;
@@ -122,10 +121,15 @@ xt::xarray<float> get_anchors(const gint image_size)
     return anchors;
 }
 
-//******************************************************************
-// MATH - HELPER FUNCTIONS
-//******************************************************************
-// Gets the maximum of the columns of each row, skipping class 0 (background)
+/**
+ * @brief Gets the maximum of the columns of each row, skipping class 0 (background)
+ *
+ * @param data data to iterate
+ * @param size size of data
+ * @param num_rows number of rows in data
+ * @param num_cols number of columns in data
+ * @return xt::xarray<float> max values
+ */
 xt::xarray<float> amax_row(float *data, const int size, const int num_rows, const int num_cols)
 {
     xt::xarray<float>::shape_type shape = {(long unsigned int)num_rows};
@@ -138,8 +142,15 @@ xt::xarray<float> amax_row(float *data, const int size, const int num_rows, cons
     return max_values;
 }
 
-// Selects indices who's score is above a given threshold
-std::vector<int> filter(float *data, const int size, const float threshold)
+/**
+ * @brief Select indices who's score are above a given threshold
+ *
+ * @param data data
+ * @param size size of data
+ * @param threshold threshold of data
+ * @return std::vector<int> the indices
+ */
+std::vector<int> filter_scores(float *data, const int size, const float threshold)
 {
     std::vector<int> indices;
     for (int i = 0; i < size; i++)
@@ -152,8 +163,14 @@ std::vector<int> filter(float *data, const int size, const float threshold)
     return indices;
 }
 
-// Compute tensor dot product along specified axes for arrays.
-// In this case along axis 2 of the first matrix and axis 0 of the second.
+/**
+ * @brief  Compute tensor dot product along specified axes for arrays.
+            In this case along axis 2 of the first matrix and axis 0 of the second.
+ *
+ * @param matrix_1 left matrix in the dot product
+ * @param matrix_2 right matrix in the dot product
+ * @return xt::xarray<float> the dot product result
+ */
 xt::xarray<float> dot_product_axis_2(xt::xarray<float, xt::layout_type::row_major> matrix_1,
                                      xt::xarray<float, xt::layout_type::row_major> matrix_2)
 {
@@ -180,116 +197,132 @@ xt::xarray<float> dot_product_axis_2(xt::xarray<float, xt::layout_type::row_majo
     }
     return product_matrix;
 }
+/*
 
-//******************************************************************
-// DETECTION & DECODING
-//******************************************************************
-void decode_masks(const std::vector<DetectionObject> &objects, const xt::xarray<float> &proto)
+ * @brief Decode the mask coefficients of Yolact into a format that makes sense
+ * and add it to the detected instance for future calculation of the final mask
+ *
+ * @param objects vector of the detected instances
+ * @param proto the 32 mask prototypes that the coefficients select portions of to form the mask
+ */
+void decode_masks(std::vector<NewHailoDetection> &objects, const xt::xarray<float> &proto)
 {
-    /*
-    Decode the mask coefficients of Yolact into a format that makes sense.
-    */
     xt::xarray<float>::shape_type mask_shape = {proto.shape(0), proto.shape(1)};
 
     int proto_width = proto.shape(0);
     int proto_height = proto.shape(1);
 
-    // For each detection object, crop the
     int xmin, ymin, xmax, ymax;
-    gsize coefficients_size;
+
     for (auto &instance : objects)
     {
         // Gather the detection bounds for this instance,
         // they are relative scale so multiply by proto size
-        xmin = CLAMP(instance.xmin * proto_width, 0, proto_width);
-        xmax = CLAMP(instance.xmax * proto_width, 0, proto_width);
-        ymin = CLAMP(instance.ymin * proto_height, 0, proto_height);
-        ymax = CLAMP(instance.ymax * proto_height, 0, proto_height);
+        HailoBBox bbox = instance.get_bbox();
+
+        xmin = CLAMP(bbox.xmin() * proto_width, 0, proto_width);
+        xmax = CLAMP(bbox.xmax() * proto_width, 0, proto_width);
+        ymin = CLAMP(bbox.ymin() * proto_height, 0, proto_height);
+        ymax = CLAMP(bbox.ymax() * proto_height, 0, proto_height);
 
         // Crop a view of the proto layer of just this instance's detection area
         auto cropped_proto = xt::view(proto, xt::range(ymin, ymax), xt::range(xmin, xmax));
 
-        // Gather the instance mask coefficients which we stored as "segmentation_data"
-        auto coeffs_struct = instance.segmentation_data;                                                 // First get the coefficients gststructure
-        const GValue *coefficients_gvalue = gst_structure_get_value(coeffs_struct, "mask_coefficients"); // Get the g value from the gststructure
-        GVariant *coefficients_variant = g_value_get_variant(coefficients_gvalue);                       // From the g value extract the variant
-        // From the variant extract the uint8 array
-        uint8_t *coefficients_raw = (guint8 *)g_variant_get_fixed_array(coefficients_variant, &coefficients_size, 1);
+        HailoMatrixPtr matrix = NULL;
+        for (auto obj : instance.get_objects())
+        {
+            if (obj->get_type() == HAILO_MATRIX)
+            {
+                matrix = std::dynamic_pointer_cast<HailoMatrix>(obj);
+            }
+        }
+        if (matrix == NULL) // no mask attached
+        {
+            return;
+        }
 
-        // Adapt the variant array into an xtensor array
-        size_t size = coefficients_size / 4;   // There 4 bytes per element, so divide by 4
-        std::vector<std::size_t> shape = {32}; // The coefficients are 1D
-        xt::xarray<float, xt::layout_type::row_major> coefficients = xt::adapt((float *)coefficients_raw, size, xt::no_ownership(), shape);
+        xt::xarray<int>::shape_type shape = {matrix->height()};
+        xt::xarray<float> mask_coefficients = xt::adapt(matrix->get_data_ptr(), matrix->height(), xt::no_ownership(), shape);
 
-        // Calculate a matrix multiplication of the instance's coefficients and the cropped proto layer
-        auto cropped_mask = dot_product_axis_2(cropped_proto, coefficients);
+        // Calculate a matrix multiplication of the instance's coefficients and the cropped proto layer and transpose it
+        xt::xarray<float, xt::layout_type::column_major> cropped_mask = xt::transpose(dot_product_axis_2(cropped_proto, mask_coefficients));
+
+        instance.remove_object(matrix); // not needed anymore
 
         // Calculate the sigmoid of the mask
         common::sigmoid(cropped_mask.data(), cropped_mask.size());
 
+        // allocate and memcpy to a new memory so it points to the right data
+        std::vector<float> data(cropped_mask.shape(0) * cropped_mask.shape(1));
+        memcpy(data.data(), cropped_mask.data(), sizeof(float) * cropped_mask.shape(0) * cropped_mask.shape(1));
+
         // Add the mask to the object meta
-        auto mask_data = cropped_mask.data(); // Get the internal pointer to where the data is stored
-        common::copy_data_to_structure(instance.segmentation_data, "mask", (void *)mask_data, cropped_mask.size() * 4);
-        common::copy_int_to_structure(instance.segmentation_data, "mask_height", cropped_mask.shape(0));
-        common::copy_int_to_structure(instance.segmentation_data, "mask_width", cropped_mask.shape(1));
+        instance.add_object(std::make_shared<HailoConfClassMask>(std::move(data), cropped_mask.shape(0), cropped_mask.shape(1), 0.3, instance.get_class_id()));
     }
 }
 
-xt::xarray<float> decode_boxes(const xt::xarray<float> &locations, const xt::xarray<float> &priors)
+/**
+ * @brief decode_boxes from the priors and locations
+ *
+ * @param locations The predicted bounding boxes of size [num_priors, 4]
+ * @param anchors The anchor box coords with size [num_priors, 4]
+ * @return xt::xarray<float> A tensor of decoded relative coordinates in point form
+             form with size [num_anchor, 4]
+ */
+xt::xarray<float> decode_boxes(const xt::xarray<float> &locations, const xt::xarray<float> &anchors)
 {
     /*
     Decode predicted bbox coordinates using the same scheme
     employed by Yolov2: https://arxiv.org/pdf/1612.08242.pdf
 
-      b_x = (sigmoid(pred_x) - .5) / conv_w + prior_x
-      b_y = (sigmoid(pred_y) - .5) / conv_h + prior_y
-      b_w = prior_w * exp(loc_w)
-      b_h = prior_h * exp(loc_h)
+      b_x = (sigmoid(pred_x) - .5) / conv_w + anchor_x
+      b_y = (sigmoid(pred_y) - .5) / conv_h + anchor_y
+      b_w = anchor_w * exp(loc_w)
+      b_h = anchor_h * exp(loc_h)
 
     Note that loc is inputed as [(s(x)-.5)/conv_w, (s(y)-.5)/conv_h, w, h]
-    while priors are inputed as [x, y, w, h] where each coordinate
+    while anchors are inputed as [x, y, w, h] where each coordinate
     is relative to size of the image (even sigmoid(x)). We do this
     in the network by dividing by the 'cell size', which is just
     the size of the convouts.
 
-    Also note that prior_x and prior_y are center coordinates which
+    Also note that anchor_x and anchor_y are center coordinates which
     is why we have to subtract .5 from sigmoid(pred_x and pred_y).
 
-    Args:
-      - loc:    The predicted bounding boxes of size [num_priors, 4]
-      - priors: The priorbox coords with size [num_priors, 4]
-
-    Returns: A tensor of decoded relative coordinates in point form
-             form with size [num_priors, 4]
-
-    **NOTE: priors = anchors
     */
     xt::xarray<float> variances = {0.1, 0.2};
     // Calculate the x and y
-    auto boxes_xy = xt::view(priors, xt::all(), xt::range(_, 2)) + (xt::view(locations, xt::all(), xt::range(_, 2)) * variances(0) * xt::view(priors, xt::all(), xt::range(2, _)));
+    auto boxes_xy = xt::view(anchors, xt::all(), xt::range(_, 2)) + (xt::view(locations, xt::all(), xt::range(_, 2)) * variances(0) * xt::view(anchors, xt::all(), xt::range(2, _)));
     // Calculate the width and height
-    auto boxes_wh = xt::view(priors, xt::all(), xt::range(2, _)) * xt::exp(xt::view(locations, xt::all(), xt::range(2, _)) * variances(1));
+    auto boxes_wh = xt::view(anchors, xt::all(), xt::range(2, _)) * xt::exp(xt::view(locations, xt::all(), xt::range(2, _)) * variances(1));
 
     // Concatenate the parameters together
-    auto boxes = xt::concatenate(xt::xtuple(boxes_xy - (boxes_wh / 2),
-                                            boxes_wh),
-                                 1);
+    auto boxes = xt::concatenate(xt::xtuple(boxes_xy - (boxes_wh / 2), boxes_wh), 1);
     return boxes;
 }
 
-void detect_instances(std::vector<DetectionObject> &objects,
+/**
+ * @brief
+ *
+ * @param objects empty vector of NewHailoDetection
+ * @param all_anchors the anchors
+ * @param all_scores the scores
+ * @param all_boxes the boxes data
+ * @param all_masks the masks data
+ * @param score_threshold treshold to filter out low scores
+ */
+void detect_instances(std::vector<NewHailoDetection> &objects,
                       auto &all_anchors,
                       auto &all_scores,
                       auto &all_boxes,
                       auto &all_masks,
-                      const gint image_size,
                       const float score_threshold)
 {
     // First get the max score of each row
     xt::xarray<float, xt::layout_type::row_major> max_scores = amax_row(all_scores.data(), all_scores.size(), all_scores.shape(0), all_scores.shape(1));
 
     // Filter out any detection below threshold
-    std::vector<int> indices_above_threshold = filter(max_scores.data(), max_scores.size(), score_threshold);
+    std::vector<int> indices_above_threshold = filter_scores(max_scores.data(), max_scores.size(), score_threshold);
 
     // Keep only the indices above thresholds from our arrays
     auto scores = xt::view(all_scores, xt::keep(indices_above_threshold), xt::drop(0));
@@ -297,7 +330,7 @@ void detect_instances(std::vector<DetectionObject> &objects,
     auto masks = xt::view(all_masks, xt::keep(indices_above_threshold), xt::all());
     auto anchors = xt::view(all_anchors, xt::keep(indices_above_threshold), xt::all());
 
-    // Decode the detection boxes
+    // Decode the detection+ boxes
     xt::xarray<float> decoded_boxes = decode_boxes(boxes, anchors);
 
     // Take the hyperbolic tangent of each element in the mask
@@ -316,62 +349,67 @@ void detect_instances(std::vector<DetectionObject> &objects,
 
         // We add 1 to class_index since we excluded class 0 (background)
         class_index = xt::argmax(xt::row(scores, index))(0) + 1;
+        std::string label = common::yolact_twenty[class_index];
         confidence = scores(index, class_index - 1); // Decrement class_index since scores excludes class 0 (background)
 
-        // Create the detection object
-        DetectionObject detected_instance = DetectionObject(xmin, ymin, h, w, confidence, common::yolact_twenty[class_index], class_index);
+        xt::xarray<float> mask_coefficients = xt::squeeze(xt::view(tanned_masks, xt::keep(index), xt::all())); // We are only interested in the coefficients of this instance
 
-        // We want to append the mask coefficients of each detection as a gst_structure
-        xt::xarray<float> mask_coefficients = xt::view(tanned_masks, xt::keep(index), xt::all()); // We are only interested in the coefficients of this instance
-        auto mask_data = mask_coefficients.data();                                                // Get the internal pointer to where the data is stored
-        common::copy_data_to_structure(detected_instance.segmentation_data, "mask_coefficients", (void *)mask_data, mask_coefficients.size() * 4);
+        HailoBBox bbox(xmin, ymin, w, h);
+        NewHailoDetection detected_instance(bbox, class_index, label, confidence);
 
-        // Push the detected instance into our objects vector
-        objects.emplace_back(std::move(detected_instance));
+        float *data = (float *)malloc(sizeof(float) * mask_coefficients.shape(0));
+        memcpy(data, mask_coefficients.data(), sizeof(float) * mask_coefficients.shape(0));
+
+        detected_instance.add_object((std::make_shared<HailoMatrix>(data, mask_coefficients.shape(0), 1)));
+        objects.push_back(detected_instance);
     }
 }
 
-//******************************************************************
-// INSTANCE SEGMENTATION POSTPROCESS
-//******************************************************************
-std::vector<DetectionObject> instance_segmentation_post(std::map<std::string, HailoTensorPtr> tensors,
-                                                        const xt::xarray<float> &anchors,
-                                                        const gint num_classes,
-                                                        const gint image_size,
-                                                        const float score_threshold,
-                                                        const float nms_threshold)
+/**
+ * @brief Perform Instance Segmentation postprocess
+ *
+ * @param tensors output tensors by name
+ * @param anchors the anchors
+ * @param num_classes number of classes in yolact
+ * @param image_size height/width of the input to the inference
+ * @param score_threshold treshold to filter out low scores
+ * @param nms_threshold threshold to fitler out detected bboxes that are too similar in order to remove duplicates
+ * @return std::vector<NewHailoDetection> final detections vector with mask to each detection
+ */
+std::vector<NewHailoDetection> instance_segmentation_post(std::map<std::string, NewHailoTensorPtr> tensors,
+                                                          const xt::xarray<float> &anchors,
+                                                          const int num_classes,
+                                                          const int image_size,
+                                                          const float score_threshold,
+                                                          const float nms_threshold)
 {
-    std::vector<DetectionObject> objects; // The detection meta we will eventually return
 
-    //-------------------------------
-    // TENSOR GATHERING
-    //-------------------------------
-    // Proto layer
-    xt::xarray<float, xt::layout_type::row_major> proto = common::dequantize(common::xtensor_from_HailoTensor(tensors[PROTO_LAYER]), tensors[PROTO_LAYER]->qp_scale, tensors[PROTO_LAYER]->qp_zp);
+    std::vector<NewHailoDetection> objects; // The detection meta we will eventually return
+
+    // tensors gathering
+    xt::xarray<float, xt::layout_type::row_major> proto = common::dequantize(common::get_xtensor(tensors[PROTO_LAYER]), tensors[PROTO_LAYER]->vstream_info().quant_info.qp_scale, tensors[PROTO_LAYER]->vstream_info().quant_info.qp_zp);
+
     // Set 0
-    auto bbox_0 = common::dequantize(common::xtensor_from_HailoTensor(tensors[BBOX_0]), tensors[BBOX_0]->qp_scale, tensors[BBOX_0]->qp_zp);
-    auto mask_0 = common::dequantize(common::xtensor_from_HailoTensor(tensors[MASK_0]), tensors[MASK_0]->qp_scale, tensors[MASK_0]->qp_zp);
-    auto conf_0 = common::dequantize(common::xtensor_from_HailoTensor(tensors[CONF_0]), tensors[CONF_0]->qp_scale, tensors[CONF_0]->qp_zp);
+    auto bbox_0 = common::dequantize(common::get_xtensor(tensors[BBOX_0]), tensors[BBOX_0]->vstream_info().quant_info.qp_scale, tensors[BBOX_0]->vstream_info().quant_info.qp_zp);
+    auto mask_0 = common::dequantize(common::get_xtensor(tensors[MASK_0]), tensors[MASK_0]->vstream_info().quant_info.qp_scale, tensors[MASK_0]->vstream_info().quant_info.qp_zp);
+    auto conf_0 = common::dequantize(common::get_xtensor(tensors[CONF_0]), tensors[CONF_0]->vstream_info().quant_info.qp_scale, tensors[CONF_0]->vstream_info().quant_info.qp_zp);
     // Set 1
-    auto bbox_1 = common::dequantize(common::xtensor_from_HailoTensor(tensors[BBOX_1]), tensors[BBOX_1]->qp_scale, tensors[BBOX_1]->qp_zp);
-    auto mask_1 = common::dequantize(common::xtensor_from_HailoTensor(tensors[MASK_1]), tensors[MASK_1]->qp_scale, tensors[MASK_1]->qp_zp);
-    auto conf_1 = common::dequantize(common::xtensor_from_HailoTensor(tensors[CONF_1]), tensors[CONF_1]->qp_scale, tensors[CONF_1]->qp_zp);
+    auto bbox_1 = common::dequantize(common::get_xtensor(tensors[BBOX_1]), tensors[BBOX_1]->vstream_info().quant_info.qp_scale, tensors[BBOX_1]->vstream_info().quant_info.qp_zp);
+    auto mask_1 = common::dequantize(common::get_xtensor(tensors[MASK_1]), tensors[MASK_1]->vstream_info().quant_info.qp_scale, tensors[MASK_1]->vstream_info().quant_info.qp_zp);
+    auto conf_1 = common::dequantize(common::get_xtensor(tensors[CONF_1]), tensors[CONF_1]->vstream_info().quant_info.qp_scale, tensors[CONF_1]->vstream_info().quant_info.qp_zp);
     // Set 2
-    auto bbox_2 = common::dequantize(common::xtensor_from_HailoTensor(tensors[BBOX_2]), tensors[BBOX_2]->qp_scale, tensors[BBOX_2]->qp_zp);
-    auto mask_2 = common::dequantize(common::xtensor_from_HailoTensor(tensors[MASK_2]), tensors[MASK_2]->qp_scale, tensors[MASK_2]->qp_zp);
-    auto conf_2 = common::dequantize(common::xtensor_from_HailoTensor(tensors[CONF_2]), tensors[CONF_2]->qp_scale, tensors[CONF_2]->qp_zp);
+    auto bbox_2 = common::dequantize(common::get_xtensor(tensors[BBOX_2]), tensors[BBOX_2]->vstream_info().quant_info.qp_scale, tensors[BBOX_2]->vstream_info().quant_info.qp_zp);
+    auto mask_2 = common::dequantize(common::get_xtensor(tensors[MASK_2]), tensors[MASK_2]->vstream_info().quant_info.qp_scale, tensors[MASK_2]->vstream_info().quant_info.qp_zp);
+    auto conf_2 = common::dequantize(common::get_xtensor(tensors[CONF_2]), tensors[CONF_2]->vstream_info().quant_info.qp_scale, tensors[CONF_2]->vstream_info().quant_info.qp_zp);
     // Set 3
-    auto bbox_3 = common::dequantize(common::xtensor_from_HailoTensor(tensors[BBOX_3]), tensors[BBOX_3]->qp_scale, tensors[BBOX_3]->qp_zp);
-    auto mask_3 = common::dequantize(common::xtensor_from_HailoTensor(tensors[MASK_3]), tensors[MASK_3]->qp_scale, tensors[MASK_3]->qp_zp);
-    auto conf_3 = common::dequantize(common::xtensor_from_HailoTensor(tensors[CONF_3]), tensors[CONF_3]->qp_scale, tensors[CONF_3]->qp_zp);
+    auto bbox_3 = common::dequantize(common::get_xtensor(tensors[BBOX_3]), tensors[BBOX_3]->vstream_info().quant_info.qp_scale, tensors[BBOX_3]->vstream_info().quant_info.qp_zp);
+    auto mask_3 = common::dequantize(common::get_xtensor(tensors[MASK_3]), tensors[MASK_3]->vstream_info().quant_info.qp_scale, tensors[MASK_3]->vstream_info().quant_info.qp_zp);
+    auto conf_3 = common::dequantize(common::get_xtensor(tensors[CONF_3]), tensors[CONF_3]->vstream_info().quant_info.qp_scale, tensors[CONF_3]->vstream_info().quant_info.qp_zp);
     // Set 4
-    auto bbox_4 = common::dequantize(common::xtensor_from_HailoTensor(tensors[BBOX_4]), tensors[BBOX_4]->qp_scale, tensors[BBOX_4]->qp_zp);
-    auto mask_4 = common::dequantize(common::xtensor_from_HailoTensor(tensors[MASK_4]), tensors[MASK_4]->qp_scale, tensors[MASK_4]->qp_zp);
-    auto conf_4 = common::dequantize(common::xtensor_from_HailoTensor(tensors[CONF_4]), tensors[CONF_4]->qp_scale, tensors[CONF_4]->qp_zp);
+    auto bbox_4 = common::dequantize(common::get_xtensor(tensors[BBOX_4]), tensors[BBOX_4]->vstream_info().quant_info.qp_scale, tensors[BBOX_4]->vstream_info().quant_info.qp_zp);
+    auto mask_4 = common::dequantize(common::get_xtensor(tensors[MASK_4]), tensors[MASK_4]->vstream_info().quant_info.qp_scale, tensors[MASK_4]->vstream_info().quant_info.qp_zp);
+    auto conf_4 = common::dequantize(common::get_xtensor(tensors[CONF_4]), tensors[CONF_4]->vstream_info().quant_info.qp_scale, tensors[CONF_4]->vstream_info().quant_info.qp_zp);
 
-    //-------------------------------
-    // FEATURE STACKING
-    //-------------------------------
     // Reshape and stack the boxes
     auto bbox_0_reshaped = xt::reshape_view(bbox_0, {(int)bbox_0.shape(0) * (int)bbox_0.shape(1) * ((int)bbox_0.shape(2) / 4), 4});
     auto bbox_1_reshaped = xt::reshape_view(bbox_1, {(int)bbox_1.shape(0) * (int)bbox_1.shape(1) * ((int)bbox_1.shape(2) / 4), 4});
@@ -400,52 +438,38 @@ std::vector<DetectionObject> instance_segmentation_post(std::map<std::string, Ha
     auto mask_4_reshaped = xt::reshape_view(mask_4, {(int)mask_4.shape(0) * (int)mask_4.shape(1) * ((int)mask_4.shape(2) / 32), 32});
     auto all_masks = xt::concatenate(xt::xtuple(mask_0_reshaped, mask_1_reshaped, mask_2_reshaped, mask_3_reshaped, mask_4_reshaped));
 
-    //-------------------------------
-    // INSTANCE DETECTION
-    //-------------------------------
-    detect_instances(objects, anchors, confidences, all_boxes, all_masks, image_size, score_threshold);
+    detect_instances(objects, anchors, confidences, all_boxes, all_masks, score_threshold);
 
-    //-------------------------------
-    // NMS
-    //-------------------------------
     common::nms(objects, nms_threshold);
 
-    //-------------------------------
-    // MASK DECODING
-    //-------------------------------
     decode_masks(objects, proto);
 
     // Return the objects
     return objects;
 }
 
-//******************************************************************
-//  YOLACT POSTPROCESS
-//******************************************************************
-void yolact(HailoFramePtr hailo_frame)
+/**
+ * @brief call the post process and add the detections to the roi
+ *
+ * @param roi the region of interest
+ */
+void yolact(HailoROIPtr roi)
 {
-    // Network specific parameters
-    const gint image_size = hailo_frame->width;
-    const gint num_classes = 20;
+    const int num_classes = 20;
+    const xt::xarray<float> anchors = get_anchors(IMAGE_SIZE);
+    std::map<std::string, NewHailoTensorPtr> tensors = roi->get_tensors_by_name();
+    std::vector<NewHailoDetection> detections = instance_segmentation_post(tensors, anchors, num_classes, IMAGE_SIZE,
+                                                                           SCORE_THRESHOLD, NMS_THRESHOLD);
 
-    // Calculate the anchors based on the image size.
-    const xt::xarray<float> anchors = get_anchors(image_size);
-
-    // Get the output layers from the hailo frame.
-    auto tensors = hailo_frame->get_tensors_by_name();
-
-    // Extract the detection objects using the given parameters.
-    std::vector<DetectionObject> detections = instance_segmentation_post(tensors, anchors, num_classes, image_size,
-                                                                         SCORE_THRESHOLD, NMS_THRESHOLD);
-
-    // Update the frame with the found detections.
-    common::update_frame(hailo_frame, detections);
+    hailo_common::add_detections(roi, detections);
 }
 
-//******************************************************************
-//  DEFAULT FILTER
-//******************************************************************
-void filter(HailoFramePtr hailo_frame)
+/**
+ * @brief default filter function
+ *
+ * @param roi the region of interest
+ */
+void filter(HailoROIPtr roi)
 {
-    yolact(hailo_frame);
+    yolact(roi);
 }

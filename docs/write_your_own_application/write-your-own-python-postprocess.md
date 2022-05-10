@@ -114,7 +114,7 @@ It is already familiar with our HailoObject types and knows how to draw classifi
 ```sh
 gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/detection.mp4 name=src_0 ! decodebin \
 ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue leaky=no max-size-buffers=30 \
-max-size-bytes=0 max-size-time=0 ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/yolov5m.hef \
+max-size-bytes=0 max-size-time=0 ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/yolov5m_wo_spp_60p.hef \
 debug=False is-active=true qos=false batch-size=8 ! queue leaky=no max-size-buffers=30 max-size-bytes=0 \
 max-size-time=0 ! hailopython module=$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/my_module.py qos=false ! queue \
 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailooverlay qos=false ! videoconvert ! \

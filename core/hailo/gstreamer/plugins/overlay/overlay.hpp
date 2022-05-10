@@ -28,6 +28,7 @@ typedef enum
 
 __BEGIN_DECLS
 overlay_status_t draw_all(cv::Mat &mat, HailoROIPtr roi, int font_thickness = 1, int line_thickness = 1);
+void face_blur(cv::Mat &mat, HailoROIPtr roi);
 
 cv::Scalar RGB_TO_YUY2(cv::Scalar rgb);
 cv::Scalar get_color(cv::Mat &mat, cv::Scalar color = DEFAULT_COLOR);

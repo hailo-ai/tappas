@@ -69,7 +69,7 @@ public:
      */
     float fix_scale(uint8_t num)
     {
-        return (num - m_vstream_info.quant_info.qp_zp) * m_vstream_info.quant_info.qp_scale;
+        return (float(num) - m_vstream_info.quant_info.qp_zp) * m_vstream_info.quant_info.qp_scale;
     }
     /**
      * @brief Gets a specific cell of this tensor.

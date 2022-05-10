@@ -4,12 +4,13 @@
 **/
 #ifndef _HAILO_CENTERPOSE_POST_HPP_
 #define _HAILO_CENTERPOSE_POST_HPP_
-#include "hailo_frame.hpp"
+#include "hailo_objects.hpp"
+#include "hailo_common.hpp"
 
-G_BEGIN_DECLS
-void filter(HailoFramePtr hailo_frame);
-void centerpose(HailoFramePtr hailo_frame);
-void centerpose_416(HailoFramePtr hailo_frame);
-void centerpose_merged(HailoFramePtr hailo_frame);
-G_END_DECLS
+__BEGIN_DECLS
+void filter(HailoROIPtr roi);
+void centerpose(HailoROIPtr roi);
+void centerpose_416(HailoROIPtr roi);
+void centerpose_merged(HailoROIPtr roi);
+__END_DECLS
 #endif

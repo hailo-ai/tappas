@@ -38,6 +38,21 @@ This guide documents the different classes available in the `TAPPAS` and their i
 - [**HailoUniqueID**](#hailouniqueid)
   - [Constructors](#constructors-3)
   - [Functions](#functions-9)
+- [**HailoMask**](#hailomask)
+  - [Constructors](#constructors-4)
+  - [Functions](#functions-10)
+- [**HailoDepthMask**](#hailodepthmask)
+  - [Constructors](#constructors-5)
+  - [Functions](#functions-11)
+- [**HailoClassMask**](#hailoclassmask)
+  - [Constructors](#constructors-6)
+  - [Functions](#functions-12)
+- [**HailoConfClassMask**](#hailoconfclassmask)
+  - [Constructors](#constructors-7)
+  - [Functions](#functions-13)
+- [**HailoMatrix**](#hailomatrix)
+  - [Constructors](#constructors-8)
+  - [Functions](#functions-14)
 
 # **Structs**
 ## **HailoBBox**
@@ -89,6 +104,10 @@ typedef enum
     HAILO_LANDMARKS,
     HAILO_TILE,
     HAILO_UNIQUE_ID,
+    HAILO_MATRIX,
+    HAILO_DEPTH_MASK,
+    HAILO_CLASS_MASK,
+    HAILO_CONF_CLASS_MASK
 } hailo_object_t;
 ```
 
@@ -246,17 +265,18 @@ HailoClassification(const std::string &classification_type, int class_id, std::s
 `SOURCE`: [core/hailo/general/hailo_objects.hpp](../../core/hailo/general/hailo_objects.hpp)  
 ## Constructors
 ```cpp
-HailoLandmarks(std::string landmarks_name, float threshold = 0.0f)
-HailoLandmarks(std::string landmarks_name, std::vector<HailoPoint> points, float threshold = 0.0f)
+HailoLandmarks(std::string landmarks_name, float threshold = 0.0f, const std::vector<std::pair<int, int>> pairs = {})
+std::string landmarks_name, std::vector<HailoPoint> points, float threshold = 0.0f, const std::vector<std::pair<int, int>> pairs = {})
 ```
 
 ## Functions
 | Function                      | Return Type                              | Description                                                             |
 | ----------------------------- | :--------------------------------------- | :---------------------------------------------------------------------- |
-| `get_type()`                  | [hailo_object_t](#enumerations)          | This [HailoObject](#hailoobject)'s type: HAILO_LANDMARKS                |
-| `add_point(HailoPoint point)` | void                                     | Add a point to this landmarks object.                                   |
+| `get_type()`                  | [hailo_object_t](#enumerations)          | This [HailoObject](#hailoobject)'s type: HAILO_LANDMARKS                 |
+| `add_point(HailoPoint point)` | void                                     | Add a point to this landmarks object.                         |
 | `get_points()`                | std::vector\<[HailoPoint](#hailopoint)\> | Gets the set of points held by this Landmarks object.                   |
 | `get_landmarks_type()`        | std::string                              | This landmark's type (e.g. "pose estimation", "face landmark", etc...). |
+| `get_pairs()`                 | std::vector<std::pair<int, int>>         | vector of pairs of joints that should be connected in overlay. |
 
 <br/>
 <br/>
@@ -277,3 +297,108 @@ HailoUniqueID(int unique_id)
 | ------------ | :------------------------------ | :------------------------------------------------------- |
 | `get_type()` | [hailo_object_t](#enumerations) | This [HailoObject](#hailoobject)'s type: HAILO_UNIQUE_ID |
 | `get_id()`   | int                             | Get the unique id.                                       |
+
+<br>
+<br>
+
+# **HailoMask**
+**Inherits from [HailoObject](#hailoobject).**  
+`HailoMask` represents a mask of an ROI. Whenever the output of a postprocess is masks (tensors with result for every pixel) we will ROIs mask objects.   
+`Shared pointer handle`: **HailoMaskPtr**  \
+`SOURCE`: [core/hailo/general/hailo_objects.hpp](../../core/hailo/general/hailo_objects.hpp)  
+## Constructors
+```cpp
+HailoMask(int mask_width, int mask_height, float transparency)
+```
+
+## Functions
+| Function     | Return Type                     | Description                                              |
+| ------------ | :------------------------------ | :------------------------------------------------------- |
+| `get_type()` | [hailo_object_t](#enumerations) | This [HailoObject](#hailoobject)'s type: HAILO_MASK |
+| `get_width()` | int | get the mask width |
+| `get_height()`   | int                             | get the mask height                                   |
+| `get_transparency()`  |float|  get the desired drawing transparency                                |
+
+<br>
+<br>
+
+# **HailoDepthMask**
+**Inherits from [HailoMask](#hailomask).**  
+`HailoDepthMask` represents a mask of an ROI, with float values for each pixel. The values represent depth between minimum and maximum values.   
+`Shared pointer handle`: **HailoDepthMaskPtr**  \
+`SOURCE`: [core/hailo/general/hailo_objects.hpp](../../core/hailo/general/hailo_objects.hpp)  
+## Constructors
+```cpp
+HailoDepthMask(std::vector<float> &&data_vec, int mask_width, int mask_height, float transparency)
+```
+
+## Functions
+| Function     | Return Type                     | Description                                              |
+| ------------ | :------------------------------ | :------------------------------------------------------- |
+| `get_type()` | [hailo_object_t](#enumerations) | This [HailoObject](#hailoobject)'s type: HAILO_DEPTH_MASK |
+| `get_data()` | const std::vector<float> | get the mask data vector |
+
+<br>
+<br>
+
+# **HailoClassMask**
+**Inherits from [HailoMask](#hailomask).**  
+`HailoClassMask` represents a mask of an ROI, with uint8_t class id classification for each pixel.    
+`Shared pointer handle`: **HailoClassMaskPtr**  \
+`SOURCE`: [core/hailo/general/hailo_objects.hpp](../../core/hailo/general/hailo_objects.hpp)  
+## Constructors
+```cpp
+HailoClassMask(std::vector<uint8_t> &&data_vec, int mask_width, int mask_height, float transparency) 
+```
+
+## Functions
+| Function     | Return Type                     | Description                                              |
+| ------------ | :------------------------------ | :------------------------------------------------------- |
+| `get_type()` | [hailo_object_t](#enumerations) | This [HailoObject](#hailoobject)'s type: HAILO_CLASS_MASK |
+| `get_data()` | const std::vector<uint8_t>  | get the mask data vector |
+
+<br>
+<br>
+
+# **HailoConfClassMask**
+**Inherits from [HailoMask](#hailomask).**  
+`HailoConfClassMask` represents a mask of an ROI, contains mask-class-id and confidence float value for each pixel.
+`Shared pointer handle`: **HailoConfClassMaskPtr**  \
+`SOURCE`: [core/hailo/general/hailo_objects.hpp](../../core/hailo/general/hailo_objects.hpp)  
+## Constructors
+```cpp
+HailoConfClassMask(std::vector<float> &&data_vec, int mask_width, int mask_height, float transparency, int class_id)
+```
+
+## Functions
+| Function     | Return Type                     | Description                                              |
+| ------------ | :------------------------------ | :------------------------------------------------------- |
+| `get_type()` | [hailo_object_t](#enumerations) | This [HailoObject](#hailoobject)'s type: HAILO_CONF_CLASS_MASK |
+| `get_data()` | const std::vector<float>  | get the mask data vector |
+| `get_class_id()` | int | get the mask class id |
+
+
+<br>
+<br>
+
+# **HailoMatrix**
+**Inherits from [HailoObject](#hailoobject).**  
+`HailoMatrix` represents a matrix, contains float values. This matrix can be added to any HailoObject for different use cases. 
+`Shared pointer handle`: **HailoMatrixPtr**  \
+`SOURCE`: [core/hailo/general/hailo_objects.hpp](../../core/hailo/general/hailo_objects.hpp)  
+## Constructors
+```cpp
+    HailoMatrix(float *data_ptr, uint32_t mat_height, uint32_t mat_width, uint32_t mat_features = HailoMatrix::DEFAULT_NUMBER_OF_FEATURES) 
+```
+
+## Functions
+| Function     | Return Type                     | Description                                              |
+| ------------ | :------------------------------ | :------------------------------------------------------- |
+| `get_type()` | [hailo_object_t](#enumerations) | This [HailoObject](#hailoobject)'s type: HAILO_MATRIX |
+| `width()` | const uint32_t | get matrix width |
+| `height()` | const uint32_t | get matrix height |
+| `features()` | const uint32_t | get matrix number of features |
+| `size()` | const uint32_t | get number of elements in matrix |
+| `shape()` | std::vector<std::size_t> | get the shape of the matrix |
+| `get_data_ptr()` | float * | get the matrix data pointer |
+

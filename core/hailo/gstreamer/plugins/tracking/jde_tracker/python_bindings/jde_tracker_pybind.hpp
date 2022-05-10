@@ -49,11 +49,11 @@ class JDETrackerWrapper {
     {}
 
     // Proxy Constructor
-    static JDETrackerWrapper create(const float kalman_dist, const float iou_thr, const float init_iou_thr, const float conf_thresh,
+    static JDETrackerWrapper create(const float kalman_dist, const float iou_thr, const float init_iou_thr,
                                     const int keep_tracked, const int keep_new, const int keep_lost,
                                     float std_weight_position, float std_weight_pos_box, float std_weight_velocity, float std_weight_vel_box)
     {
-        auto jde_tracker = std::make_unique<JDETracker>(JDETracker(kalman_dist, iou_thr, init_iou_thr, conf_thresh,
+        auto jde_tracker = std::make_unique<JDETracker>(JDETracker(kalman_dist, iou_thr, init_iou_thr,
                                                                    keep_tracked, keep_new, keep_lost,
                                                                    std_weight_position, std_weight_pos_box, std_weight_velocity, std_weight_vel_box));
         return JDETrackerWrapper(std::move(jde_tracker));
@@ -112,7 +112,7 @@ void JDETracker_api_initialize_python_module(py::module &m)
 {
     py::class_<JDETrackerWrapper>(m, "JDETracker")
         .def(py::init(&JDETrackerWrapper::create),
-             "kalman_dist"_a=0.7, "iou_thr"_a=0.8, "init_iou_thr"_a=0.9, "conf_thresh"_a=0.5,
+             "kalman_dist"_a=0.7, "iou_thr"_a=0.8, "init_iou_thr"_a=0.9,
              "keep_tracked"_a=2, "keep_new"_a=2, "keep_lost"_a=2,
              "std_weight_position"_a=0.01, "std_weight_pos_box"_a=0.01, "std_weight_velocity"_a=0.001, "std_weight_vel_box"_a=0.001)
         .def("getKalmanDistance", &JDETrackerWrapper::get_kalman_distance)

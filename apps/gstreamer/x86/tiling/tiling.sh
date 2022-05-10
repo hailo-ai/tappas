@@ -112,10 +112,8 @@ else
 fi
 
 # Detection section
-# *note - a queue between hailotilecropper and hailonet is not included here.
-#   performance wise a queue here is important, but we have an open issue
-#   related to the communication between the three.
 DETECTION_PIPELINE="\
+        queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
         hailonet hef-path=$hef_path device-id=$hailo_bus_id is-active=true qos=false batch-size=1 ! \
         queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
         hailofilter2 function-name=$postprocess_func_name so-path=$detection_postprocess_so qos=false ! \

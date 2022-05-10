@@ -7,15 +7,13 @@ function init_variables() {
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdepth_estimation.so"
     readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/multinetworks_parallel/resources/instance_segmentation.mp4"
     readonly DEFAULT_HEF_PATH="$TAPPAS_WORKSPACE/apps/gstreamer/x86/multinetworks_parallel/resources/joined_fast_depth_ssd_mobilenet_v1_no_alls.hef"
 
     video_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    depth_estimation_draw_so=$DEFAULT_DRAW_SO
+    depth_estimation_post_so="$POSTPROCESS_DIR/libdepth_estimation.so"
     detection_post_so="$POSTPROCESS_DIR/libmobilenet_ssd_post.so"
-    detection_draw_so="$POSTPROCESS_DIR/libdetection_draw.so"
 
     depth_estimation_net_name="joined_fast_depth_ssd_mobilenet_v1_no_alls/fast_depth"
     detection_net_name="joined_fast_depth_ssd_mobilenet_v1_no_alls/ssd_mobilenet_v1_no_alls"
@@ -91,7 +89,9 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true net-name=$depth_estimation_net_name qos=false batch-size=1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$depth_estimation_draw_so qos=false debug=False ! videoconvert n-threads=8 ! \
+    hailofilter2 so-path=$depth_estimation_post_so qos=false ! videoconvert ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    hailooverlay qos=false ! videoconvert n-threads=8 ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=false text-overlay=false \
     t. ! \
     videoscale n-threads=8 ! queue ! \
