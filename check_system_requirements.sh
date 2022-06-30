@@ -21,6 +21,12 @@ apt_reqs[7]='gcc-9'
 apt_reqs[8]='g++-9'
 apt_reqs[9]='python-gi-dev'
 apt_reqs[10]='pkg-config'
+apt_reqs[11]='libcairo2-dev'
+apt_reqs[12]='libgirepository1.0-dev'
+apt_reqs[13]='libgstreamer1.0-dev'
+apt_reqs[14]='cmake'
+apt_reqs[15]='libgstreamer-plugins-base1.0-dev'
+
 
 declare -a pkg_config_reqs
 

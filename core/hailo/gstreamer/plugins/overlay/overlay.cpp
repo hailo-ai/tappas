@@ -138,7 +138,7 @@ static overlay_status_t draw_landmarks(cv::Mat &image_planes, HailoLandmarksPtr 
     return OVERLAY_STATUS_OK;
 }
 
-static overlay_status_t draw_detection(cv::Mat &image_planes, NewHailoDetectionPtr detection, HailoROIPtr roi, int font_thickness = 1, int line_thickness = 1)
+static overlay_status_t draw_detection(cv::Mat &image_planes, HailoDetectionPtr detection, HailoROIPtr roi, int font_thickness = 1, int line_thickness = 1)
 {
     HailoBBox roi_bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
     auto detection_bbox = detection->get_bbox();
@@ -201,7 +201,7 @@ static overlay_status_t draw_tile(cv::Mat &image_planes, HailoTileROIPtr tile, i
 
 static overlay_status_t draw_id(cv::Mat &image_planes, HailoUniqueIDPtr &hailo_id, HailoROIPtr roi, int font_thickness = 1)
 {
-    NewHailoDetectionPtr detection = std::dynamic_pointer_cast<NewHailoDetection>(roi);
+    HailoDetectionPtr detection = std::dynamic_pointer_cast<HailoDetection>(roi);
     std::string id_text = std::to_string(hailo_id->get_id());
 
     auto bbox = detection->get_bbox();
@@ -247,7 +247,7 @@ void calc_destination_roi_and_resize_mask(cv::Mat &destinationROI, cv::Mat &imag
     roi_width = std::clamp(roi_width, 0, image_planes.cols - roi_xmin);
     roi_height = std::clamp(roi_height, 0, image_planes.rows - roi_ymin);
 
-    cv::Mat mat_data = cv::Mat(mask->get_height(), mask->get_width(), cv_type, (uint8_t*)data_ptr.data());
+    cv::Mat mat_data = cv::Mat(mask->get_height(), mask->get_width(), cv_type, (uint8_t *)data_ptr.data());
     cv::resize(mat_data, resized_mask_data, cv::Size(roi_width, roi_height), cv::INTER_LINEAR);
 
     cv::Rect roi_rect(cv::Point(roi_xmin, roi_ymin), cv::Size(roi_width, roi_height));
@@ -339,13 +339,14 @@ overlay_status_t draw_all(cv::Mat &mat, HailoROIPtr roi, int font_thickness, int
 {
     overlay_status_t ret = OVERLAY_STATUS_UNINITIALIZED;
     text_height = TEXT_DEFAULT_HEIGHT;
+
     for (auto obj : roi->get_objects())
     {
         switch (obj->get_type())
         {
         case HAILO_DETECTION:
         {
-            NewHailoDetectionPtr detection = std::dynamic_pointer_cast<NewHailoDetection>(obj);
+            HailoDetectionPtr detection = std::dynamic_pointer_cast<HailoDetection>(obj);
             draw_detection(mat, detection, roi, font_thickness, line_thickness);
             break;
         }
@@ -375,7 +376,6 @@ overlay_status_t draw_all(cv::Mat &mat, HailoROIPtr roi, int font_thickness, int
         }
         case HAILO_DEPTH_MASK:
         {
-
             HailoDepthMaskPtr mask = std::dynamic_pointer_cast<HailoDepthMask>(obj);
             draw_depth_mask(mat, mask, roi);
             break;

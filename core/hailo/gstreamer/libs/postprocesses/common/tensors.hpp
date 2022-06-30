@@ -21,14 +21,14 @@ namespace common
         return rescaled_data;
     }
 
-    xt::xarray<uint8_t> get_xtensor(NewHailoTensorPtr &tensor)
+    xt::xarray<uint8_t> get_xtensor(HailoTensorPtr &tensor)
     {
         // Adapt a HailoTensorPtr to an xarray (quantized)
         xt::xarray<uint8_t> xtensor = xt::adapt(tensor->data(), tensor->size(), xt::no_ownership(), tensor->shape());
         return xtensor;
     }
 
-    xt::xarray<uint16_t> get_xtensor_uint16(NewHailoTensorPtr &tensor)
+    xt::xarray<uint16_t> get_xtensor_uint16(HailoTensorPtr &tensor)
     {
         // Adapt a HailoTensorPtr to an xarray (quantized)
         uint16_t *data = (uint16_t *)(tensor->data());
@@ -36,7 +36,7 @@ namespace common
         return xtensor;
     }
 
-    xt::xarray<float> get_xtensor_float(NewHailoTensorPtr &tensor)
+    xt::xarray<float> get_xtensor_float(HailoTensorPtr &tensor)
     {
         // Adapt a HailoTensorPtr to an xarray (quantized)
         auto vstream_info = tensor->vstream_info();
@@ -47,11 +47,11 @@ namespace common
      * @brief Get the only the tensors (vector) from a map of string->tensor.
      * 
      * @param tensors A map between tensors name to the tensor pointer
-     * @return std::vector<NewHailoTensorPtr> A vector of tensor pointer.
+     * @return std::vector<HailoTensorPtr> A vector of tensor pointer.
      */
-    std::vector<NewHailoTensorPtr> get_tensor_values(const std::map<std::string, NewHailoTensorPtr> &tensors)
+    std::vector<HailoTensorPtr> get_tensor_values(const std::map<std::string, HailoTensorPtr> &tensors)
     {
-        std::vector<NewHailoTensorPtr> _tensors;
+        std::vector<HailoTensorPtr> _tensors;
         _tensors.reserve(tensors.size());
         for (auto &tensor_pair : tensors)
         {

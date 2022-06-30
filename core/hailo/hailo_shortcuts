@@ -42,5 +42,4 @@ gst_plot_debug() {
 }
 
 alias tappas_compile="$TAPPAS_WORKSPACE/scripts/gstreamer/install_hailo_gstreamer.sh --skip-hailort"
-
 figlet -t WELCOME to TAPPAS container!

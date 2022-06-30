@@ -1,73 +1,83 @@
+# Project Configuration
+core_conf = configuration_data()
+core_conf.set('PACKAGE', '"@0@"'.format(meson.project_name()))
+core_conf.set('VERSION', '"@0@"'.format(meson.project_version()))
+configure_file(output : 'config.h', configuration : core_conf)
+common_args = ['-DHAVE_CONFIG_H']
+
 plugin_sources = [
-  'gsthailotools.cpp',
-  'gsthailofilter.cpp',
-  'gsthailofilter2.cpp',
-  'gsthailomuxer.cpp',
-  'common/image.cpp',
-  'overlay/overlay.cpp',
-  'overlay/gsthailooverlay.cpp',
-  'cropping/gsthailobasecropper.cpp',
-  'cropping/gsthailocropper.cpp',
-  'cropping/gsthailoaggregator.cpp',
-  'cropping/gst_hailo_cropping_meta.cpp',
-  'tiling/gsthailotilecropper.cpp',
-  'tiling/gsthailotileaggregator.cpp',
-  'tracking/gsthailotracker.cpp',
+    'gsthailotools.cpp',
+    'filter/gsthailofilter.cpp',
+    'muxer/gsthailomuxer.cpp',
+    'common/image.cpp',
+    'overlay/overlay.cpp',
+    'overlay/gsthailooverlay.cpp',
+    'cropping/gsthailobasecropper.cpp',
+    'cropping/gsthailocropper.cpp',
+    'cropping/gsthailoaggregator.cpp',
+    'cropping/gst_hailo_cropping_meta.cpp',
+    'tiling/gsthailotilecropper.cpp',
+    'tiling/gsthailotileaggregator.cpp',
+    'tracking/gsthailotracker.cpp',
+    'gallery/gsthailogallery.cpp',
 ]
 
 # equivalent to - dl_dep = dependency('dl')
 dl_dep = meson.get_compiler('c').find_library('dl', required : false)
 
-
 ################################################
 # Hailo Gstreamer Shared Library
 ################################################
-libhailotools = shared_library('gsthailotools',
-  plugin_sources,
-  c_args : hailo_lib_args,
-  cpp_args : hailo_lib_args,
-  include_directories: project_inc + [xtensor_inc],
-  dependencies : plugin_deps + [meta_dep, dl_dep, opencv_dep],
-  gnu_symbol_visibility : 'default',
-  version: meson.project_version(),
-  install: true,
-  install_dir: get_option('libdir') + '/gstreamer-1.0/',
+shared_library('gsthailotools',
+    plugin_sources,
+    cpp_args : hailo_lib_args + common_args,
+    include_directories: [hailo_general_inc, xtensor_inc],
+    dependencies : plugin_deps + [meta_dep, dl_dep, opencv_dep, tracker_dep],
+    gnu_symbol_visibility : 'default',
+    version: meson.project_version(),
+    install: true,
+    install_dir: get_option('libdir') + '/gstreamer-1.0/',
 )
 
-gst_hailo_dep = declare_dependency(
-  include_directories: [include_directories('.')],
-  link_with : libhailotools)
-hailo_deps = [gst_hailo_dep]
-
-if get_option('include_python')
-    ################################################
-    # Hailo Tracker Python Extension Module
-    ################################################
-    tracker_pybind_sources = [
-        'tracking/jde_tracker/python_bindings/tracker_pybind_main.cpp'
-    ]
-    
-    libtracker = python_installation.extension_module('pyhailotracker',
-    tracker_pybind_sources,
-    c_args : hailo_lib_args,
-    cpp_args : hailo_lib_args,
-    include_directories: [hailo_general_inc, xtensor_inc, pybind_inc, include_directories('./tracking/jde_tracker')],
-    dependencies : [dl_dep, opencv_dep, pybind_dep, python_dep],
-    link_language : 'cpp',
-    gnu_symbol_visibility : 'default',
-    override_options: [
-        'cpp_rtti=true',
-    ]
-    )
-    subdir('python')
+if not get_option('include_python')
+    subdir_done()
 endif
 
-pkg_mod = import('pkgconfig')
-pkg_mod.generate(
-  name : 'gst-hailo-tools',
-  filebase : 'gst-hailo-tools',
-  description : 'Hailo gstreamer tools',
-  subdirs : 'plugins',
-  libraries : libhailotools,
-  version : '"@0@"'.format(meson.project_version()),
+fs_dep = meson.get_compiler('c').find_library('stdc++fs', required : true)
+
+################################################
+# Hailo Python Gstreamer Shared Library
+################################################
+python_sources = [
+    'python/gsthailopython.cpp',
+    'python/hailopython_infra.cpp',
+]
+
+shared_library('gsthailopython',
+    python_sources,
+    cpp_args : hailo_lib_args + common_args,
+    include_directories: [hailo_general_inc, xtensor_inc],
+    dependencies : plugin_deps + [fs_dep, python_dep, meta_dep, dl_dep] + gx_deps,
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: get_option('libdir') + '/gstreamer-1.0/',
+)
+
+################################################
+# Hailo Python Module
+################################################
+
+hailo_python_sources = [
+    'python/hailo_python_api.cpp'
+]
+
+python_installation.extension_module('hailo',
+    hailo_python_sources,
+    include_directories: hailo_general_inc,
+    dependencies : [pybind_dep],
+    link_language : 'cpp',
+    override_options: ['cpp_rtti=true'],
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: python_package_install_dir,
 )

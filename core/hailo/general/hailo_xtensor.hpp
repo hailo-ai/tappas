@@ -12,7 +12,7 @@
 namespace hailo_common
 {
 
-    inline void add_landmarks_to_detection(NewHailoDetection &detection,
+    inline void add_landmarks_to_detection(HailoDetection &detection,
                                            std::string landmarks_type,
                                            xt::xarray<float> landmarks,
                                            float threshold = 1.0f,

@@ -1,5 +1,4 @@
 option('libargs', type : 'array', value : [])
-option('libgst_plugins_path', type : 'string', value : './plugins/')
 option('libgeneral_path', type : 'string', value : '../general')
 option('target', type : 'string', value : 'all')
 option('target_platform', type : 'string', value : 'x86')
@@ -24,5 +23,4 @@ option('libcxxopts', type : 'string', value : '../../open_source/cxxopts')
 
 # POST PROCESSES
 option('post_processes_install_dir', type : 'string', value : '')
-
-# option('hailo_python', type : 'string', value : './plugins/hailo_python/')
+option('librapidjson', type : 'string', value : '../../open_source/rapidjson')

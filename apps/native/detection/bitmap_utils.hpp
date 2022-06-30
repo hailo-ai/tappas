@@ -11,7 +11,6 @@
 #define _HAILO_BITMAP_UTILS_HPP_
 
 #include "hailo/hailort.h"
-#include "yolov5_post_processing.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -59,8 +58,8 @@ public:
     };
     #pragma pack(pop)
 
-    static hailo_status get_images(std::vector<std::unique_ptr<BMPImage>> &input_images, const size_t inputs_count);
-    static hailo_status read_image(const std::string &file_path, std::unique_ptr<BMPImage> &input_image);
+    static hailo_status get_images(std::vector<std::unique_ptr<BMPImage>> &input_images, const size_t inputs_count, int image_width, int image_height);
+    static hailo_status read_image(const std::string &file_path, std::unique_ptr<BMPImage> &input_image, int image_width, int image_height);
 
     hailo_status dump_image();
     void draw_border(uint32_t left, uint32_t right, uint32_t bottom, uint32_t top, Color color);

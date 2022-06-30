@@ -11,7 +11,9 @@ function install_plugins_good() {
   pushd gst-plugins-good
 
   # Patch rtsp-plugins-good
-  git apply ${TAPPAS_WORKSPACE}/core/patches/rtsp/rtspsrc_stream_id_path.patch
+  if [[ $GSTREAMER_VERSION == @(1.14|1.16) ]]; then
+  	git apply ${TAPPAS_WORKSPACE}/core/patches/rtsp/rtspsrc_stream_id_path.patch
+  fi
 
   # Build plugins-good
   meson build --prefix /usr/
@@ -40,7 +42,7 @@ function install_gst_shark() {
   pushd ${TAPPAS_WORKSPACE}/sources/
   git clone --depth 1 --shallow-submodules -b v0.7.2 https://github.com/RidgeRun/gst-shark/
   pushd gst-shark
-  ./autogen.sh --prefix /usr/ --libdir /usr/lib/$(uname -p)-linux-gnu/
+  ./autogen.sh --prefix /usr/ --libdir /usr/lib/$(uname -m)-linux-gnu/
   sudo make install
   popd
   popd
@@ -48,5 +50,8 @@ function install_gst_shark() {
 }
 
 install_plugins_good
-install_gst_instruments
-install_gst_shark || true  # We dont want to fail our install in cases where gst-shark fails
+
+# Both gst_instruments and gst_shark are optional 
+# We dont want to fail our install in cases where one of them fails
+install_gst_instruments || true
+install_gst_shark || true

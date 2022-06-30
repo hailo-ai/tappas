@@ -32,12 +32,12 @@ class Task:
 
 
 TAPPAS_PATH = Path(__file__).resolve().parent.parent.parent
-APPS_PATH = TAPPAS_PATH / "apps" / "gstreamer" / "x86"
+APPS_PATH = TAPPAS_PATH / "apps" / "gstreamer" / "general"
 
 
 def get_tasks() -> Dict[str, Task]:
     tasks = dict()
-    shell_apps = APPS_PATH.rglob("*.sh")
+    shell_apps = APPS_PATH.parent.rglob("general/*/*.sh")
 
     for app in shell_apps:
         if app.parent.stem not in tasks:

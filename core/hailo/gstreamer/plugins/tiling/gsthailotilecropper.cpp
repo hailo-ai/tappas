@@ -5,7 +5,7 @@
 #include <gst/gst.h>
 #include <opencv2/opencv.hpp>
 
-#include "metadata/gst_hailo_meta.hpp"
+#include "gst_hailo_meta.hpp"
 #include "gsthailotilecropper.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailotilecropper_debug);

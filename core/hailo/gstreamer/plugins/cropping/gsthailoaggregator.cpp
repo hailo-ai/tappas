@@ -16,7 +16,7 @@
 #include "cropping/gst_hailo_cropping_meta.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
-#include "metadata/gst_hailo_meta.hpp"
+#include "gst_hailo_meta.hpp"
 using namespace std::chrono_literals;
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailoaggregator_debug);
@@ -310,7 +310,6 @@ gst_hailoaggregator_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
     HailoROIPtr hailo_roi = get_hailo_main_roi(buf);
 
     hailoaggregator->expected_frames = gst_buffer_get_hailo_cropping_meta(buf)->num_of_crops;
-    gst_buffer_remove_hailo_cropping_meta(buf);
 
     if (hailoaggregator->expected_frames != 0)
     {
@@ -325,9 +324,14 @@ gst_hailoaggregator_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
     gst_pad_sticky_events_foreach(hailoaggregator->sinkpad_main, forward_events, hailoaggregator->srcpad);
 
+    // Remove the cropping meta from the main frame.
+    if (! gst_buffer_remove_hailo_cropping_meta(buf))
+    {
+        GST_ERROR_OBJECT(hailoaggregator, "Failed to remove cropping meta from main frame");
+    }
+
     // Push main buffer into the src pad.
-    ret = gst_pad_push(hailoaggregator->srcpad, gst_buffer_ref(buf));
-    gst_buffer_unref(buf);
+    ret = gst_pad_push(hailoaggregator->srcpad, buf);
     return ret;
 }
 
@@ -348,7 +352,7 @@ static void gst_hailoaggregator_handle_sub_frame_roi(GstHailoAggregator *hailoag
         // Get HailoRoi from the main frame.
         HailoROIPtr main_buffer_roi = get_hailo_main_roi(hailoaggregator->mainframe);
         // Flatten sub_buffer_roi sub detections to main_buffer_roi's scales.
-        // Passing HAILO_DETECTION as a filter type here request to flatten only NewHailoDetection objects.
+        // Passing HAILO_DETECTION as a filter type here request to flatten only HailoDetection objects.
         hailo_common::flatten_hailo_roi(sub_buffer_roi, main_buffer_roi, HAILO_DETECTION);
     }
 }

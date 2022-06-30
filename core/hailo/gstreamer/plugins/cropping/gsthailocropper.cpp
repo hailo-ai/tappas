@@ -1,12 +1,12 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 /**
- * @brief 
+ * @brief
  * Crops and scales image according to command line parameters or metadata of detections.
  * Takes cropped images and pushes them to the source pad.
- * 
+ *
  */
 
 #include <gst/gst.h>
@@ -20,7 +20,7 @@
 #include "cropping/gsthailocropper.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
-#include "metadata/gst_hailo_meta.hpp"
+#include "gst_hailo_meta.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailocropper_debug);
 #define GST_CAT_DEFAULT gst_hailocropper_debug
@@ -180,7 +180,7 @@ void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat
 
 /**
  * @brief Calls the so function to retrieve the ROI's to crop.
- * 
+ *
  * @param basecropper basecropper element.
  * @param buf a GstBuffer.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
@@ -191,10 +191,18 @@ static std::vector<HailoROIPtr> gst_hailocropper_prepare_crops(GstHailoBaseCropp
     // Get main HailoROI, in case this is the first hailo element in the pipeline, create one.
     HailoROIPtr hailo_roi = get_hailo_main_roi(buf, true);
     GstCaps *caps = gst_pad_get_current_caps(basecropper->sinkpad);
-    cv::Mat image = get_image(buf, caps, GST_MAP_READ);
+
+    GstVideoInfo *info = gst_video_info_new();
+    GstMapInfo map;
+    gst_buffer_map(buf, &map, GST_MAP_READ);
+    gst_video_info_from_caps(info, caps);
+    cv::Mat image = get_mat(info, &map);
+    gst_video_info_free(info);
+
     std::vector<HailoROIPtr> crop_rois = hailocropper->handler(image, hailo_roi);
     image.release();
     gst_caps_unref(caps);
+    gst_buffer_unmap(buf, &map);
     return crop_rois;
 }
 

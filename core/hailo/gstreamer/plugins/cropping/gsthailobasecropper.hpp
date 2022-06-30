@@ -3,6 +3,7 @@
 * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
 **/
 #pragma once
+#include <map>
 #include <gst/gst.h>
 #include <opencv2/opencv.hpp>
 #include "hailo_objects.hpp"
@@ -31,7 +32,9 @@ struct _GstHailoBaseCropper
     gboolean use_internal_offset;
     gboolean drop_uncropped_buffers;
     uint internal_offset;
+    uint cropping_period;
     GstPad *sinkpad, *srcpad_crop, *srcpad_main;
+    std::map<std::string, int> stream_ids_buff_offset;
 };
 
 struct _GstHailoBaseCropperClass

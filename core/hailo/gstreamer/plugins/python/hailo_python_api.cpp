@@ -32,6 +32,47 @@ static HailoROIPtr access_HailoROI_from_desc(py_descriptor_t pd)
     return roi_pointer->shared_from_this();
 }
 
+py::tuple create_tuple_from_hailo_roi(HailoROI &roi)
+{
+    auto scaling_bbox = roi.get_scaling_bbox();
+    auto bbox = roi.get_bbox();
+    auto objects = roi.get_objects();
+    auto tensors = roi.get_tensors();
+
+    return py::make_tuple(scaling_bbox, bbox, objects, tensors);
+}
+
+void load_tuple_to_hailo_roi(py::tuple &t, HailoROI &roi)
+{
+    roi.set_scaling_bbox(t[0].cast<HailoBBox>());
+
+    for (auto &elem : t[2])
+    {
+        auto elem_type_str = py::str(elem.get_type()).cast<std::string>();
+
+        if (elem_type_str.find("hailo.HailoDetection") != std::string::npos)
+        {
+            roi.add_object(std::make_shared<HailoDetection>(elem.cast<HailoDetection>()));
+        }
+        else if (elem_type_str.find("hailo.HailoLandmarks") != std::string::npos)
+        {
+            roi.add_object(std::make_shared<HailoLandmarks>(elem.cast<HailoLandmarks>()));
+        }
+        else if (elem_type_str.find("hailo.HailoClassification") != std::string::npos)
+        {
+            roi.add_object(std::make_shared<HailoClassification>(elem.cast<HailoClassification>()));
+        }
+        else if (elem_type_str.find("hailo.HailoDepthMask") != std::string::npos)
+        {
+            roi.add_object(std::make_shared<HailoDepthMask>(elem.cast<HailoDepthMask>()));
+        }
+        else if (elem_type_str.find("hailo.HailoUniqueID") != std::string::npos)
+        {
+            roi.add_object(std::make_shared<HailoUniqueID>(elem.cast<HailoUniqueID>()));
+        }
+    }
+}
+
 #ifndef __MODULE_GEN_MACRO
 #define __MODULE_GEN_MACRO PYBIND11_MODULE
 #endif
@@ -76,15 +117,15 @@ public:
     hailo_object_t get_type() override { PYBIND11_OVERRIDE(hailo_object_t, HailoTileROI, get_type); }
 };
 
-class __NewHailoDetectionGlue : public NewHailoDetection,
-                                public std::enable_shared_from_this<__NewHailoDetectionGlue>
+class __HailoDetectionGlue : public HailoDetection,
+                                public std::enable_shared_from_this<__HailoDetectionGlue>
 {
 public:
-    using NewHailoDetection::NewHailoDetection;
+    using HailoDetection::HailoDetection;
 
     hailo_object_t get_type() override
     {
-        PYBIND11_OVERRIDE(hailo_object_t, NewHailoDetection, get_type);
+        PYBIND11_OVERRIDE(hailo_object_t, HailoDetection, get_type);
     }
 };
 
@@ -113,7 +154,7 @@ public:
 };
 
 class __HailoMaskGlue : public HailoMask,
-                             public std::enable_shared_from_this<__HailoMaskGlue>
+                        public std::enable_shared_from_this<__HailoMaskGlue>
 {
 public:
     using HailoMask::HailoMask;
@@ -206,6 +247,12 @@ __MODULE_GEN_MACRO(hailo, m)
             .value("MULTI_SCALE", MULTI_SCALE)
             .export_values();
     }
+    {
+        py::enum_<hailo_unique_id_mode_t>(m, "hailo_unique_id_mode_t")
+            .value("TRACKING_ID", TRACKING_ID)
+            .value("GLOBAL_ID", GLOBAL_ID)
+            .export_values();
+    }
 
     m.def("add_classification", &hailo_common::add_classification, "Add classification", "roi"_a,
           "type"_a, "label"_a, "confidence"_a, "class_id"_a = NULL_CLASS_ID);
@@ -237,7 +284,20 @@ __MODULE_GEN_MACRO(hailo, m)
             .def("confidence", &HailoPoint::confidence, "Confidence")
             .def("__repr__", [](const HailoPoint &obj)
                  { return "<hailo.HailoPoint"s + "(" + std::to_string(reinterpret_cast<unsigned long>(&obj)) +
-                          ")" + ">"; });
+                          ")" + ">"; })
+            .def(py::pickle(
+                [](const HailoPoint &self) { // __getstate__
+                    return py::make_tuple(self.x(), self.y(), self.confidence());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 3)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    HailoPoint instance(t[0].cast<float>(), t[1].cast<float>(), t[2].cast<float>());
+
+                    return instance;
+                }));
     }
 
     {
@@ -251,7 +311,20 @@ __MODULE_GEN_MACRO(hailo, m)
             .def("ymax", &HailoBBox::ymax, "Ymax")
             .def("__repr__", [](const HailoBBox &obj)
                  { return "<hailo.HailoBBox"s + "(" + std::to_string(reinterpret_cast<unsigned long>(&obj)) +
-                          ")" + ">"; });
+                          ")" + ">"; })
+            .def(py::pickle(
+                [](const HailoBBox &self) { // __getstate__
+                    return py::make_tuple(self.xmin(), self.ymin(), self.width(), self.height());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 4)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    HailoBBox instance(t[0].cast<float>(), t[1].cast<float>(), t[2].cast<float>(), t[3].cast<float>());
+
+                    return instance;
+                }));
     }
 
     {
@@ -289,9 +362,25 @@ __MODULE_GEN_MACRO(hailo, m)
             .def("get_type", &HailoROI::get_type, "Get type")
             .def("get_bbox", &HailoROI::get_bbox, "Get BBOX")
             .def("set_bbox", &HailoROI::set_bbox, "Set BBOX", "bbox"_a)
+            .def("get_scaling_bbox", &HailoROI::get_scaling_bbox, "Get Scaling BBOX")
+            .def("set_scaling_bbox", &HailoROI::set_scaling_bbox, "Set Scaling BBOX", "bbox"_a)
             .def("__repr__", [](const HailoROI &obj)
                  { return "<hailo.HailoROI"s + "(" + std::to_string(reinterpret_cast<unsigned long>(&obj)) +
-                          ")" + ">"; });
+                          ")" + ">"; })
+            .def(py::pickle(
+                [](HailoROI &self) { // __getstate__
+                    return create_tuple_from_hailo_roi(self);
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 4)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    auto instance = std::unique_ptr<HailoROI>(new HailoROI(t[1].cast<HailoBBox>()));
+                    load_tuple_to_hailo_roi(t, *instance);
+
+                    return instance;
+                }));
     }
 
     {
@@ -310,19 +399,37 @@ __MODULE_GEN_MACRO(hailo, m)
     }
 
     {
-        py::class_<NewHailoDetection, HailoROI, __NewHailoDetectionGlue,
-                   std::shared_ptr<NewHailoDetection>>(m, "NewHailoDetection")
+        py::class_<HailoDetection, HailoROI, __HailoDetectionGlue,
+                   std::shared_ptr<HailoDetection>>(m, "HailoDetection")
             .def(py::init<HailoBBox, const std::string &, float>(), py::arg("bbox"), py::arg("label"), py::arg("confidence"))
             .def(py::init<HailoBBox, int, const std::string &, float>(), py::arg("bbox"), py::arg("index"), py::arg("label"), py::arg("confidence"))
             .def(py::self < py::self)
             .def(py::self > py::self)
-            .def("get_type", &NewHailoDetection::get_type, "Get type")
-            .def("get_confidence", &NewHailoDetection::get_confidence, "Get confidence")
-            .def("get_label", &NewHailoDetection::get_label, "Get label")
-            .def("get_class_id", &NewHailoDetection::get_class_id, "Get class")
-            .def("__repr__", [](const NewHailoDetection &obj)
-                 { return "<hailo.NewHailoDetection"s + "(" +
-                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+            .def("get_type", &HailoDetection::get_type, "Get type")
+            .def("get_confidence", &HailoDetection::get_confidence, "Get confidence")
+            .def("get_label", &HailoDetection::get_label, "Get label")
+            .def("get_class_id", &HailoDetection::get_class_id, "Get class")
+            .def("__repr__", [](const HailoDetection &obj)
+                 { return "<hailo.HailoDetection"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; })
+            .def(py::pickle(
+                [](HailoDetection &self) { // __getstate__
+                    return py::make_tuple(self.get_bbox(), self.get_class_id(),
+                                          self.get_label(), self.get_confidence(),
+                                          create_tuple_from_hailo_roi(self));
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 5)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    auto instance = std::unique_ptr<HailoDetection>(new HailoDetection(t[0].cast<HailoBBox>(), t[1].cast<int>(),
+                                                                                       t[2].cast<std::string>(), t[3].cast<float>()));
+                    auto base_tuple = t[4].cast<py::tuple>();
+                    load_tuple_to_hailo_roi(base_tuple, *instance);
+
+                    return instance;
+                }));
     }
 
     {
@@ -338,7 +445,22 @@ __MODULE_GEN_MACRO(hailo, m)
             .def("get_class_id", &HailoClassification::get_class_id, "Get class")
             .def("__repr__", [](const HailoClassification &obj)
                  { return "<hailo.HailoClassification"s + "(" +
-                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; })
+            .def(py::pickle(
+                [](HailoClassification &self) { // __getstate__
+                    return py::make_tuple(self.get_classification_type(), self.get_class_id(),
+                                          self.get_label(), self.get_confidence());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 4)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    auto instance = std::unique_ptr<HailoClassification>(new HailoClassification(t[0].cast<std::string>(), t[1].cast<int>(),
+                                                                                                 t[2].cast<std::string>(), t[3].cast<float>()));
+
+                    return instance;
+                }));
     }
 
     {
@@ -346,14 +468,31 @@ __MODULE_GEN_MACRO(hailo, m)
             m, "HailoLandmarks")
             .def(py::init<std::string, float>(), py::arg("type"), py::arg("threshold"))
             .def(py::init<std::string, std::vector<HailoPoint>, float>(), py::arg("type"), py::arg("points"), py::arg("threshold"))
+            .def(py::init<std::string, std::vector<HailoPoint>, float, std::vector<std::pair<int, int>>>(), py::arg("type"), py::arg("points"), py::arg("threshold"), py::arg("pairs"))
             .def("get_type", &HailoLandmarks::get_type, "Get type")
             .def("add_point", &HailoLandmarks::add_point, "Add point", "point"_a)
             .def("get_points", &HailoLandmarks::get_points, "Get points")
             .def("get_threshold", &HailoLandmarks::get_threshold, "Get threshold")
             .def("get_landmarks_type", &HailoLandmarks::get_landmarks_type, "Get landmarks type")
+            .def("get_pairs", &HailoLandmarks::get_pairs, "Get pairs")
             .def("__repr__", [](const HailoLandmarks &obj)
                  { return "<hailo.HailoLandmarks"s + "(" +
-                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; })
+            .def(py::pickle(
+                [](HailoLandmarks &self) { // __getstate__
+                    return py::make_tuple(self.get_landmarks_type(), self.get_points(),
+                                          self.get_threshold(), self.get_pairs());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 4)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    auto instance = std::unique_ptr<HailoLandmarks>(new HailoLandmarks(t[0].cast<std::string>(), t[1].cast<std::vector<HailoPoint>>(),
+                                                                                       t[2].cast<float>(), t[3].cast<std::vector<std::pair<int, int>>>()));
+
+                    return instance;
+                }));
     }
 
     {
@@ -362,6 +501,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .def(py::init<int, int, float>(), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"))
             .def("get_width", &HailoMask::get_width, "Get width")
             .def("get_height", &HailoMask::get_height, "Get height")
+            .def("get_transparency", &HailoMask::get_transparency, "Get transparency")
             .def("__repr__", [](const HailoMask &obj)
                  { return "<hailo.HailoMask"s + "(" +
                           std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
@@ -373,7 +513,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .def(py::init<std::vector<float>, int, int, float>(), py::arg("data_vec"), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"))
             .def_buffer([](HailoDepthMask &obj) -> py::buffer_info
                         { return py::buffer_info(
-                              const_cast<float * > (obj.get_data().data()),
+                              const_cast<float *>(obj.get_data().data()),
                               sizeof(float),
                               py::format_descriptor<float>::format(),
                               2,
@@ -384,7 +524,23 @@ __MODULE_GEN_MACRO(hailo, m)
             .def("get_data", &HailoDepthMask::get_data, "Get data")
             .def("__repr__", [](const HailoDepthMask &obj)
                  { return "<hailo.HailoDepthMask"s + "(" +
-                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; })
+            .def(py::pickle(
+                [](HailoDepthMask &self) { // __getstate__
+                    return py::make_tuple(self.get_data(), self.get_width(),
+                                          self.get_height(), self.get_transparency());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 4)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    std::vector<float> data = t[0].cast<std::vector<float>>();
+                    auto instance = std::unique_ptr<HailoDepthMask>(new HailoDepthMask(std::move(data), t[1].cast<int>(),
+                                                                                       t[2].cast<int>(), t[3].cast<float>()));
+
+                    return instance;
+                }));
     }
 
     {
@@ -393,7 +549,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .def(py::init<std::vector<uint8_t>, int, int, float>(), py::arg("data_vec"), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"))
             .def_buffer([](HailoClassMask &obj) -> py::buffer_info
                         { return py::buffer_info(
-                              const_cast<uint8_t * > (obj.get_data().data()),
+                              const_cast<uint8_t *>(obj.get_data().data()),
                               sizeof(uint8_t),
                               py::format_descriptor<uint8_t>::format(),
                               2,
@@ -413,7 +569,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .def(py::init<std::vector<float>, int, int, float, int>(), py::arg("data_vec"), py::arg("mask_width"), py::arg("mask_height"), py::arg("transparency"), py::arg("class_id"))
             .def_buffer([](HailoConfClassMask &obj) -> py::buffer_info
                         { return py::buffer_info(
-                              const_cast<float * > (obj.get_data().data()),
+                              const_cast<float *>(obj.get_data().data()),
                               sizeof(float),
                               py::format_descriptor<float>::format(),
                               2,
@@ -430,10 +586,10 @@ __MODULE_GEN_MACRO(hailo, m)
     {
         py::class_<HailoMatrix, HailoObject, __HailoMatrixGlue, std::shared_ptr<HailoMatrix>>(
             m, "HailoMatrix", py::buffer_protocol())
-            .def(py::init<float *, uint32_t, uint32_t, uint32_t>(), py::arg("data_ptr"), py::arg("mat_height"), py::arg("mat_width"), py::arg("mat_features"))
+            .def(py::init<std::vector<float>, uint32_t, uint32_t, uint32_t>(), py::arg("data_ptr"), py::arg("mat_height"), py::arg("mat_width"), py::arg("mat_features"))
             .def_buffer([](HailoMatrix &obj) -> py::buffer_info
                         { return py::buffer_info(
-                              obj.get_data_ptr(),
+                              const_cast<float * > (obj.get_data().data()),
                               sizeof(float),
                               py::format_descriptor<float>::format(),
                               3,
@@ -445,7 +601,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .def("features", &HailoMatrix::features, "Get number of features")
             .def("size", &HailoMatrix::size, "Get size")
             .def("shape", &HailoMatrix::shape, "Get shape")
-            .def("get_data_ptr", &HailoMatrix::get_data_ptr, "Get shape")
+            .def("get_data", &HailoMatrix::get_data, "Get shape")
             .def("__repr__", [](const HailoMatrix &obj)
                  { return "<hailo.HailoMatrix"s + "(" +
                           std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
@@ -454,38 +610,52 @@ __MODULE_GEN_MACRO(hailo, m)
     {
         py::class_<HailoUniqueID, HailoObject, __HailoUniqueIDGlue, std::shared_ptr<HailoUniqueID>>(
             m, "HailoUniqueID")
-            .def(py::init<>())
+            .def(py::init<int, hailo_unique_id_mode_t>(), py::arg("id"), py::arg("mode"))
             .def(py::init<int>(), py::arg("id"))
             .def("get_id", &HailoUniqueID::get_id, "Get")
             .def("get_type", &HailoUniqueID::get_type, "Get type")
+            .def("get_mode", &HailoUniqueID::get_mode, "Mode")
             .def("__repr__", [](const HailoUniqueID &obj)
                  { return "<hailo.HailoUniqueID"s + "(" +
-                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; })
+            .def(py::pickle(
+                [](HailoUniqueID &self) { // __getstate__
+                    return py::make_tuple(self.get_id());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 1)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    auto instance = std::unique_ptr<HailoUniqueID>(new HailoUniqueID(t[0].cast<int>()));
+
+                    return instance;
+                }));
     }
 
     {
-        py::class_<NewHailoTensor, std::shared_ptr<NewHailoTensor>>(m, "NewHailoTensor",
+        py::class_<HailoTensor, std::shared_ptr<HailoTensor>>(m, "HailoTensor",
                                                                     py::buffer_protocol())
             .def(py::init<uint8_t *, const hailo_vstream_info_t &>(), py::arg("data"), py::arg("vstream_info"))
-            .def_buffer([](NewHailoTensor &obj) -> py::buffer_info
+            .def_buffer([](HailoTensor &obj) -> py::buffer_info
                         { return py::buffer_info(obj.data(), sizeof(uint8_t),
                                                  py::format_descriptor<uint8_t>::format(), 3,
                                                  {obj.height(), obj.width(), obj.features()},
                                                  {sizeof(uint8_t) * obj.features() * obj.width(), sizeof(uint8_t) * obj.features(), sizeof(uint8_t)}); })
-            .def("name", &NewHailoTensor::name, "Name")
-            .def("vstream_info", &NewHailoTensor::vstream_info, "Vstream info")
-            .def("data", &NewHailoTensor::data, "Data", py::return_value_policy::reference_internal)
-            .def("width", &NewHailoTensor::width, "Width")
-            .def("height", &NewHailoTensor::height, "Height")
-            .def("features", &NewHailoTensor::features, "Features")
-            .def("size", &NewHailoTensor::size, "Size")
-            .def("shape", &NewHailoTensor::shape, "Shape")
-            .def("fix_scale", &NewHailoTensor::fix_scale, "Fix scale", "num"_a)
-            .def("get", &NewHailoTensor::get, "Get", "row"_a, "col"_a, "channel"_a)
-            .def("get_full_percision", &NewHailoTensor::get_full_percision, "Get full percision", "row"_a,
+            .def("name", &HailoTensor::name, "Name")
+            .def("vstream_info", &HailoTensor::vstream_info, "Vstream info")
+            .def("data", &HailoTensor::data, "Data", py::return_value_policy::reference_internal)
+            .def("width", &HailoTensor::width, "Width")
+            .def("height", &HailoTensor::height, "Height")
+            .def("features", &HailoTensor::features, "Features")
+            .def("size", &HailoTensor::size, "Size")
+            .def("shape", &HailoTensor::shape, "Shape")
+            .def("fix_scale", &HailoTensor::fix_scale, "Fix scale", "num"_a)
+            .def("get", &HailoTensor::get, "Get", "row"_a, "col"_a, "channel"_a)
+            .def("get_full_percision", &HailoTensor::get_full_percision, "Get full percision", "row"_a,
                  "col"_a, "channel"_a)
-            .def("__repr__", [](const NewHailoTensor &obj)
-                 { return "<hailo.NewHailoTensor"s + "(" +
+            .def("__repr__", [](const HailoTensor &obj)
+                 { return "<hailo.HailoTensor"s + "(" +
                           std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; });
     }
     m.def("access_HailoMainObject_from_desc", &access_HailoMainObject_from_desc,

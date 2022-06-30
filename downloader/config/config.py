@@ -1,7 +1,7 @@
 import platform
 from pathlib import Path
 
-VERSION = "v3.18"
+VERSION = "v3.19"
 MODEL_ZOO_VERSION = "v2.0"
 
 CONFIG_PATH = Path(__file__).parent
@@ -10,19 +10,20 @@ ROOT_PATH = DOWNLOADER_PATH.parent
 REQUIREMENTS_PATH = CONFIG_PATH / "requirements"
 
 BUCKETS_FILE = CONFIG_PATH / "buckets.json"
-REQUIREMENTS_FILES = ["x86/x86_multistream_detection.json", "x86/x86_detection.json", "x86/x86_segmentation.json", "common/opencv.json",
-                      "x86/x86_pose_estimation.json", "x86/x86_face_detection.json",
-                      "x86/x86_facial_landmarks.json", "x86/x86_classification.json", "x86/x86_multi_device.json",
-                      "x86/x86_native_detection.json",
-                      "x86/x86_depth_estimation.json", "x86/x86_multinetworks_parallel.json", "x86/x86_instance_segmentation.json",
-                      "x86/x86_tiling.json", "x86/x86_cascading_networks.json", "x86/x86_network_switch.json", "x86/x86_century.json",
-                      "x86/x86_license_plate_recognition.json", "x86/x86_python.json", 
+REQUIREMENTS_FILES = ["general/multistream_detection.json", "general/detection.json", "general/segmentation.json", "common/opencv.json",
+                      "general/pose_estimation.json", "general/face_detection.json",
+                      "general/facial_landmarks.json", "general/classification.json", "general/multi_device.json",
+                      "general/native_detection.json",
+                      "general/depth_estimation.json", "general/multinetworks_parallel.json", "general/instance_segmentation.json",
+                      "general/tiling.json", "general/cascading_networks.json", "general/network_switch.json", "general/century.json",
+                      "general/license_plate_recognition.json", "general/python.json",  "general/re_id.json", 
                       "rpi/rpi_classification.json",
-                      "rpi/rpi_depth_estimation.json", "rpi/rpi_detection.json", "rpi/rpi_face_detection.json","rpi/rpi_multinetworks_parallel.json",
+                      "rpi/rpi_depth_estimation.json", "rpi/rpi_detection.json", "rpi/rpi_cascading_networks.json", "rpi/rpi_face_detection.json","rpi/rpi_multinetworks_parallel.json",
                       "rpi/rpi_pose_estimation.json",
-                      "arm/arm_detection.json", "arm/arm_license_plate_recognition.json", "arm/arm_facial_landmarks.json"]
+                      "imx/imx_detection.json", "imx/imx_license_plate_recognition.json", "imx/imx_facial_landmarks.json", "imx/imx_depth_estimation.json",
+                      "imx/imx_segmentation.json", "imx/imx_pose_estimation.json", "imx/imx_cascading_networks.json"]
 
 # Used during the download to decide what the source / destination is dynamically
 RESERVED_DOWNLOADER_KEYWORDS = {
-    '<ARCH>': platform.uname().processor
+    '<ARCH>': platform.uname().machine
 }

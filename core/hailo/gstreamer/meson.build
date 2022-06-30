@@ -1,18 +1,11 @@
 # Project Declaration
 
 project('gst-hailo-tools', 'c', 'cpp',
-        version : '3.18.0',
+        version : '3.19.0',
         default_options : [ 'warning_level=1',
                             'buildtype=debugoptimized',
                             'c_std=c11', 'cpp_std=c++17']
        )
-
-# Project Configuration
-core_conf = configuration_data()
-core_conf.set('PACKAGE', '"@0@"'.format(meson.project_name()))
-core_conf.set('VERSION', '"@0@"'.format(meson.project_version()))
-
-configure_file(output : 'config.h', configuration : core_conf)
 
 # Compiler Arguments
 compiler = meson.get_compiler('cpp')
@@ -25,13 +18,7 @@ if compiler_version >= 9
 endif
 
 # Include Directories
-configinc = include_directories('.')
-plugins_inc = include_directories(get_option('libgst_plugins_path'))
-metadata_inc = include_directories('./metadata/')
 hailo_general_inc = [include_directories(get_option('libgeneral_path'))]
-project_inc = [configinc, plugins_inc, metadata_inc] + hailo_general_inc
-
-cxxopts_inc_dir = get_option('libcxxopts')
 
 # Xtensor Include Directories
 xtensor_base_inc = include_directories(get_option('libxtensor'), is_system: true)
@@ -42,7 +29,6 @@ if get_option('include_blas')
 endif
 
 # Extra Compiler Arguments
-common_args = ['-DHAVE_CONFIG_H']
 xtensor_args = []  # '-mavx2', '-ffast-math' --> TODO: Causes arm issues
 debug_args = ['-g', '-O0']
 
@@ -58,7 +44,7 @@ gstvideo_dep = dependency('gstreamer-video-1.0', version : gst_req,
   fallback : ['gst-plugins-base', 'video_dep'])
 
 # Opencv Dependencies
-opencv_dep = dependency('opencv4', version : '>= 4.0')
+opencv_dep = dependency('opencv4', version : '>= 4.0', method : 'pkg-config')
 
 if get_option('include_python')
     # GObject dependencies
@@ -72,9 +58,9 @@ if get_option('include_python')
     pymod = import('python')
     python_version = 'python' + get_option('python_version')
     python_installation = pymod.find_installation(python_version)
-    python_include_path = python_installation.get_path('include')
-    pybind_inc = [include_directories(get_option('pybind11'), is_system: true),
-                  include_directories(python_include_path, is_system: true)]
+    python_dep = python_installation.dependency(embed : true)
+    python_package_install_dir = run_command(python_version, '-m', 'pip', 'show', 'pip').stdout().split('Location:')[1].split()[0]
+    pybind_inc = [include_directories(get_option('pybind11'), is_system: true)]
     # Pybind Dependecy
     pybind_dep = declare_dependency(
         compile_args : [
@@ -83,11 +69,8 @@ if get_option('include_python')
             '-fvisibility=hidden'
         ],
         include_directories : pybind_inc,
-        dependencies : [
-            python_installation.dependency()
-        ],
+        dependencies : [python_dep],
     )
-    python_dep = python_installation.dependency()
 endif
 
 # Plugin Dependencies
@@ -108,30 +91,46 @@ if get_option('include_blas')
 endif
 
 # Library Arguments
-hailo_lib_args = get_option('libargs') + common_args
+hailo_lib_args = get_option('libargs')
 
 tappas_workspace =  meson.current_source_dir() + '/../../../'
 
 post_proc_install_dir = get_option('post_processes_install_dir')
 if post_proc_install_dir == ''
   # By default install for x86 workspace
-  post_proc_install_dir = tappas_workspace + '/apps/gstreamer/x86/libs'
+  post_proc_install_dir = tappas_workspace + '/apps/gstreamer/libs/post_processes/'
 endif
 
 target = get_option('target')
 # Project Subdirectories
 
+if target in ['all','apps','libs']
+    cxxopts_inc_dir = get_option('libcxxopts')
+    # cxxopts Include Directories
+    cxxopts_inc = [include_directories(cxxopts_inc_dir, is_system: true)]
+endif
+
+if target in ['all','libs']
+    rapidjson_inc_dir = get_option('librapidjson')
+    # rapidjson Include Directories
+    rapidjson_inc = [include_directories(rapidjson_inc_dir, is_system: true)]
+
+endif
+
 if target == 'all'
   subdir('metadata')
+  subdir('tracking')
   subdir('plugins')
   subdir('libs')
   subdir('apps')
 
 elif target == 'apps'
   subdir('metadata')
+  subdir('tracking')
   subdir(target)
 elif target == 'plugins'
   subdir('metadata')
+  subdir('tracking')
   subdir(target)
 elif target == 'libs'
   subdir(target)

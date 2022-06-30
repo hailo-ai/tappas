@@ -14,6 +14,7 @@ from models import FolderRequirements
 class Platform(Enum):
     X86 = 'x86'
     ARM = 'arm'
+    IMX = 'imx'
     RaspberryPI = 'rpi'
     ANY = 'any'
 
@@ -34,6 +35,8 @@ class Downloader(ABC):
         self.dump_requirements = dump_requirements
         self.requirements_dump_file = Path(self.DEFAULT_APP_REQUIREMENT_FILE)
         self.platform = platform
+        
+        self._logger.info(f'Initialized with platform - {platform}')
 
     @abstractmethod
     def _download(self, requirement, destination, remote_md5):
@@ -52,9 +55,10 @@ class Downloader(ABC):
 
         for requirements_file in config.REQUIREMENTS_FILES:
             req_path = config.REQUIREMENTS_PATH / requirements_file
+            is_general_req = str(requirements_file).startswith(f'general/') and (platform != Platform.IMX)
             is_platform_req = str(requirements_file).startswith(f'{str(platform)}/')
-            include_common = str(requirements_file).startswith('common/') and (platform != Platform.ARM)
-            if platform == Platform.ANY or is_platform_req or include_common:
+            include_common = str(requirements_file).startswith('common/') and (platform != Platform.IMX)
+            if platform == Platform.ANY or is_platform_req or is_general_req or include_common:
                 requirements_file_content = req_path.read_text()
                 requirements.append(FolderRequirements.parse_raw(requirements_file_content))
 

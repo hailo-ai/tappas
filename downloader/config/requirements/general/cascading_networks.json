@@ -1,0 +1,20 @@
+{
+  "path": "apps/gstreamer/general/cascading_networks/resources/",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/joined_lightface_slim_tddfa_mobilenet_v1.hef",
+      "destination": "joined_lightface_slim_tddfa_mobilenet_v1.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/face_detection.mp4",
+      "destination": "face_detection.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "instance_segmentation.mp4"
+    }
+  ]
+}

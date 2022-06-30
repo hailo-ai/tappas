@@ -56,7 +56,7 @@ def bus_message_handler(bus: Gst.Bus, message: Gst.Message, user_data: UserData)
         user_data.quit()
     elif message_type in (Gst.MessageType.SEGMENT_DONE, Gst.MessageType.EOS):
         if user_data.max_loops_num == INFINITE_LOOP or user_data.current_loop_id < user_data.max_loops_num:
-            user_data.pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.SEGMENT, 0)
+            user_data.pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.SEGMENT, 0)
             user_data.current_loop_id += 1
             logger.info(f"Loop... {user_data.current_loop_id}/{user_data.max_loops_num}")
         else:

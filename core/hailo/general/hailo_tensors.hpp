@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-class NewHailoTensor
+class HailoTensor
 {
 private:
     uint8_t *m_data;                     // Pointer to the data of the tensor.
@@ -26,13 +26,13 @@ public:
      * @param data - Pointer to the tensor output.
      * @param vstream_info - pointer to info about the output, represented as hailo_vstream_info_t.
      */
-    NewHailoTensor(uint8_t *data, const hailo_vstream_info_t &vstream_info) : m_data(data), m_vstream_info(vstream_info), m_name(m_vstream_info.name){};
+    HailoTensor(uint8_t *data, const hailo_vstream_info_t &vstream_info) : m_data(data), m_vstream_info(vstream_info), m_name(m_vstream_info.name){};
     // Destructor
-    ~NewHailoTensor() = default;
+    ~HailoTensor() = default;
     // Copy constructor
-    NewHailoTensor(const NewHailoTensor &other) = default;
+    HailoTensor(const HailoTensor &other) = default;
     // Move constructor
-    NewHailoTensor(NewHailoTensor &&other) = default;
+    HailoTensor(HailoTensor &&other) = default;
 
     // Getters:
     std::string name()
@@ -101,4 +101,4 @@ public:
     }
 };
 
-using NewHailoTensorPtr = std::shared_ptr<NewHailoTensor>;
+using HailoTensorPtr = std::shared_ptr<HailoTensor>;

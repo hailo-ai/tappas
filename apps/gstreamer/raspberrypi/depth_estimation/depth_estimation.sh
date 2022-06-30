@@ -6,19 +6,21 @@ function init_variables() {
     script_dir=$(dirname $(realpath "$0"))
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
-    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs"
+    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes"
     readonly DEFAULT_POST_SO="$POSTPROCESS_DIR/libdepth_estimation.so"
-    readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/depth_estimation/resources/instance_segmentation.mp4"
-    readonly DEFAULT_HEF_PATH="$TAPPAS_WORKSPACE/apps/gstreamer/x86/depth_estimation/resources/fast_depth.hef"
-
+    readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/raspberrypi/depth_estimation/resources/instance_segmentation.mp4"
+    readonly DEFAULT_HEF_PATH="$TAPPAS_WORKSPACE/apps/gstreamer/raspberrypi/depth_estimation/resources/fast_depth.hef"
+    readonly DEFAULT_VDEVICE_KEY="1"
 
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
     post_so=$DEFAULT_POST_SO
     print_gst_launch_only=false
     additonal_parameters=""
-    
-    hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
+    camera_input_width=416
+    camera_input_height=416
+    camera_framerate="40/1"
+    camera_input_format="RGB"
 }
 
 function print_usage() {
@@ -30,6 +32,26 @@ function print_usage() {
     echo "  --show-fps               Print fps"
     echo "  --print-gst-launch       Print the ready gst-launch command without running it"
     exit 0
+}
+
+function validate_rpi_platform_camera_support() {
+    os_id=$(cat /etc/os-release | grep ^ID=)
+    if [ "$os_id" != "ID=debian" ]; then
+        echo "Camera device supported only in Debian release of Raspberry PI"
+        exit 1
+    fi
+
+    identify_v4l=$(gst-launch-1.0 v4l2src device=$input_source num-buffers=1 ! fakesink 2>&1 | grep 'Cannot identify device' | wc -l)
+    if [ "$identify_v4l" -eq 1 ]; then
+        echo "Cannot identify v4l device '$input_source'"
+        exit 1
+    fi
+
+    num_of_cam_devices_sup=$(gst-launch-1.0 --gst-debug=v4l2src:5 v4l2src device=$input_source num-buffers=1 ! fakesink 2>&1 | sed -une '/caps of src/ s/[:;] /\n/gp' | grep $camera_input_format | wc -l)
+    if [ "$num_of_cam_devices_sup" -eq 0 ]; then
+        echo "v4l device '$input_source' is not supporting requested input format '$camera_input_format'"
+        exit 1
+    fi
 }
 
 function print_help_if_needed() {
@@ -67,24 +89,33 @@ parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    source_element="v4l2src device=$input_source name=src_0 ! videoflip video-direction=horiz"
+    validate_rpi_platform_camera_support
+    source_element="v4l2src device=$input_source name=src_0 !  video/x-raw, format=$camera_input_format, width=$camera_input_width, height=$camera_input_height, framerate=$camera_framerate, pixel-aspect-ratio=1/1 ! \
+                    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoflip video-direction=horiz"
 else
-    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 "
+    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 ! \
+                    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+                    videoconvert n-threads=4"
 fi
 
 PIPELINE="gst-launch-1.0 \
-    $source_element ! queue ! videoconvert n-threads=2 ! queue ! \
+    $source_element ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     tee name=t ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    aspectratiocrop aspect-ratio=1/1 ! queue ! videoscale ! queue ! \
-    hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=1 ! \
+    aspectratiocrop aspect-ratio=1/1 ! \
+    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    videoscale ! \
+    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    hailonet hef-path=$hef_path is-active=true vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter2 so-path=$post_so qos=false ! videoconvert ! \
+    hailofilter so-path=$post_so qos=false ! videoconvert ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=false text-overlay=false \
     t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoscale ! video/x-raw, width=300, height=300 ! queue ! videoconvert ! \
+    videoscale n-threads=2 ! video/x-raw, width=300, height=300 ! queue ! videoconvert ! \
     ximagesink sync=false ${additonal_parameters}"
 
 echo "Running"

@@ -8,7 +8,7 @@
 #include "overlay/gsthailooverlay.hpp"
 #include "common/image.hpp"
 #include "overlay/overlay.hpp"
-#include "metadata/gst_hailo_meta.hpp"
+#include "gst_hailo_meta.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailooverlay_debug_category);
 #define GST_CAT_DEFAULT gst_hailooverlay_debug_category
@@ -194,7 +194,14 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     GST_DEBUG_OBJECT(hailooverlay, "transform_ip");
 
     caps = gst_pad_get_current_caps(trans->sinkpad);
-    mat = get_image(buffer, caps, GST_MAP_READWRITE);
+
+    GstVideoInfo *info = gst_video_info_new();
+    GstMapInfo map;
+    gst_buffer_map(buffer, &map, GST_MAP_READWRITE);
+    gst_video_info_from_caps(info, caps);
+    mat = get_mat(info, &map);
+    gst_video_info_free(info);
+
     hailo_roi = get_hailo_main_roi(buffer, true);
 
     // Blur faces if face-blur is activated.
@@ -213,6 +220,7 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     status = GST_FLOW_OK;
 cleanup:
     mat.release();
+    gst_buffer_unmap(buffer, &map);
     gst_caps_unref(caps);
     return status;
 }

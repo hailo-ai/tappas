@@ -10,7 +10,9 @@
 #include "hailo/hailort.h"
 #include "double_buffer.hpp"
 #include "bitmap_utils.hpp"
-#include "yolov5_post_processing.hpp"
+#include "yolo_postprocess.hpp"
+#include "hailo_objects.hpp"
+#include "hailo_tensors.hpp"
 
 #include <algorithm>
 #include <future>
@@ -21,6 +23,10 @@
 #define OUTPUT_COUNT (3)
 #define INPUT_FILES_COUNT (10)
 #define HEF_FILE ("yolov5m_wo_spp_60p.hef")
+#define CONFIG_FILE ("yolov5.json")
+#define YOLOV5M_IMAGE_WIDTH 640
+#define YOLOV5M_IMAGE_HEIGHT 640
+#define MAX_BOXES 50
 
 #define REQUIRE_ACTION(cond, action, label, ...)                \
     do {                                                        \
@@ -88,8 +94,8 @@ static const std::pair<Color, std::string> g_colors[] = {
 
 class FeatureData {
 public:
-    FeatureData(uint32_t buffers_size, float32_t qp_zp, float32_t qp_scale, uint32_t width) :
-    m_buffers(buffers_size), m_qp_zp(qp_zp), m_qp_scale(qp_scale), m_width(width)
+    FeatureData(uint32_t buffers_size, float32_t qp_zp, float32_t qp_scale, uint32_t width, hailo_vstream_info_t vstream_info) :
+    m_buffers(buffers_size), m_qp_zp(qp_zp), m_qp_scale(qp_scale), m_width(width), m_vstream_info(vstream_info)
     {}
     static bool sort_tensors_by_size (std::shared_ptr<FeatureData> i, std::shared_ptr<FeatureData> j) { return i->m_width < j->m_width; };
 
@@ -97,9 +103,11 @@ public:
     float32_t m_qp_zp;
     float32_t m_qp_scale;
     uint32_t m_width;
+    hailo_vstream_info_t m_vstream_info;
 };
 
-hailo_status create_feature(hailo_output_vstream vstream, std::shared_ptr<FeatureData> &feature)
+hailo_status create_feature(hailo_output_vstream vstream,
+                            std::shared_ptr<FeatureData> &feature)
 {
     hailo_vstream_info_t vstream_info = {};
     auto status = hailo_get_output_vstream_info(vstream, &vstream_info);
@@ -116,43 +124,42 @@ hailo_status create_feature(hailo_output_vstream vstream, std::shared_ptr<Featur
     }
 
     feature = std::make_shared<FeatureData>(static_cast<uint32_t>(output_frame_size), vstream_info.quant_info.qp_zp,
-        vstream_info.quant_info.qp_scale, vstream_info.shape.width);
+        vstream_info.quant_info.qp_scale, vstream_info.shape.width, vstream_info);
 
     return HAILO_SUCCESS;
 }
 
-hailo_status dump_detected_object(const DetectionObject &detection, std::ofstream &detections_file, const std::string &color)
+hailo_status dump_detected_object(const HailoDetectionPtr &detection, std::ofstream &detections_file, const std::string &color)
 {
     if (detections_file.fail()) {
         return HAILO_FILE_OPERATION_FAILURE;
     }
 
-    auto class_id_name = coco_eighty_classes.find(detection.class_id);
-    if (coco_eighty_classes.end() == class_id_name) {
-        std::cerr << "Failed to find class with id = " << detection.class_id << "\n";
-        return HAILO_NOT_FOUND;
-    }
-
-    detections_file << "Detection object name:          " << class_id_name->second << "\n";
+    HailoBBox bbox = detection->get_bbox();
+    detections_file << "Detection object name:          " << detection->get_label() << "\n";
     detections_file << "Detection object color:         " << color << "\n";
-    detections_file << "Detection object id:            " << detection.class_id << "\n";
-    detections_file << "Detection object confidence:    " << detection.confidence << "\n";
-    detections_file << "Detection object Xmax:          " << detection.xmax << "\n";
-    detections_file << "Detection object Xmin:          " << detection.xmin << "\n";
-    detections_file << "Detection object Ymax:          " << detection.ymax << "\n";
-    detections_file << "Detection object Ymin:          " << detection.ymin << "\n" << std::endl;
+    detections_file << "Detection object id:            " << detection->get_class_id() << "\n";
+    detections_file << "Detection object confidence:    " << detection->get_confidence() << "\n";
+    detections_file << "Detection object Xmax:          " << bbox.xmax()*YOLOV5M_IMAGE_WIDTH << "\n";
+    detections_file << "Detection object Xmin:          " << bbox.xmin()*YOLOV5M_IMAGE_WIDTH << "\n";
+    detections_file << "Detection object Ymax:          " << bbox.ymax()*YOLOV5M_IMAGE_HEIGHT << "\n";
+    detections_file << "Detection object Ymin:          " << bbox.ymin()*YOLOV5M_IMAGE_HEIGHT << "\n" << std::endl;
 
     return HAILO_SUCCESS;
 }
 
-hailo_status draw(std::unique_ptr<BMPImage> &image, std::vector<DetectionObject> &detections)
+hailo_status draw(std::unique_ptr<BMPImage> &image, HailoROIPtr roi)
 {
     hailo_status status = HAILO_SUCCESS;
+
+    //Get the detections
+    std::vector<HailoDetectionPtr> detections = hailo_common::get_hailo_detections(roi);
     if (detections.size() == 0) {
         std::cout << "No detections were found in file '" << image->name() << "'\n";
         return HAILO_SUCCESS;
     }
 
+    // Prepare output files
     auto detections_file = OUTPUT_DIR_PATH + image->name() + "_detections.txt";
     std::ofstream ofs(detections_file, std::ios::out);
     if (ofs.fail()) {
@@ -162,22 +169,23 @@ hailo_status draw(std::unique_ptr<BMPImage> &image, std::vector<DetectionObject>
     
     uint32_t color_index = 0;
     for (auto &detection : detections) {
-        if (0 == detection.confidence) {
+        if (0 == detection->get_confidence()) {
             continue;
         }
 
-        if ((detection.xmax >= YOLOV5M_IMAGE_WIDTH) ||
-            (detection.ymax >= YOLOV5M_IMAGE_HEIGHT) ||
-            (detection.xmin < 0) || (detection.ymin < 0)) {
-            std::cerr << "Failed drawing detection object, the coordinates are not compatible to image size limits\n";  
-            status = HAILO_INVALID_OPERATION;
-            continue;
-        }
+        HailoBBox bbox = detection->get_bbox();
+        int xmax = std::clamp((int)(bbox.xmax()*YOLOV5M_IMAGE_WIDTH), 0, YOLOV5M_IMAGE_WIDTH - 1);
+        int xmin = std::clamp((int)(bbox.xmin()*YOLOV5M_IMAGE_WIDTH), 0, xmax - 1);
+        int ymax = std::clamp((int)(bbox.ymax()*YOLOV5M_IMAGE_HEIGHT), 0, YOLOV5M_IMAGE_HEIGHT - 1);
+        int ymin = std::clamp((int)(bbox.ymin()*YOLOV5M_IMAGE_HEIGHT), 0, ymax - 1);
 
         static_assert((MAX_BOXES == sizeof(g_colors)/sizeof(g_colors[0])), "The size of g_colors array must be MAX_BOXES");
         auto color_name_pair = g_colors[color_index];
-        image->draw_border(static_cast<uint32_t>(detection.xmin), static_cast<uint32_t>(detection.xmax),
-            static_cast<uint32_t>(detection.ymin), static_cast<uint32_t>(detection.ymax), color_name_pair.first);
+        image->draw_border(static_cast<uint32_t>(xmin),
+                           static_cast<uint32_t>(xmax),
+                           static_cast<uint32_t>(ymin),
+                           static_cast<uint32_t>(ymax),
+                           color_name_pair.first);
 
         auto dump_status = dump_detected_object(detection, ofs, color_name_pair.second);
         if (HAILO_SUCCESS != dump_status) {
@@ -194,23 +202,31 @@ hailo_status post_processing_all(std::vector<std::shared_ptr<FeatureData>> &feat
 {
     auto status = HAILO_SUCCESS;
 
+    YoloParams * init_params = init(CONFIG_FILE);
+
     std::sort(features.begin(), features.end(), &FeatureData::sort_tensors_by_size);
     for (size_t i = 0; i < frames_count; i++) {
-        auto detections = post_processing(
-            features[0]->m_buffers.get_read_buffer().data(), features[0]->m_qp_zp, features[0]->m_qp_scale,
-            features[1]->m_buffers.get_read_buffer().data(), features[1]->m_qp_zp, features[1]->m_qp_scale,
-            features[2]->m_buffers.get_read_buffer().data(), features[2]->m_qp_zp, features[2]->m_qp_scale);
+
+        // Gather the features into HailoTensors in a HailoROIPtr
+        HailoROIPtr roi = std::make_shared<HailoROI>(HailoROI(HailoBBox(0.0f, 0.0f, 1.0f, 1.0f)));
+        for (uint j = 0; j < features.size(); j++)
+            roi->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(features[j]->m_buffers.get_read_buffer().data()), features[j]->m_vstream_info));
+        
+        // Perform the actual postprocess
+        yolov5(roi, init_params);
     
         for (auto &feature : features) {
             feature->m_buffers.release_read_buffer();
         }
 
-        auto draw_status = draw(input_images[i], detections);
+        // Draw the results
+        auto draw_status = draw(input_images[i], roi);
         if (HAILO_SUCCESS != draw_status) {
             std::cerr << "Failed drawing detecftions on image '" << input_images[i]->name() << "'. Got status "<< draw_status << "\n";
             status = draw_status;
         }
 
+        // Dump the image
         auto dump_image_status = input_images[i]->dump_image();
         if (HAILO_SUCCESS != draw_status) {
             std::cerr << "Failed dumping image '" << input_images[i]->name() << "'. Got status "<< dump_image_status << "\n";
@@ -253,6 +269,7 @@ hailo_status run_inference_threads(hailo_input_vstream input_vstream, hailo_outp
 {
     // Create features data to be used for post-processing
     std::vector<std::shared_ptr<FeatureData>> features;
+
     features.reserve(output_vstreams_size);
     for (size_t i = 0; i < output_vstreams_size; i++) {
         std::shared_ptr<FeatureData> feature(nullptr);
@@ -379,7 +396,7 @@ int main()
 {
     std::vector<std::unique_ptr<BMPImage>> input_images;
     input_images.reserve(INPUT_FILES_COUNT);
-    auto status = BMPImage::get_images(input_images, INPUT_FILES_COUNT);
+    auto status = BMPImage::get_images(input_images, INPUT_FILES_COUNT, YOLOV5M_IMAGE_WIDTH, YOLOV5M_IMAGE_HEIGHT);
     if (HAILO_SUCCESS != status) {
         std::cerr << "get_images() failed to with status = " << status << std::endl;
         return status;

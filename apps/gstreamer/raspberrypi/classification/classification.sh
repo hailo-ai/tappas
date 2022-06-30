@@ -6,12 +6,13 @@ function init_variables() {
     script_dir=$(dirname $(realpath "$0"))
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
-    readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/classification/resources"
-    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
+    readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/raspberrypi/classification/resources"
+    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes/"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libclassification.so"
     readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/classification_movie.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/resnet_v1_50.hef"
+    readonly DEFAULT_VDEVICE_KEY="1"
 
     hef_path=$DEFAULT_HEF_PATH
     input_source=$DEFAULT_VIDEO_SOURCE
@@ -20,8 +21,6 @@ function init_variables() {
 
     print_gst_launch_only=false
     additonal_parameters=""
-    
-    hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
 }
 
 function print_usage() {
@@ -75,18 +74,21 @@ if [[ $input_source =~ "/dev/video" ]]; then
 fi
 
 PIPELINE="gst-launch-1.0 \
-    filesrc location=$input_source ! qtdemux ! h264parse ! avdec_h264 ! videoconvert n-threads=2 ! \
+    filesrc location=$input_source ! qtdemux ! h264parse ! avdec_h264 ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    videoconvert n-threads=4 ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     tee name=t hailomuxer name=hmux \
     t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hmux. \
-    t. ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! \
+    t. ! videoscale n-threads=2 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false ! \
+    hailonet hef-path=$hef_path is-active=true vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter2 so-path=$postprocess_so qos=false ! \
+    hailofilter so-path=$postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hmux. \
     hmux. ! hailooverlay ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoconvert ! \
+    videoconvert n-threads=2 ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=false text-overlay=false ${additonal_parameters}"
 
 echo "Running"

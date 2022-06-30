@@ -24,7 +24,7 @@ function init_variables() {
 }
 
 function print_usage() {
-    echo "Arm Face Landmarks pipeline usage:"
+    echo "IMX Face Landmarks pipeline usage:"
     echo ""
     echo "Options:"
     echo "  --help                  Show this help"
@@ -75,13 +75,17 @@ fi
 PIPELINE="gst-launch-1.0 \
     filesrc location=$input_source name=src_0 ! decodebin ! \
     queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoscale n-threads=4 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
-    queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    glupload ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    glcolorscale ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    gldownload ! video/x-raw,pixel-aspect-ratio=1/1,format=RGBA ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert name=pre_hailonet_videoconvert n-threads=4 qos=false ! \
     queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false ! \
     queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter2 so-path=$postprocess_so qos=false ! \
+    hailofilter so-path=$postprocess_so qos=false ! \
     queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! videoconvert qos=false ! \
     queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

@@ -3,6 +3,8 @@ set -e
 
 skip_hailort=false
 target_platform="x86"
+compile_num_cores=""
+
 if [[ -z "$TAPPAS_WORKSPACE" ]]; then
   export TAPPAS_WORKSPACE=$(dirname "$(realpath "$0")")
   echo "No TAPPAS_WORKSPACE in environment found, using the default one $TAPPAS_WORKSPACE"
@@ -17,7 +19,8 @@ function print_usage() {
   echo "Options:"
   echo "  --help                 Show this help"
   echo "  --skip-hailort         Skips installation of HailoRT Deb package"
-  echo "  --target-platform      Target platform [x86, arm, rpi(raspberry pi)], used for downloading only required media and hef files (Default is $target_platform)"
+  echo "  --target-platform      Target platform [x86, arm, imx, rpi(raspberry pi)], used for downloading only required media and hef files (Default is $target_platform)"
+  echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
   exit 1
 }
 
@@ -29,6 +32,12 @@ function parse_args() {
       skip_hailort=true
     elif [ "$1" == "--target-platform" ]; then
         target_platform=$2
+        if [ "$target_platform" == "rpi" ]; then
+          compile_num_cores="--compile-num-of-cores 1"
+        fi
+        shift
+    elif [ "$1" == "--compile-num-of-cores" ]; then
+        compile_num_cores="--compile-num-of-cores $2"
         shift
     else
       echo "Unknown parameters, exiting"
@@ -68,15 +77,18 @@ function clone_external() {
   git clone --depth 1 --shallow-submodules -b 0.20.0 https://github.com/xtensor-stack/xtensor-blas.git
   git clone --depth 1 --shallow-submodules -b 0.7.3 https://github.com/xtensor-stack/xtl.git
   git clone --depth 1 --shallow-submodules -b v3.0.0 https://github.com/jarro2783/cxxopts.git
+  git clone --depth 1 --shallow-submodules -b v1.1.0 https://github.com/Tencent/rapidjson.git
   git clone --depth 1 --shallow-submodules -b v2.9.0 https://github.com/pybind/pybind11.git
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/base
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/blas
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/cxxopts
+  mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/rapidjson
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/pybind11
   cp -r xtensor/include/. ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/base
   cp -r xtensor-blas/include/. ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/blas
   cp -r xtl/include/. ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/base
   cp -r cxxopts/include/. ${TAPPAS_WORKSPACE}/core/open_source/cxxopts
+  cp -r rapidjson/include/. ${TAPPAS_WORKSPACE}/core/open_source/rapidjson
   cp -r pybind11/include/. ${TAPPAS_WORKSPACE}/core/open_source/pybind11
   popd
   # Clone Catch2 required packages
@@ -92,16 +104,20 @@ function install_hailo() {
     sudo dpkg -i ${TAPPAS_WORKSPACE}/hailort/hailort_*_$(dpkg --print-architecture).deb
   fi
 
-  pip3 install -e ${TAPPAS_WORKSPACE}/tools/run_app
-  mkdir -p ${TAPPAS_WORKSPACE}/scripts/bash_completion.d
-  activate-global-python-argcomplete --dest=${TAPPAS_WORKSPACE}/scripts/bash_completion.d
+  if [ "$target_platform" != "x86" ]; then
+    echo "Skipping run_app tool on non x86 target platform..."
+  else
+    pip3 install -e ${TAPPAS_WORKSPACE}/tools/run_app
+    mkdir -p ${TAPPAS_WORKSPACE}/scripts/bash_completion.d
+    activate-global-python-argcomplete --dest=${TAPPAS_WORKSPACE}/scripts/bash_completion.d
 
-  if ! grep -Fxq ". $TAPPAS_WORKSPACE/scripts/bash_completion.d/python-argcomplete" ~/.bashrc; then
-    echo ". $TAPPAS_WORKSPACE/scripts/bash_completion.d/python-argcomplete" >> ~/.bashrc
+    if ! grep -Fxq ". $TAPPAS_WORKSPACE/scripts/bash_completion.d/python-argcomplete" ~/.bashrc; then
+      echo ". $TAPPAS_WORKSPACE/scripts/bash_completion.d/python-argcomplete" >> ~/.bashrc
+    fi
   fi
 
   $TAPPAS_WORKSPACE/scripts/gstreamer/install_gstreamer.sh
-  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform
+  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores
 }
 
 function check_systems_requirements(){

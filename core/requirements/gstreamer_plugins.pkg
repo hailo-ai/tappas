@@ -12,7 +12,6 @@ gstreamer1.0-plugins-base
 gstreamer1.0-plugins-base-apps 
 gstreamer1.0-plugins-bad 
 gstreamer1.0-libav 
-gstreamer1.0-doc 
 gstreamer1.0-tools 
 gstreamer1.0-x 
 gstreamer1.0-alsa 
@@ -40,5 +39,12 @@ automake
 # Specific versions
 18.04:python-gst-1.0  
 18.04:python3-dev 
+18.04:gstreamer1.0-doc
+
 20.04:python3-gst-1.0
 20.04:python3-dev
+20.04:gstreamer1.0-doc
+
+21.04:python3-gst-1.0
+21.04:python3-dev
+

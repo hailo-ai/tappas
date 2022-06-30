@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
 
+script_dir=$(dirname $(realpath "$0"))
+source $script_dir/../misc/checks_before_run.sh --export-only
+
 BUILD_DIR="$TAPPAS_WORKSPACE/core/hailo/gstreamer"
-POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs"
 BUILD_MODE=release
 SKIP_HAILORT=false
 COMPILE_LIBGSTHAILO=false
@@ -10,6 +12,14 @@ INCLUDE_UNIT_TESTS=true
 PYTHON_VERSION=$(python3 --version | awk '{print $2}' | awk -F'.' '{print $1"."$2}')
 TARGET="all"
 TARGET_PLATFORM="x86"
+
+num_cores_to_use=0
+# Occupy all the cores could sometimes freeze the PC
+if [[ $(nproc) -le 4 ]]; then
+    num_cores_to_use=$(($(nproc)/2))
+else
+    num_cores_to_use=$(($(nproc) - 1))
+fi
 
 function print_usage() {
     echo "Install Hailo GStreamer:"
@@ -24,6 +34,7 @@ function print_usage() {
     echo "  --skip-unit-tests      Skip compilation of unit tests"
     echo "  --target               Tappas build target [all, plugins, libs, apps] (default = all)"
     echo "  --target-platform      Target platform, used for installing only required media and hef files [x86, arm] (Default is $TARGET_PLATFORM)"
+    echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
     exit 1
 }
 
@@ -50,6 +61,9 @@ function parse_args() {
             SKIP_HAILORT=true
         elif [ "$1" == "--skip-unit-tests" ]; then
             INCLUDE_UNIT_TESTS=false
+        elif [ "$1" == "--compile-num-of-cores" ]; then
+            num_cores_to_use=$2
+            shift
         elif [ "$1" == "--compile-libgsthailo" ]; then
             COMPILE_LIBGSTHAILO=true
         else
@@ -62,7 +76,7 @@ function parse_args() {
 
 function handle_libgsthailo() {
     # Compile from sources if the user selects to or the .deb has not placed it already there
-    if [ "$COMPILE_LIBGSTHAILO" = true ] || [ ! -f /usr/lib/$(uname -p)-linux-gnu/gstreamer-1.0/libgsthailo.so ]; then
+    if [ "$COMPILE_LIBGSTHAILO" = true ] || [ ! -f /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailo.so ]; then
         ${TAPPAS_WORKSPACE}/scripts/gstreamer/compile_libgsthailo.sh --build-type $BUILD_MODE
     fi
 }
@@ -80,18 +94,14 @@ function main() {
     then
         reconfigure_flag=--reconfigure
     fi
+
+    echo "Compiling Hailo Gstreamer target $TARGET, with $num_cores_to_use cpu cores, build type $BUILD_MODE $reconfigure_flag"
+
     CC=gcc-9 CXX=g++-9 meson build.$BUILD_MODE $reconfigure_flag --prefix '/usr' --buildtype $BUILD_MODE \
                             -Dtarget=$TARGET \
                             -Dtarget_platform=$TARGET_PLATFORM \
                             -Dlibargs="-I/usr/include/hailo/,-I/usr/include/gstreamer-1.0/gst/hailo/" \
                              -Dinclude_python=true -Dpython_version=$PYTHON_VERSION
-
-    # Occupy all the cores could sometimes freeze the PC
-    if [[ $(nproc) -le 4 ]]; then
-	    num_cores_to_use=$(($(nproc)/2))
-    else
-    	num_cores_to_use=$(($(nproc) - 1))
-    fi
 
     if [[ -f "build.$BUILD_MODE/.ninja_log" ]]; then
         # Solve permission bug
@@ -100,11 +110,7 @@ function main() {
 
     ninja -j $num_cores_to_use -C build.$BUILD_MODE
     sudo env "PATH=$PATH" ninja install -C build.$BUILD_MODE
-    sudo cp -a build.$BUILD_MODE/plugins/python/libgsthailopython.so /usr/lib/$(uname -p)-linux-gnu/gstreamer-1.0/
 
-    site_packages=$(pip show pip | grep Location | cut -d: -f2 | tr -d ' ')
-    cp build.$BUILD_MODE/plugins/pyhailotracker.*.so "${site_packages}"
-    cp build.$BUILD_MODE/plugins/python/libhailo.so ${site_packages}/hailo.so
     popd
 }
 
