@@ -1,0 +1,25 @@
+{
+  "path": "apps/gstreamer/general/license_plate_recognition/resources",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/tiny_yolov4_license_plates.hef",
+      "destination": "tiny_yolov4_license_plates.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/lprnet.hef",
+      "destination": "lprnet.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolov5m_vehicles_79FPS.hef",
+      "destination": "yolov5m_vehicles_79FPS.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/lpr_ayalon.mp4",
+      "destination": "lpr_ayalon.mp4"
+    }
+  ]
+}

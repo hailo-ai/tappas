@@ -1,0 +1,21 @@
+{
+  "path": "apps/gstreamer/general/multi_person_multi_camera_tracking/resources",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolov5s_personface.hef",
+      "destination": "yolov5s_personface.hef"
+    },
+    {
+        "bucket": "tappas",
+        "source": "general/hefs/repvgg_a0_person_reid_2048.hef",
+        "destination": "repvgg_a0_person_reid_2048.hef"
+      },
+    {
+      "bucket": "tappas",
+      "source": "general/media/re_id/reid.tar.gz",
+      "destination": "reid.tar.gz",
+      "should_extract": true
+    }
+  ]
+}

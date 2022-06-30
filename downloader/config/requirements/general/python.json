@@ -1,0 +1,15 @@
+{
+  "path": "apps/gstreamer/general/python/resources",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/resnet_v1_50.hef",
+      "destination": "resnet_v1_50.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/classification_movie_imagenet.mp4",
+      "destination": "classification_movie.mp4"
+    }
+  ]
+}

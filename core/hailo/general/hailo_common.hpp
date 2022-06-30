@@ -1,14 +1,16 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 /* __BEGIN_DECLS should be used at the beginning of your declarations,
    so that C++ compilers don't mangle their names.  Use __END_DECLS at
    the end of C declarations. */
 
 #pragma once
 #include "hailo_objects.hpp"
-#include <string>
+// #include <stdlib.h>
+// #include <string>
+// #include <cstring>
 
 #undef __BEGIN_DECLS
 #undef __END_DECLS
@@ -44,23 +46,23 @@ namespace hailo_common
                    std::make_shared<HailoClassification>(type, class_id, label, confidence));
     }
 
-    inline NewHailoDetectionPtr add_detection(HailoROIPtr roi, HailoBBox bbox, std::string label, float confidence, int class_id = NULL_CLASS_ID)
+    inline HailoDetectionPtr add_detection(HailoROIPtr roi, HailoBBox bbox, std::string label, float confidence, int class_id = NULL_CLASS_ID)
     {
-        NewHailoDetectionPtr detection = std::make_shared<NewHailoDetection>(bbox, class_id, label, confidence);
+        HailoDetectionPtr detection = std::make_shared<HailoDetection>(bbox, class_id, label, confidence);
         detection->set_scaling_bbox(roi->get_bbox());
         add_object(roi, detection);
         return detection;
     }
 
-    inline void add_detections(HailoROIPtr roi, std::vector<NewHailoDetection> detections)
+    inline void add_detections(HailoROIPtr roi, std::vector<HailoDetection> detections)
     {
         for (auto det : detections)
         {
-            add_object(roi, std::make_shared<NewHailoDetection>(det));
+            add_object(roi, std::make_shared<HailoDetection>(det));
         }
     }
 
-    inline void add_detection_pointers(HailoROIPtr roi, std::vector<NewHailoDetectionPtr> detections)
+    inline void add_detection_pointers(HailoROIPtr roi, std::vector<HailoDetectionPtr> detections)
     {
         for (auto det : detections)
         {
@@ -77,7 +79,7 @@ namespace hailo_common
         }
     }
 
-    inline void remove_detections(HailoROIPtr roi, std::vector<NewHailoDetectionPtr> objects)
+    inline void remove_detections(HailoROIPtr roi, std::vector<HailoDetectionPtr> objects)
     {
         for (HailoObjectPtr obj : objects)
         {
@@ -130,14 +132,14 @@ namespace hailo_common
         }
     }
 
-    inline std::vector<NewHailoDetectionPtr> get_hailo_detections(HailoROIPtr roi)
+    inline std::vector<HailoDetectionPtr> get_hailo_detections(HailoROIPtr roi)
     {
         std::vector<HailoObjectPtr> objects = roi->get_objects_typed(HAILO_DETECTION);
-        std::vector<NewHailoDetectionPtr> detections;
+        std::vector<HailoDetectionPtr> detections;
 
         for (auto obj : objects)
         {
-            detections.emplace_back(std::dynamic_pointer_cast<NewHailoDetection>(obj));
+            detections.emplace_back(std::dynamic_pointer_cast<HailoDetection>(obj));
         }
         return detections;
     }

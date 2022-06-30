@@ -1,16 +1,16 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 /**
  * @file overlay/common.hpp
  * @author your name (you@domain.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2022-01-20
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #pragma once
@@ -28,14 +28,29 @@ __BEGIN_DECLS
  */
 size_t get_size(GstCaps *caps);
 
+/**
+ * @brief Get the mat object
+ *
+ * @param info The GstVideoInfo to extract mat from.
+ * @param map The GstMapInfo to extract mat from.
+ * @return cv::Mat The mat object.
+ */
+cv::Mat get_mat(GstVideoInfo *info, GstMapInfo *map);
 
 /**
- * @brief Get the cv::Mat object from the GstBuffer
+ * @brief Resizes a YUY2 image (4 channel cv::Mat)
  *
- * @param buffer The buffer to return as cv::Mat
- * @param caps The caps of the buffer in order to get measurements.
- * @return cv::Mat A cv Matrix of buffer.
+ * @param cropped_image - cv::Mat &
+ *        The cropped image to resize
+ *
+ * @param resized_image - cv::Mat &
+ *        The resized image container to fill
+ *        (dims for resizing are assumed from here)
+ *
+ * @param interpolation - int
+ *        The interpolation type to resize by.
+ *        Must be a supported opencv type
+ *        (bilinear, nearest neighbors, etc...)
  */
-cv::Mat get_image(GstBuffer *buffer, GstCaps *caps, GstMapFlags flags);
+void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolation = cv::INTER_LINEAR);
 __END_DECLS
-

@@ -1,14 +1,14 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include <gst/gst.h>
 #include <gst/video/video.h>
 #include <opencv2/opencv.hpp>
 #include "overlay/gsthailooverlay.hpp"
 #include "common/image.hpp"
 #include "overlay/overlay.hpp"
-#include "metadata/gst_hailo_meta.hpp"
+#include "gst_hailo_meta.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailooverlay_debug_category);
 #define GST_CAT_DEFAULT gst_hailooverlay_debug_category
@@ -38,6 +38,7 @@ enum
     PROP_0,
     PROP_LINE_THICKNESS,
     PROP_FONT_THICKNESS,
+    PROP_FACE_BLUR,
 };
 
 static void
@@ -73,7 +74,10 @@ gst_hailooverlay_class_init(GstHailoOverlayClass *klass)
     g_object_class_install_property(gobject_class, PROP_FONT_THICKNESS,
                                     g_param_spec_int("font-thickness", "font-thickness", "The thickness when drawing text. Default 1.", 0, G_MAXINT, 1,
                                                      (GParamFlags)(GST_PARAM_MUTABLE_READY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
-    
+    g_object_class_install_property(gobject_class, PROP_FACE_BLUR,
+                                    g_param_spec_boolean("face-blur", "face-blur", "Whether to blur faces", false,
+                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
     gobject_class->dispose = gst_hailooverlay_dispose;
     gobject_class->finalize = gst_hailooverlay_finalize;
     base_transform_class->start = GST_DEBUG_FUNCPTR(gst_hailooverlay_start);
@@ -87,6 +91,7 @@ gst_hailooverlay_init(GstHailoOverlay *hailooverlay)
 {
     hailooverlay->line_thickness = 1;
     hailooverlay->font_thickness = 1;
+    hailooverlay->face_blur = false;
 }
 
 void gst_hailooverlay_set_property(GObject *object, guint property_id,
@@ -103,6 +108,9 @@ void gst_hailooverlay_set_property(GObject *object, guint property_id,
         break;
     case PROP_FONT_THICKNESS:
         hailooverlay->font_thickness = g_value_get_int(value);
+        break;
+    case PROP_FACE_BLUR:
+        hailooverlay->face_blur = g_value_get_boolean(value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -124,6 +132,9 @@ void gst_hailooverlay_get_property(GObject *object, guint property_id,
         break;
     case PROP_FONT_THICKNESS:
         g_value_set_int(value, hailooverlay->font_thickness);
+        break;
+    case PROP_FACE_BLUR:
+        g_value_set_boolean(value, hailooverlay->face_blur);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -183,8 +194,21 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     GST_DEBUG_OBJECT(hailooverlay, "transform_ip");
 
     caps = gst_pad_get_current_caps(trans->sinkpad);
-    mat = get_image(buffer, caps, GST_MAP_READWRITE);
+
+    GstVideoInfo *info = gst_video_info_new();
+    GstMapInfo map;
+    gst_buffer_map(buffer, &map, GST_MAP_READWRITE);
+    gst_video_info_from_caps(info, caps);
+    mat = get_mat(info, &map);
+    gst_video_info_free(info);
+
     hailo_roi = get_hailo_main_roi(buffer, true);
+
+    // Blur faces if face-blur is activated.
+    if (hailooverlay->face_blur)
+    {
+        face_blur(mat, hailo_roi);
+    }
 
     // Draw all results of the given roi on mat.
     ret = draw_all(mat, hailo_roi, hailooverlay->font_thickness, hailooverlay->line_thickness);
@@ -196,6 +220,7 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     status = GST_FLOW_OK;
 cleanup:
     mat.release();
+    gst_buffer_unmap(buffer, &map);
     gst_caps_unref(caps);
     return status;
 }

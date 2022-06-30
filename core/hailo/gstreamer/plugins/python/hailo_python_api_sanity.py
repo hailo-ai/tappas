@@ -59,10 +59,10 @@ print(dir(hailo.HailoTileROI))
 # print(f"_hailo_tile_roi.index = {_hailo_tile_roi.index()}")
 # print(f"_hailo_tile_roi.mode = {_hailo_tile_roi.mode()}")
 
-print("hailo.NewHailoDetection")
-print(dir(hailo.NewHailoDetection))
+print("hailo.HailoDetection")
+print(dir(hailo.HailoDetection))
 
-_new_hailo_detection = hailo.NewHailoDetection(_hailo_b_box, "TBD", 1)
+_new_hailo_detection = hailo.HailoDetection(_hailo_b_box, "TBD", 1)
 print(f"_new_hailo_detection.get_type = {_new_hailo_detection.get_type()}")
 print(
     f"_new_hailo_detection.get_confidence = {_new_hailo_detection.get_confidence()}"
@@ -100,10 +100,10 @@ print(
     f"_hailo_landmarks.get_landmarks_type = {_hailo_landmarks.get_landmarks_type()}"
 )
 
-print("hailo.NewHailoTensor")
-print(dir(hailo.NewHailoTensor))
+print("hailo.HailoTensor")
+print(dir(hailo.HailoTensor))
 
-# _new_hailo_tensor = hailo.NewHailoTensor()
+# _new_hailo_tensor = hailo.HailoTensor()
 # print(f"_new_hailo_tensor.name = {_new_hailo_tensor.name()}")
 # print(f"_new_hailo_tensor.vstream_info = {_new_hailo_tensor.vstream_info()}")
 # print(f"_new_hailo_tensor.data = {_new_hailo_tensor.data()}")

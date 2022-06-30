@@ -1,4 +1,4 @@
-tqdm==4.62.0
+tqdm==4.59.0
 pydantic==1.8.2
 requests==2.26.0
 boto3==1.19.9

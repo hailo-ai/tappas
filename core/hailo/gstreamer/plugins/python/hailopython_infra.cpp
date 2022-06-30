@@ -2,7 +2,7 @@
 * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
 * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
 **/
-#include "python/hailopython_infra.hpp"
+#include "hailopython_infra.hpp"
 
 #include <pygobject-3.0/pygobject.h>
 
@@ -40,6 +40,27 @@ PythonCallback *create_python_callback(const char *module_path, const char *func
         *error_msg = strdup(msg.c_str());
         return nullptr;
     }
+}
+
+GstFlowReturn invoke_python_callback(PythonCallback *python_callback, char **error_msg)
+{
+    if (!python_callback)
+    {
+        return GST_FLOW_ERROR;
+    }
+
+    auto context_initializer = PythonContextInitializer();
+    try
+    {
+        return python_callback->CallPython();
+    }
+    catch (const std::exception &e)
+    {
+        PythonError python_err;
+        std::string msg = std::string(e.what()) + std::string(": \n") + std::string(python_err.get());
+        *error_msg = strdup(msg.c_str());
+        return GST_FLOW_ERROR;
+    }   
 }
 
 GstFlowReturn invoke_python_callback(PythonCallback *python_callback, GstBuffer *buffer,
@@ -81,6 +102,18 @@ GstFlowReturn PythonCallback::CallPython(GstBuffer *buffer, py_descriptor_t desc
     // Create the arguments for the user function and call it.
     __PYFILTER_DECL_WRAPPER(args, Py_BuildValue("OO", (PyObject *)py_buffer, (PyObject *)hailo_roi));
     PyObjectWrapper result(PyObject_CallObject(user_python_function, args));
+
+    if (((PyObject *)result) == nullptr)
+    {
+        throw std::runtime_error("Error in Python function");
+    }
+
+    return (GstFlowReturn)PyLong_AsLong(result);
+}
+
+GstFlowReturn PythonCallback::CallPython()
+{
+    PyObjectWrapper result(PyObject_CallObject(user_python_function, NULL));
 
     if (((PyObject *)result) == nullptr)
     {

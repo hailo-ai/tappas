@@ -25,8 +25,10 @@ struct _GstHailoPython
 {
     GstVideoFilter base_hailopython;
     struct PythonCallback *python_callback;
+    struct PythonCallback *python_finalize_callback;
     gchar *module_name;
     gchar *function_name;
+    gchar *finalize_function_name;
 };
 
 struct _GstHailoPythonClass

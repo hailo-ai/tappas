@@ -13,6 +13,12 @@ KNOWN_BUCKETS = Buckets.parse_raw(Path(config.BUCKETS_FILE).read_text())
 
 class S3AmazonDownloader:
     @classmethod
+    def dump_requirement(cls, relative_url: str, bucket: str, destination_path: Path, requirements_file: Path) -> None:
+        url = f"{KNOWN_BUCKETS.buckets[bucket].url}/{config.VERSION}/{relative_url}"
+        with requirements_file.open("a") as f:
+            f.write(f"{url} -> {destination_path} \n")
+
+    @classmethod
     def download(cls, relative_url: str, bucket: str, destination_path: Path) -> None:
         """
         Download file in chunks

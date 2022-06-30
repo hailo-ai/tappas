@@ -6,14 +6,15 @@ function init_variables() {
     script_dir=$(dirname $(realpath "$0"))
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
-    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
-    readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources"
+    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes"
+    readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/raspberrypi/detection/resources"
 
-    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libnew_yolo_post.so"
+    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m.hef"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
+    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
 
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
@@ -26,7 +27,13 @@ function init_variables() {
     stats_element=""
     debug_stats_export=""
     sync_pipeline=false
-    hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
+    device_id_prop=""
+
+    camera_framerate="40/1"
+    camera_input_width=640
+    camera_input_height=640
+    camera_input_format="RGB"
+    json_config_path=$DEFAULT_JSON_CONFIG_PATH 
 }
 
 function print_help_if_needed() {
@@ -45,7 +52,7 @@ function print_usage() {
     echo "Options:"
     echo "  -h --help                  Show this help"
     echo "  --network NETWORK          Set network to use. choose from [yolov5, mobilenet_ssd], default is yolov5"
-    echo "  -i INPUT --input INPUT     Set the input video file path (default $input_source)"
+    echo "  -i INPUT --input INPUT     Set the input source (default $input_source)"
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
     echo "  --print-device-stats       Print the power and temperature measured"
@@ -72,7 +79,8 @@ function parse_args() {
             print_gst_launch_only=true
         elif [ "$1" = "--print-device-stats" ]; then
             hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
-            stats_element="hailodevicestats device-id=$hailo_bus_id"
+            device_id_prop="device_id=$hailo_bus_id"
+            stats_element="hailodevicestats $device_id_prop"
             debug_stats_export="GST_DEBUG=hailodevicestats:5"
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
@@ -90,27 +98,55 @@ function parse_args() {
     done
 }
 
+function validate_rpi_platform_camera_support() {
+    os_id=$(cat /etc/os-release | grep ^ID=)
+    if [ "$os_id" != "ID=debian" ]; then
+        echo "Camera device supported only in Debian release of Raspberry PI"
+        exit 1
+    fi
+
+    identify_v4l=$(gst-launch-1.0 v4l2src device=$input_source num-buffers=1 ! fakesink 2>&1 | grep 'Cannot identify device' | wc -l)
+    if [ "$identify_v4l" -eq 1 ]; then
+        echo "Cannot identify v4l device '$input_source'"
+        exit 1
+    fi
+
+    num_of_cam_devices_sup=$(gst-launch-1.0 --gst-debug=v4l2src:5 v4l2src device=$input_source num-buffers=1 ! fakesink 2>&1 | sed -une '/caps of src/ s/[:;] /\n/gp' | grep $camera_input_format | wc -l)
+    if [ "$num_of_cam_devices_sup" -eq 0 ]; then
+        echo "v4l device '$input_source' is not supporting requested input format '$camera_input_format'"
+        exit 1
+    fi
+}
+
 init_variables $@
 parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    echo "Received invalid argument: $input_source. Live input sources are currently not supported."
-    exit 1
+    validate_rpi_platform_camera_support
+    source_element="v4l2src device=$input_source name=src_0 !  video/x-raw, format=$camera_input_format, width=$camera_input_width, height=$camera_input_height, framerate=$camera_framerate, pixel-aspect-ratio=1/1 ! \
+                    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoflip video-direction=horiz ! \
+                    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoscale n-threads=2"
 else
-    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 "
+    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 max_threads=2 ! \
+                    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoscale n-threads=2 ! \
+                    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoconvert n-threads=3"
 fi
 
 PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     $source_element ! \
-    videoscale n-threads=8 ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert n-threads=8 ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=$batch_size ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter2 function-name=$network_name so-path=$postprocess_so qos=false ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    hailonet hef-path=$hef_path $device_id_prop is-active=true batch-size=$batch_size ! \
+    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    hailofilter function-name=$network_name config-path=$json_config_path so-path=$postprocess_so qos=false ! \
+    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! \
-    videoconvert n-threads=8 ! \
+    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    videoconvert n-threads=3 ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
 
 echo "Running $network_name"

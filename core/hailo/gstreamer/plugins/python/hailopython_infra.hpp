@@ -73,6 +73,7 @@ public:
 
     ~PythonCallback() = default;
 
+    GstFlowReturn CallPython();
     GstFlowReturn CallPython(GstBuffer *buffer, py_descriptor_t desc);
 };
 
@@ -93,6 +94,7 @@ private:
 };
 
 GstFlowReturn invoke_python_callback(PythonCallback *pycb, GstBuffer *buffer, py_descriptor_t desc, char **error_msg);
+GstFlowReturn invoke_python_callback(PythonCallback *pycb, char **error_msg);
 PythonCallback *create_python_callback(const char *module_path, const char *function_name,
                                        const char *args_string, const char *keyword_args_string, char **error_msg);
 

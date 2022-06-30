@@ -25,7 +25,7 @@
 
 #include <gst/video/video.h>
 #include <gst/video/gstvideofilter.h>
-#include "jde_tracker/jde_tracker.hpp"
+#include "hailo_tracker.hpp"
 
 G_BEGIN_DECLS
 
@@ -42,9 +42,10 @@ struct _GstHailoTracker
 {
     GstVideoFilter base_hailotracker;
     gboolean debug;
-    gchar *stream_id;
+    gchar *current_stream_id;
     gint class_id;
-    JDETracker jde_tracker;
+    HailoTrackerParams tracker_params;
+    std::vector<std::string> active_streams;
 };
 
 struct _GstHailoTrackerClass

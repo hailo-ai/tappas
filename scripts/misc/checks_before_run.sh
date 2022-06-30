@@ -4,6 +4,35 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+check_python_packages=false
+export_only=false
+
+function check__print_usage() {
+    echo "Checks before app run:"
+    echo ""
+    echo "Options:"
+    echo "  --help                   Show this help"
+    echo "  --check-python-packages  Check if python packages exists"
+    echo "  --export-only            Handle setting TAPPAS_WORKSPACE only mode"
+    exit 1
+}
+
+function check__parse_args() {
+    # Unknown arguemnt could be argument of our parent
+    # https://unix.stackexchange.com/questions/541878/prevent-bashscript-argument-being-transferred-to-a-child-sourced-script
+    while test $# -gt 0; do
+        if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+            check__print_usage
+        elif [ "$1" == "--check-python-packages" ]; then
+            check_python_packages=true
+        elif [ "$1" == "--export-only" ]; then
+            export_only=true
+        fi
+        shift
+    done
+}
+
+
 function log_error() {
     echo -e "${RED}ERROR:${NC} ${1}"
 }
@@ -26,6 +55,21 @@ function validate_hailo_device_connected() {
         log_error "No Hailo-8 devices found. Please connect the device and try again"
         return 1
     fi
+}
+
+function check_python_packages_found() {
+    cat $TAPPAS_WORKSPACE/core/requirements/gstreamer_requirements.txt | while read line 
+    do
+        set +e
+        python3 -c "import pkg_resources; pkg_resources.require('$line')" &> /dev/null
+        package_import_return_code=$?
+        set -e
+
+        if [[ $package_import_return_code -ne 0 ]]; then
+            log_warning "Pip package '${line}' is missing, Perhaps the virtualenv is not activated?"
+            return 1
+        fi
+    done
 }
 
 function validate_hailort_version() {
@@ -60,7 +104,15 @@ function export_xv_image_is_supported() {
 }
 
 function main() {
-    functions_to_run=( export_workspaces validate_hailo_device_connected validate_hailort_version export_xv_image_is_supported )
+    functions_to_run=( export_workspaces validate_hailo_device_connected validate_hailort_version export_xv_image_is_supported)
+
+    if [ "$export_only" = true ]; then
+        functions_to_run=( export_workspaces )
+    fi
+
+    if [ "$check_python_packages" = true ]; then
+        functions_to_run+=( check_python_packages_found )
+    fi
 
     for func_name in "${functions_to_run[@]}"
     do  
@@ -73,4 +125,5 @@ function main() {
     done
 }
 
+check__parse_args $@
 main

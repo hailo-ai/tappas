@@ -1,0 +1,15 @@
+{
+  "path": "apps/gstreamer/general/facial_landmarks/resources",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/tddfa_mobilenet_v1.hef",
+      "destination": "tddfa_mobilenet_v1.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/faces_120_120.mp4",
+      "destination": "faces_120_120.mp4"
+    }
+  ]
+}

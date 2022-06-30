@@ -28,7 +28,7 @@ const std::string get_file_name(const std::string &file_path)
     }
 }
 
-hailo_status BMPImage::read_image(const std::string &file_path, std::unique_ptr<BMPImage> &input_image)
+hailo_status BMPImage::read_image(const std::string &file_path, std::unique_ptr<BMPImage> &input_image, int image_width, int image_height)
 {
     bmp_file_header_t file_header;
     std::ifstream image(file_path, std::ios::in | std::ios_base::binary);
@@ -57,9 +57,9 @@ hailo_status BMPImage::read_image(const std::string &file_path, std::unique_ptr<
     }
 
     // Validate input image match the yolov5 net
-    if ((YOLOV5M_IMAGE_WIDTH != info_header.width) || (YOLOV5M_IMAGE_HEIGHT != info_header.height)) {
-        std::cerr << "Input image '" << file_path << "' has the wrong size! Size should be" << YOLOV5M_IMAGE_WIDTH <<
-            "x" << YOLOV5M_IMAGE_HEIGHT << ", received: " << info_header.width << "x" << info_header.height << std::endl;
+    if ((image_width != info_header.width) || (image_height != info_header.height)) {
+        std::cerr << "Input image '" << file_path << "' has the wrong size! Size should be" << image_width <<
+            "x" << image_height << ", received: " << info_header.width << "x" << info_header.height << std::endl;
         return HAILO_INVALID_ARGUMENT;
     }
     if (RGB_BITS_PER_PIXEL != info_header.bits_per_pixel_count) {
@@ -178,12 +178,12 @@ void BMPImage::fill_pixel(uint32_t x, uint32_t y, Color color)
     m_data[RGB_CHANNELS_COUNT * (y * m_info_header.width + x) + 2] = color.r;
 }
 
-hailo_status BMPImage::get_images(std::vector<std::unique_ptr<BMPImage>> &input_images, const size_t inputs_count)
+hailo_status BMPImage::get_images(std::vector<std::unique_ptr<BMPImage>> &input_images, const size_t inputs_count, int image_width, int image_height)
 {
     for (uint32_t i = 0; i < inputs_count; i++) {
         std::string file_path = INPUT_DIR_PATH + "image" + std::to_string(i) + ".bmp";
         std::unique_ptr<BMPImage> image;
-        auto status = BMPImage::read_image(file_path, image);
+        auto status = BMPImage::read_image(file_path, image, image_width, image_height);
         if (HAILO_SUCCESS != status) {
             std::cerr << "Failed reading file: '" << file_path << "', status = " << status << std::endl;
             return status;

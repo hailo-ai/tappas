@@ -6,26 +6,47 @@ function init_variables() {
     script_dir=$(dirname $(realpath "$0"))
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
 
-    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/libs/"
-    readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/x86/pose_estimation/resources"
+    readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes/"
+    readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/raspberrypi/pose_estimation/resources"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libcenterpose_post.so"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
     readonly DEFAULT_NETWORK_NAME="centerpose"
-    readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/x86/detection/resources/detection.mp4"
+    readonly DEFAULT_VIDEO_SOURCE="$TAPPAS_WORKSPACE/apps/gstreamer/raspberrypi/detection/resources/detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/centerpose_regnetx_1.6gf_fpn.hef"
 
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    draw_so=$DEFAULT_DRAW_SO
     network_name=$DEFAULT_NETWORK_NAME
     sync_pipeline=false
 
     print_gst_launch_only=false
     additonal_parameters=""
 
-    hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
+    camera_framerate="35/1"
+    camera_input_format="RGB"
+    camera_input_width=640
+    camera_input_height=640
+}
+
+function validate_rpi_platform_camera_support() {
+    os_id=$(cat /etc/os-release | grep ^ID=)
+    if [ "$os_id" != "ID=debian" ]; then
+        echo "Camera device supported only in Debian release of Raspberry PI"
+        exit 1
+    fi
+
+    identify_v4l=$(gst-launch-1.0 v4l2src device=$input_source num-buffers=1 ! fakesink 2>&1 | grep 'Cannot identify device' | wc -l)
+    if [ "$identify_v4l" -eq 1 ]; then
+        echo "Cannot identify v4l device '$input_source'"
+        exit 1
+    fi
+
+    num_of_cam_devices_sup=$(gst-launch-1.0 --gst-debug=v4l2src:5 v4l2src device=$input_source num-buffers=1 ! fakesink 2>&1 | sed -une '/caps of src/ s/[:;] /\n/gp' | grep $camera_input_format | wc -l)
+    if [ "$num_of_cam_devices_sup" -eq 0 ]; then
+        echo "v4l device '$input_source' is not supporting requested input format '$camera_input_format'"
+        exit 1
+    fi
 }
 
 function print_usage() {
@@ -64,6 +85,8 @@ function parse_args() {
             if [ $2 == "centerpose_416" ]; then
                 network_name="centerpose_416"
                 hef_path="$RESOURCES_DIR/centerpose_repvgg_a0.hef"
+                camera_input_width=416
+                camera_input_height=416
             elif [ $2 != "centerpose" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
@@ -85,22 +108,28 @@ parse_args $@
 
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
-    echo "Received invalid argument: $input_source. Live input sources are currently not supported."
-    exit 1
+    validate_rpi_platform_camera_support
+    source_element="v4l2src device=$input_source name=src_0 !  video/x-raw, format=$camera_input_format, width=$camera_input_width, height=$camera_input_height, framerate=$camera_framerate, pixel-aspect-ratio=1/1 ! \
+                    queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoflip video-direction=horiz"
 else
-    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264"
+    source_element="filesrc location=$input_source name=src_0 ! qtdemux ! h264parse ! avdec_h264 ! \
+                    queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoscale n-threads=3 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
+                    queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                    videoconvert n-threads=2"
 fi
 
 PIPELINE="gst-launch-1.0 \
     $source_element ! \
-    videoscale n-threads=8 ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert n-threads=8 ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false batch-size=1 ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$postprocess_so qos=false debug=False function-name=$network_name ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$draw_so qos=false debug=False ! \
-    videoconvert n-threads=8 ! \
+    queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    hailonet hef-path=$hef_path is-active=true ! \
+    queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    hailofilter so-path=$postprocess_so qos=false function-name=$network_name ! \
+    queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    hailooverlay qos=false ! \
+    queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+    videoconvert n-threads=2 ! \
     fpsdisplaysink video-sink=ximagesink name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
 
 echo ${PIPELINE}

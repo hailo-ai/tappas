@@ -19,7 +19,7 @@ const char *OUTPUT_LAYER_NAME = "lprnet/conv31";
  */
 void OCR_postprocess(HailoROIPtr roi)
 {
-    NewHailoTensorPtr net_output = roi->get_tensor(OUTPUT_LAYER_NAME);
+    HailoTensorPtr net_output = roi->get_tensor(OUTPUT_LAYER_NAME);
     if (nullptr == net_output)
          return;
 

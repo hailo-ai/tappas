@@ -1,0 +1,15 @@
+{
+  "path": "apps/gstreamer/imx/segmentation/resources",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/fcn8_resnet_v1_18.hef",
+      "destination": "fcn8_resnet_v1_18.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/full_mov_slow.mp4",
+      "destination": "full_mov_slow.mp4"
+    }
+  ]
+}

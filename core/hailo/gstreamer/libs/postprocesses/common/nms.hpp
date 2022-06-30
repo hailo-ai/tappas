@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #pragma once
 
 #include "hailo_objects.hpp"
@@ -25,9 +25,9 @@ namespace common
     }
 
     /**
-     * @brief Perform IOU based NMS on a vector of NewHailoDetection objects
-     * 
-     * @param objects  -  std::vector<NewHailoDetection>
+     * @brief Perform IOU based NMS on a vector of HailoDetection objects
+     *
+     * @param objects  -  std::vector<HailoDetection>
      *        The detections to perform NMS on.
      *
      * @param iou_thr  -  float
@@ -36,73 +36,47 @@ namespace common
      * @param should_nms_cross_classes  -  bool
      *        If true, then apply NMS regardless of class differences. Default false.
      */
-    void nms(std::vector<NewHailoDetection> &objects, const float iou_thr, bool should_nms_cross_classes = false)
+    void nms(std::vector<HailoDetection> &objects, const float iou_thr, bool should_nms_cross_classes = false)
     {
+        std::vector<HailoDetection> objects_after_nms;
         // The network may propose multiple detections of similar size/score,
         // which are actually the same detection. We want to filter out the lesser
         // detections with a simple nms.
+        std::sort(objects.begin(), objects.end(),
+                  [](HailoDetection a, HailoDetection b)
+                  { return a.get_confidence() > b.get_confidence(); });
+
         for (uint index = 0; index < objects.size(); index++)
         {
-            for (uint jindex = index + 1; jindex < objects.size(); jindex++)
+            if (objects[index].get_confidence() != 0.0f)
             {
-                if (should_nms_cross_classes || (objects[index].get_class_id() == objects[jindex].get_class_id()))
+                for (uint jindex = index + 1; jindex < objects.size(); jindex++)
                 {
-                    // For each detection, calculate the IOU against each following detection.
-                    float iou = iou_calc(objects[index].get_bbox(), objects[jindex].get_bbox());
-                    // If the IOU is above threshold, then we have two similar detections,
-                    // and want to delete the one.
-                    if (iou >= iou_thr)
+                    if ((should_nms_cross_classes || (objects[index].get_class_id() == objects[jindex].get_class_id())) &&
+                        objects[jindex].get_confidence() != 0.0f)
                     {
-                        // The detections are arranged in highest score order,
-                        // so we want to erase the latter detection.
-                        objects.erase(objects.begin() + jindex);
-                        jindex--; // Step back jindex since we just erased the current detection.
+                        // For each detection, calculate the IOU against each following detection.
+                        float iou = iou_calc(objects[index].get_bbox(), objects[jindex].get_bbox());
+                        // If the IOU is above threshold, then we have two similar detections,
+                        // and want to delete the one.
+                        if (iou >= iou_thr)
+                        {
+                            // The detections are arranged in highest score order,
+                            // so we want to erase the latter detection.
+                            objects[jindex].set_confidence(0.0f);
+                        }
                     }
                 }
             }
         }
-    }
-
-    /**
-     * @brief Perform IOU based NMS on detection objects of HailoRoi
-     * 
-     * @param hailo_roi  -  HailoROIPtr
-     *        The HailoROI contains detections to perform NMS on.
-     *
-     * @param iou_thr  -  float
-     *        Threshold for IOU filtration
-     *
-     * @param should_nms_cross_classes  -  bool
-     *        If true, then apply NMS regardless of class differences. Default false.
-     */
-    void nms(HailoROIPtr hailo_roi, const float iou_thr, bool should_nms_cross_classes = false)
-    {
-        // The network may propose multiple detections of similar size/score,
-        // which are actually the same detection. We want to filter out the lesser
-        // detections with a simple nms.
-
-        std::vector<NewHailoDetectionPtr> objects = hailo_common::get_hailo_detections(hailo_roi);
         for (uint index = 0; index < objects.size(); index++)
         {
-            for (uint jindex = index + 1; jindex < objects.size(); jindex++)
+            if (objects[index].get_confidence() != 0.0f)
             {
-                if (should_nms_cross_classes || (objects[index]->get_class_id() == objects[jindex]->get_class_id()))
-                {
-                    // For each detection, calculate the IOU against each following detection.
-                    float iou = iou_calc(objects[index]->get_bbox(), objects[jindex]->get_bbox());
-                    // If the IOU is above threshold, then we have two similar detections,
-                    // and want to delete the one.
-                    if (iou >= iou_thr)
-                    {
-                        // The detections are arranged in highest score order,
-                        // so we want to erase the latter detection.
-                        hailo_roi->remove_object(objects[jindex]);
-                        objects.erase(objects.begin() + jindex);
-                        jindex--; // Step back jindex since we just erased the current detection.
-                    }
-                }
-            
+                objects_after_nms.push_back(objects[index]);
             }
         }
+        objects = objects_after_nms;
     }
+
 }
