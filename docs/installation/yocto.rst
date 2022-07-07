@@ -46,7 +46,7 @@ Add the following to your image in your ``conf/bblayers.conf``\ :
 
 .. code-block:: sh
 
-   BBLAYERS += "${BSPDIR}/sources/meta-hailo-tappas/meta-hailo-tappas"
+   BBLAYERS += "${BSPDIR}/sources/meta-hailo/meta-hailo-tappas"
 
 Add the following to your image in your ``conf/local.conf``\ :
 

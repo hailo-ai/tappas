@@ -25,3 +25,4 @@ That's a great question! Hailo provides a `Sanity Pipeline <sanity_pipeline/READ
 #. `Detection and Depth Estimation - networks switch App <network_switch/README.rst>`_ - Demonstrates Hailonet network-switch capability.
 #. `Python <python/README.rst>`_ - Classification app using ``resnet_v1_50`` with python post-processing.
 #. `License Plate Recognition <license_plate_recognition/README.rst>`_ - LPR app using ``yolov5m`` vehicle detection, ``tiny-yolov4`` license plate detection, and ``lprnet`` OCR extraction with Hailonet network-switch capability.
+#. `Multi Person Multi Camera Tracking Pipeline <multi_person_multi_camera_tracking/README.rst>`_ - Tracking persons across multiple streams.
