@@ -2,9 +2,6 @@
 set -e
 
 function init_variables() {
-    YELLOW='\033[1;33m'
-    NO_COLOR='\033[0m'
-    echo -e "${YELLOW}WARNING:${NO_COLOR} This application is work in progress"
     print_help_if_needed $@
     script_dir=$(dirname $(realpath "$0"))
     source $script_dir/../../../../scripts/misc/checks_before_run.sh
@@ -82,10 +79,10 @@ function create_sources() {
 
     for ((n = $start_index; n < $num_of_src; n++)); do
         sources+="filesrc location=$RESOURCES_DIR/reid$n.mp4 name=source_$n ! decodebin ! \
-                queue name=hailo_preprocess_q_$n leaky=no max_size_buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                queue name=hailo_preprocess_q_$n leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
                 videorate ! video/x-raw, framerate=30/1 ! \
                 fun.sink_$n sid.src_$n ! \
-                queue name=comp_q_$n leaky=downstream max_size_buffers=300 max-size-bytes=0 max-size-time=0 \
+                queue name=comp_q_$n leaky=downstream max-size-buffers=300 max-size-bytes=0 max-size-time=0 \
                 ! comp.sink_$n "
     done
 }
@@ -134,9 +131,9 @@ function main() {
         hailofilter use-gst-buffer=true so-path=$RE_ID_OVERLAY qos=false ! \
         queue name=hailo_post_draw leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         streamiddemux name=sid compositor name=comp start-time-selection=0 $compositor_locations ! \
-        queue name=hailo_video_q_0 leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        queue name=hailo_video_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         videoconvert n-threads=2 ! \
-        queue name=hailo_display_q_0 leaky=no max_size_buffers=300 max-size-bytes=0 max-size-time=0 ! \
+        queue name=hailo_display_q_0 leaky=no max-size-buffers=300 max-size-bytes=0 max-size-time=0 ! \
         fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=true text-overlay=false \
         $sources ${additonal_parameters}"
 
@@ -147,7 +144,6 @@ function main() {
 
     echo "Running Pipeline..."
     eval "${pipeline}"
-    echo -e "${YELLOW}WARNING:${NO_COLOR} This application is work in progress"
 
 }
 

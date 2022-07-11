@@ -54,7 +54,7 @@ Prerequisites
 * At least 6GB's of free disk space
 
 
-   Note: This version is compatible with HailoRT v4.8.0.
+   Note: This version is compatible with HailoRT v4.8.1.
 
 
 Installation
@@ -120,7 +120,7 @@ The following table details the currently availble examples.
    :header-rows: 1
 
    * - 
-     - `x86 <apps/gstreamer/general/README.rst>`_
+     - `General <apps/gstreamer/general/README.rst>`_
      - `iMX8 <apps/gstreamer/imx/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - Object Detection
@@ -176,7 +176,7 @@ The cascaded (serial) flow shows two networks running in series. This example pi
    :header-rows: 1
 
    * - 
-     - `x86 <apps/gstreamer/general/README.rst>`_
+     - `General <apps/gstreamer/general/README.rst>`_
      - `iMX8 <apps/gstreamer/imx/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - Parallel - Object Det + Depth Estimation
@@ -203,7 +203,7 @@ Multi-Stream Pipelines
    :header-rows: 1
 
    * - 
-     - `x86 <apps/gstreamer/general/README.rst>`_
+     - `General <apps/gstreamer/general/README.rst>`_
      - `iMX8 <apps/gstreamer/imx/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - Multi-stream Object Detection
@@ -226,7 +226,7 @@ Pipelines for High-Resolution Processing Via Tiling
    :header-rows: 1
 
    * - 
-     - `x86 <apps/gstreamer/general/README.rst>`_
+     - `General <apps/gstreamer/general/README.rst>`_
      - `iMX8 <apps/gstreamer/imx/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - HD Object Detection
@@ -249,7 +249,7 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
    :header-rows: 1
 
    * - 
-     - `x86 <apps/gstreamer/general/README.rst>`_
+     - `General <apps/gstreamer/general/README.rst>`_
      - `iMX8 <apps/gstreamer/imx/README.rst>`_
    * - LPR
      - |check_mark|
@@ -262,10 +262,16 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
 Changelog
 ----------
 
+**v3.19.1 (July 2022)**
+
+* New Apps:
+  
+  * Multi-Camera Multi-Person Tracking (RE-ID) pipeline `multi_person_multi_camera_tracking.sh <apps/gstreamer/general/multi_person_multi_camera_tracking/README.rst>`_ (preview)
+
 **v3.19.0 (June 2022)**
 
 * New Apps:
-
+  
   * Added Cascading networks, Depth Estimation, Pose Estimation and Semantic Segmentation pipelines for `i.MX Pipelines <apps/gstreamer/imx/README.rst>`_
 
 * Added an option to control post-process parameters via a JSON configuration for the detection application
@@ -292,7 +298,7 @@ Changelog
 
 * New Apps:
 
-  * LPR (License Plate Recognition) pipeline for `x86 Pipelines <apps/gstreamer/general/README.rst>`_ (preview)
+  * LPR (License Plate Recognition) pipeline for `General Pipelines <apps/gstreamer/general/README.rst>`_ (preview)
   * Detection & pose estimation app
   * Detection (MobilenetSSD) - Multi scale tiling app
 
