@@ -9,6 +9,7 @@ plugin_sources = [
     'gsthailotools.cpp',
     'filter/gsthailofilter.cpp',
     'muxer/gsthailomuxer.cpp',
+    'muxer/gsthailoroundrobin.cpp',
     'common/image.cpp',
     'overlay/overlay.cpp',
     'overlay/gsthailooverlay.cpp',
@@ -20,6 +21,7 @@ plugin_sources = [
     'tiling/gsthailotileaggregator.cpp',
     'tracking/gsthailotracker.cpp',
     'gallery/gsthailogallery.cpp',
+    'export/export_file/gsthailoexportfile.cpp',
 ]
 
 # equivalent to - dl_dep = dependency('dl')
@@ -31,7 +33,7 @@ dl_dep = meson.get_compiler('c').find_library('dl', required : false)
 shared_library('gsthailotools',
     plugin_sources,
     cpp_args : hailo_lib_args + common_args,
-    include_directories: [hailo_general_inc, xtensor_inc],
+    include_directories: [hailo_general_inc, xtensor_inc, rapidjson_inc],
     dependencies : plugin_deps + [meta_dep, dl_dep, opencv_dep, tracker_dep],
     gnu_symbol_visibility : 'default',
     version: meson.project_version(),

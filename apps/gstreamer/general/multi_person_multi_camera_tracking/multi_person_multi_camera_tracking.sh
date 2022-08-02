@@ -12,6 +12,7 @@ function init_variables() {
     readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
     readonly CROPPER_SO="$POSTPROCESS_DIR/cropping_algorithms/libre_id.so"
     readonly RE_ID_POST_SO="$POSTPROCESS_DIR/libre_id.so"
+    readonly RE_ID_DEWARP_SO="$APPS_LIBS_DIR/libre_id_dewarp.so"
     readonly HEF_PATH="$RESOURCES_DIR/yolov5s_personface.hef"
     readonly REID_HEF_PATH="$RESOURCES_DIR/repvgg_a0_person_reid_2048.hef"
     readonly FUNCTION_NAME="yolov5_personface"
@@ -28,6 +29,9 @@ function init_variables() {
     print_gst_launch_only=false
     vdevice_key=1
     json_config_path=$DEFAULT_JSON_CONFIG_PATH
+    sync_mode=true
+    dewarp_element=""
+    source_prefix="reid"
 }
 
 function print_usage() {
@@ -38,6 +42,7 @@ function print_usage() {
     echo "  --show-fps                      Printing fps"
     echo "  --num-of-sources NUM            Setting number of sources to given input (default value is 4)"
     echo "  --print-gst-launch              Print the ready gst-launch command without running it"
+    echo "  --online-dewarp                 Perform online dewarping"
     exit 0
 }
 
@@ -65,6 +70,12 @@ function parse_args() {
             shift
             echo "Setting number of sources to $1"
             num_of_src=$1
+        elif [ "$1" = "--online-dewarp" ]; then
+            sync_mode=false
+            dewarp_element="queue name=pre_dewarp_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+                             hailofilter so_path=$RE_ID_DEWARP_SO use-gst-buffer=true qos=false ! "
+            source_prefix="reid_orig"
+            
         else
             echo "Received invalid argument: $1. See expected arguments below:"
             print_usage
@@ -78,8 +89,8 @@ function create_sources() {
     start_index=0
 
     for ((n = $start_index; n < $num_of_src; n++)); do
-        sources+="filesrc location=$RESOURCES_DIR/reid$n.mp4 name=source_$n ! decodebin ! \
-                queue name=hailo_preprocess_q_$n leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+        sources+="filesrc location=$RESOURCES_DIR/$source_prefix$n.mp4 name=source_$n ! decodebin ! \
+                queue name=hailo_preprocess_q_$n leaky=no max_size_buffers=5 max-size-bytes=0 max-size-time=0 ! \
                 videorate ! video/x-raw, framerate=30/1 ! \
                 fun.sink_$n sid.src_$n ! \
                 queue name=comp_q_$n leaky=downstream max-size-buffers=300 max-size-bytes=0 max-size-time=0 \
@@ -117,24 +128,25 @@ function main() {
     pipeline="gst-launch-1.0 \
         funnel name=fun ! \
         queue name=hailo_pre_convert_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        videoconvert n-threads=1 ! video/x-raw,format=RGB ! \
+        videoconvert n-threads=1 qos=false ! video/x-raw,format=RGB ! \
+        $dewarp_element \
         $DETECTION_PIPELINE ! \
         queue name=hailo_pre_tracker leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailotracker name=hailo_tracker class-id=1 kalman-dist-thr=0.7 iou-thr=0.7 init-iou-thr=0.8 \
-        keep-new-frames=2 keep-tracked-frames=4 keep-lost-frames=8 ! \
+        keep-new-frames=2 keep-tracked-frames=4 keep-lost-frames=8 qos=false ! \
         $RE_ID_PIPELINE ! \
         queue name=hailo_pre_gallery leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailogallery similarity-thr=.4 gallery-queue-size=100 class-id=1 ! \
         queue name=hailo_post_gallery leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        videoscale n-threads=2 add-borders=false ! video/x-raw, width=800, height=450, pixel-aspect-ratio=1/1 ! \
+        videoscale n-threads=2 add-borders=false qos=false ! video/x-raw, width=800, height=450, pixel-aspect-ratio=1/1 ! \
         queue name=hailo_pre_draw leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailofilter use-gst-buffer=true so-path=$RE_ID_OVERLAY qos=false ! \
         queue name=hailo_post_draw leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         streamiddemux name=sid compositor name=comp start-time-selection=0 $compositor_locations ! \
-        queue name=hailo_video_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        videoconvert n-threads=2 ! \
-        queue name=hailo_display_q_0 leaky=no max-size-buffers=300 max-size-bytes=0 max-size-time=0 ! \
-        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=true text-overlay=false \
+        queue name=hailo_video_q_0 leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        videoconvert n-threads=2 qos=false ! \
+        queue name=hailo_display_q_0 leaky=no max_size_buffers=300 max-size-bytes=0 max-size-time=0 ! \
+        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_mode text-overlay=false \
         $sources ${additonal_parameters}"
 
     echo ${pipeline}

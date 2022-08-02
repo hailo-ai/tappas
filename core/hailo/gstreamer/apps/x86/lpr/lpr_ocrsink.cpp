@@ -30,7 +30,6 @@ int singleton_map_key = 0;
 std::vector<int> seen_ocr_track_ids;
 const gchar *OCR_LABEL_TYPE = "ocr";
 
-
 void catalog_yuy2_mat(std::string text, cv::Mat &mat)
 {
     // Resize the mat to a presentable size, add padding
@@ -42,7 +41,7 @@ void catalog_yuy2_mat(std::string text, cv::Mat &mat)
     cv::copyMakeBorder(resized_yuy2, padded_yuy2, 30, 0, 0, 0, cv::BORDER_CONSTANT, cv::Scalar(235, 128, 235, 128));
 
     // write the OCR text on that padding (view as 2 channel su the yuy2 draws correctly)
-    cv::Mat image_2_channel = cv::Mat(padded_yuy2.rows, padded_yuy2.cols*2, CV_8UC2, (char *)padded_yuy2.data, padded_yuy2.step);
+    cv::Mat image_2_channel = cv::Mat(padded_yuy2.rows, padded_yuy2.cols * 2, CV_8UC2, (char *)padded_yuy2.data, padded_yuy2.step);
     auto text_position = cv::Point(5, 25);
     cv::putText(image_2_channel, text, text_position, cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(81, 90, 81, 239), 2);
 
@@ -55,7 +54,7 @@ void catalog_rgb_mat(std::string text, cv::Mat &mat)
     // Resize the mat to a presentable size, add padding
     cv::Mat resized_image;
     cv::Mat padded_image;
-    cv::resize(mat, resized_image, cv::Size(300, 75), cv::INTER_AREA);
+    cv::resize(mat, resized_image, cv::Size(300, 75), 0, 0, cv::INTER_AREA);
 
     // Add padding top, bottom, left, right, borderType
     cv::copyMakeBorder(resized_image, padded_image, 30, 0, 0, 0, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
@@ -63,7 +62,7 @@ void catalog_rgb_mat(std::string text, cv::Mat &mat)
     // write the OCR text on that padding
     auto text_position = cv::Point(10, 25);
     cv::putText(padded_image, text, text_position, cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0), 2);
-    
+
     // Set the new license plate in our CV Map singleton
     CVMatSingleton::GetInstance().set_mat_at_key(singleton_map_key % MAP_LIMIT, padded_image);
 }
@@ -75,7 +74,7 @@ void catalog_license_plate(std::string label, float confidence, HailoBBox licens
     cv::Rect rect;
     rect.x = CLAMP(license_plate_box.xmin() * mat.cols, 0, mat.cols);
     rect.y = CLAMP(license_plate_box.ymin() * mat.rows, 0, mat.rows);
-    rect.width  = CLAMP(license_plate_box.width()  * mat.cols, 0, mat.cols - rect.x);
+    rect.width = CLAMP(license_plate_box.width() * mat.cols, 0, mat.cols - rect.x);
     rect.height = CLAMP(license_plate_box.height() * mat.rows, 0, mat.rows - rect.y);
     if (rect.width == 0 || rect.height == 0)
         return;
@@ -84,7 +83,9 @@ void catalog_license_plate(std::string label, float confidence, HailoBBox licens
     if (cropped_image.type() == CV_8UC4)
     {
         catalog_yuy2_mat(text, cropped_image);
-    } else {
+    }
+    else
+    {
         catalog_rgb_mat(text, cropped_image);
     }
 
@@ -96,16 +97,16 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
     if (nullptr == roi)
         return;
 
-    std::vector<HailoDetectionPtr> vehicle_detections; // The vehicle detections in the ROI
-    std::vector<HailoUniqueIDPtr>       unique_ids;       // The unique ids of those vehicle detections
-    std::vector<HailoDetectionPtr> lp_detections;      // The license plate detections in those vehicle detections
-    std::vector<HailoClassificationPtr> classifications;  // The classifications of those license plate detections
-    float confidence;                                     // The confidence of those classifications
-    std::string license_plate_ocr_label;                  // The labels of those classifications
+    std::vector<HailoDetectionPtr> vehicle_detections;   // The vehicle detections in the ROI
+    std::vector<HailoUniqueIDPtr> unique_ids;            // The unique ids of those vehicle detections
+    std::vector<HailoDetectionPtr> lp_detections;        // The license plate detections in those vehicle detections
+    std::vector<HailoClassificationPtr> classifications; // The classifications of those license plate detections
+    float confidence;                                    // The confidence of those classifications
+    std::string license_plate_ocr_label;                 // The labels of those classifications
 
     // For each roi, check the detections
     vehicle_detections = hailo_common::get_hailo_detections(roi);
-    for(HailoDetectionPtr &vehicle_detection : vehicle_detections)
+    for (HailoDetectionPtr &vehicle_detection : vehicle_detections)
     {
         // Get the unique id of the detection
         unique_ids = hailo_common::get_hailo_unique_id(vehicle_detection);
@@ -114,7 +115,7 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
 
         // For each vehicle, get the license plate detection
         lp_detections = hailo_common::get_hailo_detections(vehicle_detection);
-        for(HailoDetectionPtr &lp_detection : lp_detections)
+        for (HailoDetectionPtr &lp_detection : lp_detections)
         {
             HailoBBox license_plate_box = hailo_common::create_flattened_bbox(lp_detection->get_bbox(), lp_detection->get_scaling_bbox());
             // For each license plate detection, check the classifications
@@ -124,7 +125,7 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
             HailoClassificationPtr classification = classifications[0];
             if (OCR_LABEL_TYPE == classification->get_classification_type())
             {
-                confidence = classification->get_confidence(); 
+                confidence = classification->get_confidence();
                 license_plate_ocr_label = classification->get_label();
                 if (confidence >= OCR_SCORE_THRESHOLD && license_plate_ocr_label.size() > 6)
                 {
@@ -132,7 +133,9 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
                     {
                         // this track id was already updated
                         continue;
-                    } else {
+                    }
+                    else
+                    {
                         seen_ocr_track_ids.emplace_back(unique_ids[0]->get_id());
                     }
 

@@ -12,6 +12,11 @@ Configuration
 
 The yolo post processes parameters can be configured by a json file located in $TAPPAS_WORKSPACE/apps/gstreamer/general/license_plate_recognition/resources/configs
 
+Configuration
+-------------
+
+The yolo post processes parameters can be configured by a json file located in $TAPPAS_WORKSPACE/apps/gstreamer/general/license_plate_recognition/resources/configs
+
 Run
 ---
 

@@ -17,6 +17,7 @@
 #define DEFAULT_IOU_THRESHOLD (0.8f)
 #define DEFAULT_INIT_IOU_THRESHOLD (0.9f)
 #define DEFAULT_KEEP_FRAMES (2)
+#define DEFAULT_KEEP_PAST_METADATA (true)
 
 struct HailoTrackerParams
 {
@@ -26,6 +27,7 @@ struct HailoTrackerParams
     int keep_tracked_frames;
     int keep_new_frames;
     int keep_lost_frames;
+    bool keep_past_metadata;
 };
 
 class HailoTracker
@@ -54,4 +56,5 @@ public:
     void set_keep_tracked_frames(std::string name, int new_keep_tracked);
     void set_keep_new_frames(std::string name, int new_keep_new);
     void set_keep_lost_frames(std::string name, int new_keep_lost);
+    void set_keep_past_metadata(std::string name, bool new_keep_past);
 };

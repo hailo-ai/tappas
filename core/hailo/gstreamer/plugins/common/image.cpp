@@ -56,15 +56,15 @@ void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolati
     cv::merge(y_channels, 2, merged_y_channels);
     // In order to resize the Y values together, they need to be viewed as a single channel Mat
     cv::Mat merged_y_channels_flat = cv::Mat(merged_y_channels.rows, merged_y_channels.cols * 2, CV_8UC1, (char *)merged_y_channels.data, merged_y_channels.cols * 2);
-    cv::resize(merged_y_channels_flat, resized_y_channels, cv::Size(resized_image.cols * 2, resized_image.rows), interpolation);
+    cv::resize(merged_y_channels_flat, resized_y_channels, cv::Size(resized_image.cols * 2, resized_image.rows), 0, 0, interpolation);
     // We can make a 2 channel view of the resized image in order to split the Y channels again
     cv::Mat resized_y_channels_2_split = cv::Mat(resized_image.rows, resized_image.cols, CV_8UC2, (char *)resized_y_channels.data, resized_image.cols * 2);
     cv::split(resized_y_channels_2_split, y_channels);
 
     // Resize the U and V channels
     std::vector<cv::Mat> resized_channels(2);
-    cv::resize(channels[1], resized_channels[0], cv::Size(resized_image.cols, resized_image.rows), interpolation);
-    cv::resize(channels[3], resized_channels[1], cv::Size(resized_image.cols, resized_image.rows), interpolation);
+    cv::resize(channels[1], resized_channels[0], cv::Size(resized_image.cols, resized_image.rows), 0, 0, interpolation);
+    cv::resize(channels[3], resized_channels[1], cv::Size(resized_image.cols, resized_image.rows), 0, 0, interpolation);
 
     // Merge all resized channels
     cv::Mat channels_to_merge[4] = {y_channels[0], resized_channels[0], y_channels[1], resized_channels[1]};

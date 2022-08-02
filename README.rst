@@ -262,6 +262,14 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
 Changelog
 ----------
 
+**v3.20.0 (August 2022)**
+
+* New Apps:
+  
+  * `Detection every X frames pipeline <apps/gstreamer/general/detection/README.rst>`_ - Demonstrates the ability of skipping frames using a tracker
+
+* Improvements to Multi-Camera Multi-Person Tracking (RE-ID) pipeline (released)
+
 **v3.19.1 (July 2022)**
 
 * New Apps:
@@ -271,7 +279,7 @@ Changelog
 **v3.19.0 (June 2022)**
 
 * New Apps:
-  
+
   * Added Cascading networks, Depth Estimation, Pose Estimation and Semantic Segmentation pipelines for `i.MX Pipelines <apps/gstreamer/imx/README.rst>`_
 
 * Added an option to control post-process parameters via a JSON configuration for the detection application

@@ -101,12 +101,18 @@ OpenCV installation
 
     # Make and install
     cmake -DOPENCV_GENERATE_PKGCONFIG=ON \
-        -DBUILD_LIST=core,imgproc,imgcodecs \
+        -DBUILD_LIST=core,imgproc,imgcodecs,calib3d,features2d,flann \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DWITH_PROTOBUF=OFF -DWITH_QUIRC=OFF \
+        -DWITH_WEBP=OFF -DWITH_OPENJPEG=OFF \
+        -DWITH_GSTREAMER=OFF -DWITH_GTK=OFF \
+        -DOPENCV_DNN_OPENCL=OFF -DBUILD_opencv_python2=OFF \
         -DINSTALL_C_EXAMPLES=ON \
         -DINSTALL_PYTHON_EXAMPLES=ON \
-        -DCMAKE_BUILD_TYPE=RELEASE \
         -DCMAKE_INSTALL_PREFIX=/usr/local  ..
-    make -j4
+
+    num_cores_to_use=$(($(nproc)/2))
+    make -j$num_cores_to_use
     sudo make install
 
     # Update the linker

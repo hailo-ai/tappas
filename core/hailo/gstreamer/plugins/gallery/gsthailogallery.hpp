@@ -21,7 +21,6 @@ struct _GstHailoGallery
 {
     GstBaseTransform base_hailogallery;
     gboolean debug;
-    gchar *stream_id;
     gint class_id;
     Gallery gallery;
 };

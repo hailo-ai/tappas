@@ -92,10 +92,10 @@ inline void JDETracker::update_matches(std::vector<std::pair<int,int>> matches,
         switch(track->get_state())
         {
             case TrackState::Tracked: // The tracklet was already tracked, so update
-                track->update(*det, this->m_frame_id);
+                track->update(*det, this->m_frame_id, this->m_keep_past_metadata);
                 break;
             case TrackState::Lost:    // The tracklet was lost but found, so re-activate
-                track->re_activate(*det, this->m_frame_id, false);
+                track->re_activate(*det, this->m_frame_id, false, this->m_keep_past_metadata);
                 break;
             case TrackState::New:     // The tracklet is brand new, so activate
                 track->activate(this->m_kalman_filter, this->m_frame_id);

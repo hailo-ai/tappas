@@ -48,6 +48,7 @@ enum
     PROP_KEEP_TRACKED_FRAMES,
     PROP_KEEP_NEW_FRAMES,
     PROP_KEEP_LOST_FRAMES,
+    PROP_KEEP_PAST_METADATA,
 };
 
 //******************************************************************
@@ -123,10 +124,15 @@ gst_hailo_tracker_class_init(GstHailoTrackerClass *klass)
                                                      0, G_MAXINT, DEFAULT_KEEP_FRAMES,
                                                      (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     g_object_class_install_property(gobject_class, PROP_KEEP_LOST_FRAMES,
-                                    g_param_spec_int("keep-lost-frames", "Keep lost frames",
-                                                     "Number of frames to keep without a successful match before a 'lost' instance is removed from the tracking record.",
-                                                     0, G_MAXINT, DEFAULT_KEEP_FRAMES,
-                                                     (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+                                g_param_spec_int("keep-lost-frames", "Keep lost frames",
+                                                    "Number of frames to keep without a successful match before a 'lost' instance is removed from the tracking record.",
+                                                    0, G_MAXINT, DEFAULT_KEEP_FRAMES,
+                                                    (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_KEEP_PAST_METADATA,
+                                g_param_spec_boolean("keep-past-metadata", "Keep past metadata on tracked object",
+                                                    "When set (default) past metadata is kept on tracked objects. When unset past metadata is removed from tracked objects.",
+                                                    DEFAULT_KEEP_PAST_METADATA,
+                                                    (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
     // Set virtual functions
     gobject_class->dispose = gst_hailo_tracker_dispose;
@@ -150,6 +156,7 @@ gst_hailo_tracker_init(GstHailoTracker *hailotracker)
     hailotracker->tracker_params.keep_tracked_frames = DEFAULT_KEEP_FRAMES;
     hailotracker->tracker_params.keep_new_frames = DEFAULT_KEEP_FRAMES;
     hailotracker->tracker_params.keep_lost_frames = DEFAULT_KEEP_FRAMES;
+    hailotracker->tracker_params.keep_past_metadata = DEFAULT_KEEP_PAST_METADATA;
 }
 
 //******************************************************************
@@ -185,6 +192,10 @@ void update_active_trackers(GstHailoTracker *hailotracker, guint property_id)
         case PROP_KEEP_LOST_FRAMES:
             HailoTracker::GetInstance().set_keep_lost_frames(stream_id,
                                                              hailotracker->tracker_params.keep_lost_frames);
+            break;
+        case PROP_KEEP_PAST_METADATA:
+            HailoTracker::GetInstance().set_keep_past_metadata(stream_id,
+                                                               hailotracker->tracker_params.keep_past_metadata);
             break;
         default:
             break;
@@ -223,6 +234,9 @@ void gst_hailo_tracker_set_property(GObject *object, guint property_id,
     case PROP_KEEP_LOST_FRAMES:
         hailotracker->tracker_params.keep_lost_frames = g_value_get_int(value);
         break;
+    case PROP_KEEP_PAST_METADATA:
+        hailotracker->tracker_params.keep_past_metadata = g_value_get_boolean(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
@@ -260,6 +274,9 @@ void gst_hailo_tracker_get_property(GObject *object, guint property_id,
         break;
     case PROP_KEEP_LOST_FRAMES:
         g_value_set_int(value, hailotracker->tracker_params.keep_lost_frames);
+        break;
+    case PROP_KEEP_PAST_METADATA:
+        g_value_set_boolean(value, hailotracker->tracker_params.keep_past_metadata);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);

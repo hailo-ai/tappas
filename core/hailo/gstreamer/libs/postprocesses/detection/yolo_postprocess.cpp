@@ -285,41 +285,10 @@ void yolov5_personface(HailoROIPtr roi, void *params_void_ptr)
 
     // Yolov5 Postprocess for faces
     auto post = Yolov5(roi, params);
-    auto face_detections = post.decode();
-    auto face_class_id = 2;
-    // Take only the faces.
-    face_detections.erase(std::remove_if(face_detections.begin(), face_detections.end(),
-                                         [face_class_id](HailoDetection obj)
-                                         { return obj.get_class_id() != face_class_id; }),
-                          face_detections.end());
+    auto detections = post.decode();
 
     // Fix the bboxes because resize was letterbox.
-    for (auto &det : face_detections)
-    {
-        auto detection_bbox = det.get_bbox();
-        auto xmin = (detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin();
-        auto ymin = (detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin();
-        auto xmax = (detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin();
-        auto ymax = (detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin();
-
-        HailoBBox new_bbox(xmin, ymin, xmax - xmin, ymax - ymin);
-        det.set_bbox(new_bbox);
-    }
-
-    // Yolov5 Postprocess for persons
-    float person_detection_thr = 0.5f;
-    auto person_class_id = 1;
-    params->detection_threshold = person_detection_thr;
-    auto persons_post = Yolov5(roi, params);
-    auto person_detections = persons_post.decode();
-    // Take only the persons.
-    person_detections.erase(std::remove_if(person_detections.begin(), person_detections.end(),
-                                           [person_class_id](HailoDetection obj)
-                                           { return obj.get_class_id() != person_class_id; }),
-                            person_detections.end());
-
-    // Fix the bboxes because resize was letterbox.
-    for (auto &det : person_detections)
+    for (auto &det : detections)
     {
         auto detection_bbox = det.get_bbox();
         auto xmin = (detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin();
@@ -335,8 +304,7 @@ void yolov5_personface(HailoROIPtr roi, void *params_void_ptr)
     roi->clear_scaling_bbox();
 
     // Add detections to main roi.
-    hailo_common::add_detections(roi, face_detections);
-    hailo_common::add_detections(roi, person_detections);
+    hailo_common::add_detections(roi, detections);
 }
 
 void yolov5_vehicles_only(HailoROIPtr roi, void *params_void_ptr)

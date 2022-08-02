@@ -476,9 +476,9 @@ public:
     }
     float get_overlap_x_axis() { return m_overlap_x_axis; }
     float get_overlap_y_axis() { return m_overlap_y_axis; }
-    float get_index() { return m_index; }
+    uint get_index() { return m_index; }
     uint get_layer() { return m_layer; }
-    float get_mode() { return m_mode; }
+    uint get_mode() { return m_mode; }
 };
 using HailoTileROIPtr = std::shared_ptr<HailoTileROI>;
 

@@ -27,12 +27,14 @@ apt_reqs[13]='libgstreamer1.0-dev'
 apt_reqs[14]='cmake'
 apt_reqs[15]='libgstreamer-plugins-base1.0-dev'
 
-
 declare -a pkg_config_reqs
 
 pkg_config_reqs[0]='opencv_imgproc'
 pkg_config_reqs[1]='opencv_core'
 pkg_config_reqs[2]='opencv_imgcodec'
+pkg_config_reqs[3]='opencv_features2d'
+pkg_config_reqs[4]='opencv_calib3d'
+pkg_config_reqs[5]='opencv_flann'
 
 error=false
 

@@ -57,8 +57,7 @@ class Downloader(ABC):
             req_path = config.REQUIREMENTS_PATH / requirements_file
             is_general_req = str(requirements_file).startswith(f'general/') and (platform != Platform.IMX)
             is_platform_req = str(requirements_file).startswith(f'{str(platform)}/')
-            include_common = str(requirements_file).startswith('common/') and (platform != Platform.IMX)
-            if platform == Platform.ANY or is_platform_req or is_general_req or include_common:
+            if platform == Platform.ANY or is_platform_req or is_general_req:
                 requirements_file_content = req_path.read_text()
                 requirements.append(FolderRequirements.parse_raw(requirements_file_content))
 
@@ -114,26 +113,30 @@ class Downloader(ABC):
         self._md5_cache_dict[md5] = file_path
 
     def _download_file(self, destination_path, requirement):
+        md5 = self._get_md5(requirement)
         if destination_path.is_file():
-            self._logger.info(
-                f'{destination_path.name} already exists inside {destination_path.parent}. Skipping download')
-            self._update_md5_cache(destination_path)
-        else:
-            md5 = self._get_md5(requirement)
-
-            if md5 in self._md5_cache_dict:
-                self._logger.info(f'Creating softlink {self._md5_cache_dict[md5]} to {destination_path}')
-                create_symlink_command = f"ln -s {self._md5_cache_dict[md5]} {destination_path}"
-                subprocess.run(create_symlink_command.split(), check=True)
-            else:
-                self._logger.info(f'Downloading {requirement.source} into {destination_path}')
-                self._download(requirement=requirement, destination=destination_path, remote_md5=md5)
+            local_file_md5 = hashlib.md5(destination_path.read_bytes()).hexdigest()
+            if md5 == local_file_md5:
+                self._logger.info(
+                    f'{destination_path.name} already exists inside {destination_path.parent}. Skipping download')
                 self._update_md5_cache(destination_path)
+                return
+            else:
+                destination_path.unlink()
 
-                if requirement.should_extract:
-                    self._logger.info(f'Extracting {destination_path} to folder')
-                    self._extract_tar(destination_path, destination_path.parent)
-                    os.remove(destination_path)
+        if md5 in self._md5_cache_dict:
+            self._logger.info(f'Creating softlink {self._md5_cache_dict[md5]} to {destination_path}')
+            create_symlink_command = f"ln -s {self._md5_cache_dict[md5]} {destination_path}"
+            subprocess.run(create_symlink_command.split(), check=True)
+        else:
+            self._logger.info(f'Downloading {requirement.source} into {destination_path}')
+            self._download(requirement=requirement, destination=destination_path, remote_md5=md5)
+            self._update_md5_cache(destination_path)
+
+            if requirement.should_extract:
+                self._logger.info(f'Extracting {destination_path} to folder')
+                self._extract_tar(destination_path, destination_path.parent)
+                os.remove(destination_path)
 
     def _adjust_model_zoo_requirements(self, folders_requirements):
         """

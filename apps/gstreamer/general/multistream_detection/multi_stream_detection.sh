@@ -77,10 +77,10 @@ function create_sources() {
     if [ "$live_src" != "" ] && [ -e $live_src ]; then
         identity="identity single-segment=true sync=true !"
         sources+="v4l2src device=$live_src name=source_0 ! videoflip video-direction=horiz ! \
-                queue name=hailo_preprocess_q_0 leaky=downstream max_size_buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                queue name=hailo_preprocess_q_0 leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
                 videoconvert ! videobox autocrop=true ! video/x-raw,width=640,height=640,pixel-aspect-ratio=1/1 ! \
                 $identity fun.sink_0 sid.src_0 ! queue name=comp_q_0 \
-                leaky=downstream max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! comp.sink_0 "
+                leaky=downstream max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! comp.sink_0 "
         start_index=1
         if [ $num_of_src -gt 4 ]; then
             num_of_src=4
@@ -90,10 +90,10 @@ function create_sources() {
     for ((n = $start_index; n < $num_of_src; n++)); do
         sources+="uridecodebin3 uri=file://$RESOURCES_DIR/detection$n.mp4 \
                 name=source_$n ! videorate ! video/x-raw,framerate=30/1 ! \
-                queue name=hailo_preprocess_q_$n leaky=no max_size_buffers=5 max-size-bytes=0  \
+                queue name=hailo_preprocess_q_$n leaky=no max-size-buffers=5 max-size-bytes=0  \
                 max-size-time=0 ! videoconvert ! videoscale method=0 add-borders=false ! \
                 video/x-raw,width=640,height=640,pixel-aspect-ratio=1/1 ! $identity \
-                fun.sink_$n sid.src_$n ! queue name=comp_q_$n leaky=downstream max_size_buffers=30 \
+                fun.sink_$n sid.src_$n ! queue name=comp_q_$n leaky=downstream max-size-buffers=30 \
                 max-size-bytes=0 max-size-time=0 ! comp.sink_$n "
     done
 }
@@ -112,8 +112,8 @@ function main() {
            queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            hailooverlay ! \
            streamiddemux name=sid compositor name=comp start-time-selection=0 $compositor_locations ! \
-           queue name=hailo_video_q_0 leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
-           videoconvert ! queue name=hailo_display_q_0 leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+           queue name=hailo_video_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+           videoconvert ! queue name=hailo_display_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
            $sources ${additonal_parameters}"
 

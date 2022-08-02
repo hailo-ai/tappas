@@ -21,7 +21,6 @@ static void gst_hailo_gallery_set_property(GObject *object, guint property_id, c
 static void gst_hailo_gallery_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void gst_hailo_gallery_dispose(GObject *object);
 static GstFlowReturn gst_hailo_gallery_transform_ip(GstBaseTransform *trans, GstBuffer *buffer);
-static gboolean gst_hailo_gallery_sink_event(GstBaseTransform *trans, GstEvent *event);
 
 enum
 {
@@ -91,7 +90,6 @@ gst_hailo_gallery_class_init(GstHailoGalleryClass *klass)
     // Set virtual functions
     gobject_class->dispose = gst_hailo_gallery_dispose;
     base_transform_class->transform_ip = GST_DEBUG_FUNCPTR(gst_hailo_gallery_transform_ip);
-    base_transform_class->sink_event = GST_DEBUG_FUNCPTR(gst_hailo_gallery_sink_event);
 }
 
 /* Instance initialization */
@@ -167,9 +165,6 @@ void gst_hailo_gallery_dispose(GObject *object)
 
     GST_DEBUG_OBJECT(hailogallery, "dispose");
 
-    /* clean up as possible.  may be called multiple times */
-    g_free(hailogallery->stream_id);
-
     G_OBJECT_CLASS(gst_hailo_gallery_parent_class)->dispose(object);
 }
 
@@ -190,37 +185,8 @@ gst_hailo_gallery_transform_ip(GstBaseTransform *trans, GstBuffer *buffer)
         if ((hailogallery->class_id == -1) || (detection->get_class_id() == hailogallery->class_id))
             detections.push_back(detection);
     }
-    hailogallery->gallery.update(detections, std::string(hailogallery->stream_id));
+    hailogallery->gallery.update(detections);
 
     GST_DEBUG_OBJECT(hailogallery, "transform_ip");
     return GST_FLOW_OK;
-}
-
-//******************************************************************
-// EVENT HANDLING
-//******************************************************************
-/* Handle sink events. */
-static gboolean
-gst_hailo_gallery_sink_event(GstBaseTransform *trans,
-                             GstEvent *event)
-{
-    GstHailoGallery *hailogallery = GST_HAILO_GALLERY(trans);
-    switch (GST_EVENT_TYPE(event))
-    {
-    case GST_EVENT_STREAM_START:
-        const gchar *stream_id;
-        gst_event_parse_stream_start(event, &stream_id);
-        if (!stream_id)
-        {
-            GST_ERROR_OBJECT(hailogallery, "No stream ID");
-            return FALSE;
-        }
-        else
-        {
-            GST_DEBUG_OBJECT(hailogallery, "filtering stream %s", stream_id);
-            hailogallery->stream_id = strdup(stream_id);
-        }
-    default:
-        return GST_BASE_TRANSFORM_CLASS(gst_hailo_gallery_parent_class)->sink_event(trans, event);
-    }
 }

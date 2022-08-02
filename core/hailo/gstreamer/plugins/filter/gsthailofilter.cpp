@@ -348,6 +348,7 @@ static GstFlowReturn gst_hailofilter_transform_ip(GstBaseTransform *trans,
             handler(hailo_roi, &frame, stream_id);
         }
         gst_video_frame_unmap(&frame);
+        g_free(stream_id);
     }
     else
     {

@@ -248,7 +248,7 @@ void calc_destination_roi_and_resize_mask(cv::Mat &destinationROI, cv::Mat &imag
     roi_height = std::clamp(roi_height, 0, image_planes.rows - roi_ymin);
 
     cv::Mat mat_data = cv::Mat(mask->get_height(), mask->get_width(), cv_type, (uint8_t *)data_ptr.data());
-    cv::resize(mat_data, resized_mask_data, cv::Size(roi_width, roi_height), cv::INTER_LINEAR);
+    cv::resize(mat_data, resized_mask_data, cv::Size(roi_width, roi_height), 0, 0, cv::INTER_LINEAR);
 
     cv::Rect roi_rect(cv::Point(roi_xmin, roi_ymin), cv::Size(roi_width, roi_height));
     destinationROI = image_planes(roi_rect);

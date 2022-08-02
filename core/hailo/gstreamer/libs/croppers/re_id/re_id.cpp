@@ -43,7 +43,7 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi)
 
     // Resize the frame
     cv::Mat resized_image;
-    cv::resize(cropped_image, resized_image, RE_ID_NETWORK_SIZE, cv::INTER_LINEAR);
+    cv::resize(cropped_image, resized_image, RE_ID_NETWORK_SIZE, 0, 0, cv::INTER_LINEAR);
 
     // Convert to grayscale
     cv::Mat gray_image;

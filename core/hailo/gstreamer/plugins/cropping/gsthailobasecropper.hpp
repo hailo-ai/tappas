@@ -49,6 +49,8 @@ G_GNUC_INTERNAL GType gst_hailo_basecropper_get_type(void);
 void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolation);
 void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
 void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
+void resize_bicubic(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
+void resize_inter_area(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
 void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
 
 G_END_DECLS

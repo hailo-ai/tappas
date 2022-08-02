@@ -39,9 +39,11 @@ gst_hailocropper_resize_method_get_type(void)
 {
     static GType hailocropper_resize_method_type = 0;
     static const GEnumValue hailocropper_resize_methods[] = {
-        {GST_HAILO_CROPPER_NEAREST_NEIGHBOR, "Nearest Neighbour", "nearest-neighbour"},
-        {GST_HAILO_CROPPER_BILINEAR, "Bilinear", "bilinear"},
-        {GST_HAILO_CROPPER_LETTERBOX, "Letterbox", "letterbox"},
+        {GST_HAILO_CROPPER_NEAREST_NEIGHBOR, "Nearest neighbour interpolation", "nearest-neighbour"},
+        {GST_HAILO_CROPPER_BILINEAR, "Bilinear interpolation", "bilinear"},
+        {GST_HAILO_CROPPER_LETTERBOX, "Aspect ratio preserving resize with padding (border)", "letterbox"},
+        {GST_HAILO_CROPPER_BICUBIC, "Bicubic interpolation", "bicubic"},
+        {GST_HAILO_CROPPER_INTER_AREA, "Resampling using pixel area relation", "inter-area"},
         {0, NULL, NULL},
     };
     if (!hailocropper_resize_method_type)
@@ -168,6 +170,12 @@ void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat
         break;
     case GST_HAILO_CROPPER_BILINEAR:
         resize_bilinear(basecropper, cropped_image, resized_image, roi);
+        break;
+    case GST_HAILO_CROPPER_BICUBIC:
+        resize_bicubic(basecropper, cropped_image, resized_image, roi);
+        break;
+     case GST_HAILO_CROPPER_INTER_AREA:
+        resize_inter_area(basecropper, cropped_image, resized_image, roi);
         break;
     case GST_HAILO_CROPPER_LETTERBOX:
         resize_letterbox(basecropper, cropped_image, resized_image, roi);

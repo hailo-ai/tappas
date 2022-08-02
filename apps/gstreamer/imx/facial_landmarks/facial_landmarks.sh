@@ -74,7 +74,7 @@ fi
 
 PIPELINE="gst-launch-1.0 \
     filesrc location=$input_source name=src_0 ! decodebin ! \
-    queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     glupload ! \
     queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     glcolorscale ! \
@@ -82,11 +82,11 @@ PIPELINE="gst-launch-1.0 \
     gldownload ! video/x-raw,pixel-aspect-ratio=1/1,format=RGBA ! \
     queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert name=pre_hailonet_videoconvert n-threads=4 qos=false ! \
-    queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-id=$hailo_bus_id debug=False is-active=true qos=false ! \
-    queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$postprocess_so qos=false ! \
-    queue max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! videoconvert qos=false ! \
     queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=true text-overlay=false window-width=600 window-height=600 ${additonal_parameters}"
