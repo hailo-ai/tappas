@@ -9,7 +9,6 @@
 #include "xtensor/xsort.hpp"
 #include "xtensor/xio.hpp"
 #include "hailo_objects.hpp"
-#include "hailo_tracker.hpp"
 
 static xt::xarray<float> gallery_get_xtensor(HailoMatrixPtr matrix)
 {

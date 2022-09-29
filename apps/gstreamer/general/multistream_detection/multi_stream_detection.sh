@@ -53,7 +53,7 @@ function parse_args() {
             print_gst_launch_only=true
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep hailo_display"
+            additonal_parameters="-v | grep hailo_display"
         elif [ "$1" = "--set-live-source" ]; then
             shift
             echo "Setting live_src to $1"

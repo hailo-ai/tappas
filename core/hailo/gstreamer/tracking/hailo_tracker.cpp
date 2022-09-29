@@ -7,6 +7,7 @@
 #include "jde_tracker/jde_tracker.hpp"
 
 #include "hailo_tracker.hpp"
+#include "hailo_common.hpp"
 
 std::mutex HailoTracker::mutex_;
 
@@ -68,6 +69,16 @@ void HailoTracker::add_object_to_track(std::string name, int track_id, HailoObje
     if (nullptr != tracked_detection)
     {
         tracked_detection->add_object(obj);
+    }
+}
+
+void HailoTracker::remove_classifications_from_track(std::string name, int track_id, std::string classifier_type)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    STrack *tracked_detection = priv->trackers[name].get_detection_with_id(track_id);
+    if (tracked_detection)
+    {
+        hailo_common::remove_classifications(tracked_detection->get_hailo_detection(), classifier_type);
     }
 }
 

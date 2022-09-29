@@ -62,10 +62,10 @@ gst_hailoexportfile_class_init(GstHailoExportFileClass *klass)
        base_class_init if you intend to subclass this class. */
     gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
                                        gst_pad_template_new("src", GST_PAD_SRC, GST_PAD_ALWAYS,
-                                                            gst_caps_from_string(GST_VIDEO_CAPS_MAKE("{ RGB, YUY2 }"))));
+                                                            gst_caps_new_any()));
     gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
                                        gst_pad_template_new("sink", GST_PAD_SINK, GST_PAD_ALWAYS,
-                                                            gst_caps_from_string(GST_VIDEO_CAPS_MAKE("{ RGB, YUY2 }"))));
+                                                            gst_caps_new_any()));
 
     gst_element_class_set_static_metadata(GST_ELEMENT_CLASS(klass),
                                           "hailoexportfile - export element",
@@ -91,6 +91,7 @@ static void
 gst_hailoexportfile_init(GstHailoExportFile *hailoexportfile)
 {
     hailoexportfile->file_path = g_strdup("hailo_meta.json");
+    hailoexportfile->buffer_offset = 0;
 }
 
 void gst_hailoexportfile_set_property(GObject *object, guint property_id,
@@ -184,6 +185,7 @@ gst_hailoexportfile_transform_ip(GstBaseTransform *trans,
     // Add a timestamp
     auto timenow = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     encoded_roi.AddMember("timestamp (ms)", rapidjson::Value(timenow), encoded_roi.GetAllocator());
+    encoded_roi.AddMember("buffer_offset", rapidjson::Value(hailoexportfile->buffer_offset), encoded_roi.GetAllocator());
 
     // Open the file 
     hailoexportfile->json_file = fopen(hailoexportfile->file_path, "rb+");
@@ -206,6 +208,7 @@ gst_hailoexportfile_transform_ip(GstBaseTransform *trans,
     std::fputc(']', hailoexportfile->json_file);
     fclose(hailoexportfile->json_file);
 
+    hailoexportfile->buffer_offset++;
     GST_DEBUG_OBJECT(hailoexportfile, "transform_ip");
     return GST_FLOW_OK;
 }

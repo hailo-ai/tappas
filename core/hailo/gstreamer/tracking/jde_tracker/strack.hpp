@@ -76,7 +76,7 @@ private:
 public:
     // Constructors
     STrack(std::vector<float> tlwh_ = {0., 0., 0., 0.}, float score_ = 0.0, std::vector<float> temp_feat = {0.0},
-           HailoDetectionPtr detection_ptr = nullptr) : m_is_activated(false), m_track_id(0), m_frame_id(0), m_tracklet_len(0), m_confidence(score_),
+           HailoDetectionPtr detection_ptr = nullptr, int frame_id = 0) : m_is_activated(false), m_track_id(0), m_frame_id(frame_id), m_tracklet_len(0), m_confidence(score_),
                                                            m_start_frame(0), m_alpha(0.9), tmp_location_tlwh(tlwh_), m_state(TrackState::New),
                                                            m_hailo_detection(detection_ptr)
     {

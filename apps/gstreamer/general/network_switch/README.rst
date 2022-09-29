@@ -41,8 +41,32 @@ Exporting ``TAPPAS_WORKSPACE`` environment variable is a must before running the
        <img src="readme_resources/networks_switch.gif" width="640px" height="240px"/>
    </div>
 
+Models
+------
+
+
+* ``fast_depth``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/fast_depth.yaml
+* ``yolov5s``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5s.yaml
 
 How the application works
 -------------------------
 
 This app uses HailoRT Model Scheduler, read more about HailoRT Model Scheduler GStreamer integration at `HailoNet  <../../../../docs/elements/hailo_net.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolov5s``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
+
+    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)

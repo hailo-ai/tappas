@@ -19,7 +19,7 @@ Example pipeline
        filesrc location=$video_device ! decodebin ! videoconvert ! \
        videoscale ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-       hailonet hef-path=$hef_path is-active=true qos=false ! \
+       hailonet hef-path=$hef_path is-active=true ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        hailofilter function-name=yolov5 so-path=$POSTPROCESS_SO qos=false ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -50,7 +50,7 @@ Before sending the frames into the ``hailonet`` element, set a queue so no frame
 .. code-block::
 
 
-       hailonet hef-path=$hef_path is-active=true qos=false ! \
+       hailonet hef-path=$hef_path is-active=true ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
 
 Performs the inference on the Hailo-8 device.
@@ -89,7 +89,7 @@ An example for pipelines who preserve the original resolution:
        t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! mux. \
        t. ! videoscale ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-       hailonet hef-path=$hef_path is-active=true qos=false ! \
+       hailonet hef-path=$hef_path is-active=true ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! mux. \
        mux. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

@@ -29,6 +29,7 @@
 int singleton_map_key = 0;
 std::vector<int> seen_ocr_track_ids;
 const gchar *OCR_LABEL_TYPE = "ocr";
+std::string tracker_name = "hailo_tracker";
 
 void catalog_yuy2_mat(std::string text, cv::Mat &mat)
 {
@@ -103,6 +104,7 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
     std::vector<HailoClassificationPtr> classifications; // The classifications of those license plate detections
     float confidence;                                    // The confidence of those classifications
     std::string license_plate_ocr_label;                 // The labels of those classifications
+    std::string jde_tracker_name = tracker_name + "_" + stream_id;
 
     // For each roi, check the detections
     vehicle_detections = hailo_common::get_hailo_detections(roi);
@@ -140,7 +142,7 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
                     }
 
                     // Update the tracker with the found ocr
-                    HailoTracker::GetInstance().add_object_to_track(stream_id,
+                    HailoTracker::GetInstance().add_object_to_track(jde_tracker_name,
                                                                     unique_ids[0]->get_id(),
                                                                     classification);
 

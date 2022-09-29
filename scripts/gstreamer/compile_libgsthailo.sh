@@ -40,7 +40,7 @@ fi
 pushd $TAPPAS_WORKSPACE/hailort/sources/hailort/libhailort/bindings/gstreamer
 rm -rf build
 
-cmake -H. -Bbuild -DCMAkE_BUILD_TYPE=$BUILD_TYPE
+cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 cmake --build build
 
 sudo cp -a $TAPPAS_WORKSPACE/hailort/sources/hailort/libhailort/bindings/gstreamer/build/libgsthailo.so /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0

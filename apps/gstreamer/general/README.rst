@@ -14,7 +14,7 @@ That's a great question! Hailo provides a `Sanity Pipeline <sanity_pipeline/READ
 #. `Multinetworks parallel <multinetworks_parallel/README.rst>`_ - single-stream multi-networks pipeline on top of GStreamer using the Hailo-8 device.
 #. `Instance segmentation <instance_segmentation/README.rst>`_ - single-stream instance segmentation on top of GStreamer using the Hailo-8 device.
 #. `Multi-stream detection <multistream_detection/README.rst>`_ - Multi stream object detection (up to 8 RTSP camera into one Hailo-8 chip).
-#. `Pose Estimation <pose_estimation/../README.rst>`_ - Human pose estimation using ``centerpose`` network.
+#. `Pose Estimation <pose_estimation/README.rst>`_ - Human pose estimation using ``centerpose`` network.
 #. `Segmentation <segmentation/README.rst>`_ - Semantic segmentation using ``resnet18_fcn8`` network on top of GStreamer using the Hailo-8 device.
 #. `Facial landmark <facial_landmarks/README.rst>`_ - Facial landmarking application.
 #. `Face Detection <face_detection/README.rst>`_ - Face detection application.

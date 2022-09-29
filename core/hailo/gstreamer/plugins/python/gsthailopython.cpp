@@ -38,6 +38,7 @@ static void gst_hailopython_get_property(GObject *object, guint property_id, GVa
 static void gst_hailopython_dispose(GObject *object);
 static void gst_hailopython_finalize(GObject *object);
 
+static gboolean gst_hailopython_set_caps(GstBaseTransform *trans, GstCaps *incaps, GstCaps *outcaps);
 static gboolean gst_hailopython_start(GstBaseTransform *trans);
 static gboolean gst_hailopython_stop(GstBaseTransform *trans);
 static GstFlowReturn gst_hailopython_transform_frame_ip(GstVideoFilter *filter,
@@ -53,9 +54,9 @@ enum
 
 /* pad templates */
 
-#define VIDEO_SRC_CAPS GST_VIDEO_CAPS_MAKE("{ RGB, YUY2 }")
+#define VIDEO_SRC_CAPS GST_VIDEO_CAPS_MAKE("{ RGB, YUY2, I420, RGBA, NV12 }")
 
-#define VIDEO_SINK_CAPS GST_VIDEO_CAPS_MAKE("{ RGB, YUY2 }")
+#define VIDEO_SINK_CAPS GST_VIDEO_CAPS_MAKE("{ RGB, YUY2, I420, RGBA, NV12 }")
 
 /* class initialization */
 
@@ -85,6 +86,8 @@ static void gst_hailopython_class_init(GstHailoPythonClass *klass)
     gobject_class->get_property = gst_hailopython_get_property;
     gobject_class->dispose = gst_hailopython_dispose;
     gobject_class->finalize = gst_hailopython_finalize;
+
+    base_transform_class->set_caps = GST_DEBUG_FUNCPTR(gst_hailopython_set_caps);
     base_transform_class->start = GST_DEBUG_FUNCPTR(gst_hailopython_start);
     base_transform_class->stop = GST_DEBUG_FUNCPTR(gst_hailopython_stop);
     video_filter_class->transform_frame_ip = GST_DEBUG_FUNCPTR(gst_hailopython_transform_frame_ip);
@@ -216,6 +219,25 @@ void gst_hailopython_finalize(GObject *object)
     G_OBJECT_CLASS(gst_hailopython_parent_class)->finalize(object);
 }
 
+static gboolean gst_hailopython_set_caps(GstBaseTransform *trans, GstCaps *incaps, GstCaps *outcaps) 
+{    
+    // Mark as un-used
+    (void)(outcaps);
+
+    GstHailoPython *hailopython = GST_HAILO_PYTHON(trans);
+    GST_DEBUG_OBJECT(hailopython, "set_caps");
+
+    char *error_msg;
+     GstFlowReturn result = set_python_callback_caps(hailopython->python_callback, incaps, &error_msg);
+
+    if (result != GST_FLOW_OK)
+    {
+        GST_ELEMENT_ERROR(hailopython, LIBRARY, FAILED, ("%s", error_msg), (NULL));
+    }
+    
+    return GST_BASE_TRANSFORM_CLASS(gst_hailopython_parent_class)->set_caps(trans, incaps, outcaps);
+}
+
 static gboolean gst_hailopython_start(GstBaseTransform *trans)
 {
     GstHailoPython *hailopython = GST_HAILO_PYTHON(trans);
@@ -330,6 +352,7 @@ static GstFlowReturn gst_hailopython_transform_frame_ip(GstVideoFilter *filter, 
     get_tensors_from_meta(frame->buffer, roi);
 
     result = invoke_python_callback(hailopython->python_callback, frame->buffer, (py_descriptor_t)roi.get(), &error_msg);
+
     if (result != GST_FLOW_OK)
     {
         GST_ELEMENT_ERROR(hailopython, LIBRARY, FAILED, ("%s", error_msg), (NULL));

@@ -28,10 +28,6 @@ typedef enum {
 #define GST_HAILO_CROPPER_GET_CLASS(obj) \
         (G_TYPE_INSTANCE_GET_CLASS ((obj),GST_TYPE_HAILO_CROPPER,GstHailoCropperClass))
 
-#define HAILO_CROPPER_SUPPORTED_FORMATS "{ RGB, YUY2 }"
-#define HAILO_CROPPER_VIDEO_CAPS \
-    GST_VIDEO_CAPS_MAKE(HAILO_CROPPER_SUPPORTED_FORMATS)
-
 typedef struct _GstHailoCropper GstHailoCropper;
 typedef struct _GstHailoCropperClass GstHailoCropperClass;
 

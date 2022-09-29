@@ -62,6 +62,16 @@ The output should look like:
        <img src="readme_resources/pipeline_run.gif" width="600px" height="500px"/>
    </div>
 
+Model
+-----
+
+
+* 'yolov5m_wo_spp_yuv' with color convert and resize: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_yuv.yaml
+
+.. note::
+   The network that is used on TAPPAS differ from the Model-Zoo model:
+   - It has an additional YUY2->YUV layer
+   - More information on the retraining section
 
 How it works
 ------------
@@ -72,3 +82,22 @@ Links
 -----
 
 `Blog post about this setup <https://hailo.ai/blog/customer-case-study-developing-a-high-performance-application-on-an-embedded-edge-ai-device/>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolov5m_wo_spp_yuv``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
+    
+    - For best compatibility and performance with TAPPAS, use ``yolov5m_wo_spp_yuv.yaml`` for the compilation
+    - **Apply the changes** written on 'on-chip YUY2->YUV layers' section on :ref:`Retraining TAPPAS Models<retraining_tappas_models>`
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)

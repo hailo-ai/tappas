@@ -22,7 +22,7 @@ class Requirement(BaseModel):
     def replace_reserved_keywords_in_paths(cls, value):
         for keyword, value_to_replace_with in config.RESERVED_DOWNLOADER_KEYWORDS.items():
             if keyword in value:
-                return value.replace(keyword, value_to_replace_with)
+                value = value.replace(keyword, value_to_replace_with)
 
         return value
 

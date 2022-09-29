@@ -1,8 +1,8 @@
 import platform
 from pathlib import Path
 
-VERSION = "v3.20"
-MODEL_ZOO_VERSION = "v2.0"
+VERSION = "v3.21"
+MODEL_ZOO_VERSION = "v2.4"
 
 CONFIG_PATH = Path(__file__).parent
 DOWNLOADER_PATH = CONFIG_PATH.parent
@@ -46,5 +46,5 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
 
 # Used during the download to decide what the source / destination is dynamically
 RESERVED_DOWNLOADER_KEYWORDS = {
-    '<ARCH>': platform.uname().machine
+    '<ARCH>': platform.uname().machine,
 }

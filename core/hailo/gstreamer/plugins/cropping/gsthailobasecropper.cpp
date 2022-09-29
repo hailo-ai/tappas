@@ -13,7 +13,7 @@
 #include <typeinfo>
 #include "common/image.hpp"
 #include "cropping/gsthailobasecropper.hpp"
-#include "cropping/gst_hailo_cropping_meta.hpp"
+#include "gst_hailo_cropping_meta.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
 #include "gst_hailo_meta.hpp"
@@ -303,7 +303,7 @@ gst_hailo_basecropper_sink_event(GstPad *pad, GstObject *parent,
  * @param[in] crop_roi          Reference to a ROI Object to crop.
  * @return A new buffer, cropped and scaled for a second network.
  */
-static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuffer *buf, HailoROIPtr &crop_roi)
+static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuffer *buf, HailoROIPtr crop_roi)
 {
     GstHailoBaseCropperClass *hailo_basecropperclass = GST_HAILO_BASE_CROPPER_GET_CLASS(hailo_basecropper);
 
@@ -325,7 +325,8 @@ static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuf
     GstMapInfo full_image_map;
     gst_buffer_map(buf, &full_image_map, GST_MAP_READ);
     gst_video_info_from_caps(full_image_info, incaps);
-    cv::Mat full_image = get_mat(full_image_info, &full_image_map);
+    std::shared_ptr<HailoMat> full_image = get_mat_by_format(full_image_info, &full_image_map);
+    GstVideoFormat image_format = GST_VIDEO_INFO_FORMAT(full_image_info) ;
     gst_video_info_free(full_image_info);
 
     // get cv matrix of cropped image from buffer
@@ -333,25 +334,25 @@ static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuf
     GstMapInfo resized_image_map;
     gst_buffer_map(cropped_buf, &resized_image_map, GST_MAP_READWRITE);
     gst_video_info_from_caps(resized_image_info, outcaps);
-    cv::Mat resized_image = get_mat(resized_image_info, &resized_image_map);
+    std::shared_ptr<HailoMat> resized_image = get_mat_by_format(resized_image_info, &resized_image_map);
     gst_video_info_free(resized_image_info);
 
     auto bbox = hailo_common::create_flattened_bbox(crop_roi->get_bbox(), crop_roi->get_scaling_bbox());
     cv::Rect rect;
-    rect.x = CLAMP(bbox.xmin() * full_image.cols, 0, full_image.cols);
-    rect.y = CLAMP(bbox.ymin() * full_image.rows, 0, full_image.rows);
-    rect.width = CLAMP(bbox.width() * full_image.cols, 0, full_image.cols - rect.x);
-    rect.height = CLAMP(bbox.height() * full_image.rows, 0, full_image.rows - rect.y);
-    cv::Mat cropped_image = full_image(rect);
+    rect.x = CLAMP(bbox.xmin() * full_image->width(), 0, full_image->width());
+    rect.y = CLAMP(bbox.ymin() * full_image->height(), 0, full_image->height());
+    rect.width = CLAMP(bbox.width() * full_image->width(), 0, full_image->width() - rect.x);
+    rect.height = CLAMP(bbox.height() * full_image->height(), 0, full_image->height() - rect.y);
+    cv::Mat cropped_cv_mat = full_image->get_mat()(rect);
+    cv::Mat &resized_cv_mat = resized_image->get_mat();
     // Crop and resize the the frame
-    hailo_basecropperclass->resize(hailo_basecropper, cropped_image, resized_image, crop_roi);
+    hailo_basecropperclass->resize(hailo_basecropper, cropped_cv_mat, resized_cv_mat, crop_roi, image_format);
 
     // Add the croopped ROI to the buffer
     gst_buffer_add_hailo_meta(cropped_buf, crop_roi);
 
-    full_image.release();
-    cropped_image.release();
-    resized_image.release();
+    cropped_cv_mat.release();
+    resized_cv_mat.release();
     gst_caps_unref(incaps);
     gst_caps_unref(outcaps);
     gst_buffer_unmap(buf, &full_image_map);
@@ -449,15 +450,20 @@ static GstFlowReturn gst_hailo_basecropper_chain(GstPad *pad, GstObject *parent,
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
     {
-        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_LINEAR);
-    }
-    else if (cropped_image.type() == CV_8UC4)
+    case GST_VIDEO_FORMAT_YUY2:
     {
         resize_yuy2(cropped_image, resized_image, cv::INTER_LINEAR);
+        break;
+    }
+    default:
+    {
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_LINEAR);
+        break;
+    }
     }
 }
 
@@ -478,15 +484,20 @@ void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, c
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_bicubic(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_bicubic(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
     {
-        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_CUBIC);
-    }
-    else if (cropped_image.type() == CV_8UC4)
+    case GST_VIDEO_FORMAT_YUY2:
     {
         resize_yuy2(cropped_image, resized_image, cv::INTER_CUBIC);
+        break;
+    }
+    default:
+    {
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_CUBIC);
+        break;
+    }
     }
 }
 
@@ -507,15 +518,20 @@ void resize_bicubic(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_inter_area(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_inter_area(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
     {
-        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_AREA);
-    }
-    else if (cropped_image.type() == CV_8UC4)
+    case GST_VIDEO_FORMAT_YUY2:
     {
         resize_yuy2(cropped_image, resized_image, cv::INTER_AREA);
+        break;
+    }
+    default:
+    {
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_AREA);
+        break;
+    }
     }
 }
 
@@ -536,15 +552,20 @@ void resize_inter_area(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image,
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
     {
-        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_NEAREST);
-    }
-    else if (cropped_image.type() == CV_8UC4)
+    case GST_VIDEO_FORMAT_YUY2:
     {
         resize_yuy2(cropped_image, resized_image, cv::INTER_NEAREST);
+        break;
+    }
+    default:
+    {
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_NEAREST);
+        break;
+    }
     }
 }
 
@@ -565,9 +586,16 @@ void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
+    {
+    case GST_VIDEO_FORMAT_YUY2:
+    {
+        std::cerr << "Letterbox resizing is not yet supported for YUY2, only Bilinear and Nearest Neighbors are supported." << std::endl;
+        break;
+    }
+    default:
     {
         cv::Mat tmp;
         static const cv::Scalar color(114, 114, 114);
@@ -593,9 +621,7 @@ void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, 
         cv::resize(cropped_image, tmp, cv::Size(new_width, new_height), 0, 0, cv::INTER_AREA);
         cv::copyMakeBorder(tmp, resized_image, top, bottom, left, right, cv::BORDER_CONSTANT, color);
         tmp.release();
+        break;
     }
-    else if (cropped_image.type() == CV_8UC4)
-    {
-        std::cerr << "Letterbox resizing is not yet supported for YUY2, only Bilinear and Nearest Neighbors are supported." << std::endl;
     }
 }

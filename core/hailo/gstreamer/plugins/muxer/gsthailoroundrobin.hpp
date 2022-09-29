@@ -44,6 +44,7 @@ struct _GstHailoRoundRobin
     /*< private >*/
     GstPad *srcpad;
     size_t current_pad_num;
+    gboolean funnel_mode;
     std::vector<std::unique_ptr<std::mutex>> mutexes;
     std::vector<std::unique_ptr<std::condition_variable>> condition_vars;
 };

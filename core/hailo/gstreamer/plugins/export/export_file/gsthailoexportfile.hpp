@@ -25,6 +25,7 @@ struct _GstHailoExportFile
     GstBaseTransform base_hailoexportfile;
     gchar *file_path;
     FILE* json_file;
+    uint buffer_offset;
 };
 
 struct _GstHailoExportFileClass

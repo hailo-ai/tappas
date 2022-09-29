@@ -20,8 +20,8 @@ Options
 * ``--print-gst-launch`` is a flag that prints the ready gst-launch command without running it
 * ``--show-fps``  is an optional flag that enables printing FPS on screen
 
-Supported Network
------------------
+Model
+-----
 
 
 * 'fcn8_resnet_v1_18' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/fcn8_resnet_v1_18.yaml
@@ -57,3 +57,20 @@ How it works?
 -------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``fcn8_resnet_v1_18``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/fcn>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `semantic_segmentation.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/semantic_segmentation/semantic_segmentation.cpp#L10>`_
+      with your new paremeters, then recompile to create ``libsemantic_segmentation.so``

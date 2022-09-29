@@ -48,12 +48,26 @@ Model
 -----
 
 
-* ``fcn8_resnet_v1_18`` in resolution of 1920x1024x3.
-* Numeric accuracy 65.18mIOU.
-* Pre trained on cityscapes using GlounCV and a resnet-18-
-  FCN8 architecture.
+* ``fcn8_resnet_v1_18`` in resolution of 1920x1024x3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/fcn8_resnet_v1_18.yaml.
 
 How it works?
 -------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``fcn8_resnet_v1_18``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/fcn>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `semantic_segmentation.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/semantic_segmentation/semantic_segmentation.cpp#L10>`_
+      with your new paremeters, then recompile to create ``libsemantic_segmentation.so``

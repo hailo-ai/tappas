@@ -80,11 +80,15 @@ static gboolean gst_hailo_meta_transform(GstBuffer *transbuf, GstMeta *meta, Gst
                                          GQuark type, gpointer data)
 {
     GstHailoMeta *gst_hailo_meta = (GstHailoMeta *)meta;
-    gst_buffer_add_hailo_meta(transbuf, gst_hailo_meta->main_object);
-    if (gst_buffer_is_writable(buffer))
+    HailoMainObjectPtr main_object = gst_hailo_meta->main_object;
+
+    GstHailoMeta *new_hailo_meta = gst_buffer_add_hailo_meta(transbuf, main_object);
+    if(!new_hailo_meta)
     {
-        gst_buffer_remove_meta(buffer, meta);
+        GST_ERROR("gst_hailo_meta_transform: failed to transform hailo_meta");
+        return FALSE;
     }
+
     return TRUE;
 }
 

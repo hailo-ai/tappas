@@ -94,7 +94,7 @@ public:
     //******************************************************************
     /******************** PUBLIC FUNCTIONS ****************************/
 public:
-    static std::vector<STrack> hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs);
+    static std::vector<STrack> hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs, int frame_id);
     static std::vector<HailoDetectionPtr> stracks_to_hailo_detections(std::vector<STrack> &stracks);
     STrack *get_detection_with_id(int track_id);
     std::vector<STrack> get_tracked_stracks();

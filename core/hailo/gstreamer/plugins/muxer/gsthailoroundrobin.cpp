@@ -8,9 +8,9 @@
  * gsthailoroundrobin.cpp: Simple Input Round Robin funnel (N->1) element, waits on all sinks, passes the first one, with all metadata included.
  */
 
-#include <iostream>
 #include "gsthailoroundrobin.hpp"
 #include "gst_hailo_meta.hpp"
+#include "gst_hailo_stream_meta.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_round_robin_debug);
 #define GST_CAT_DEFAULT gst_hailo_round_robin_debug
@@ -60,6 +60,7 @@ G_DEFINE_TYPE(GstHailoRoundRobinPad, gst_hailo_round_robin_pad, GST_TYPE_PAD);
 enum
 {
     PROP_0,
+    PROP_FUNNEL_MODE,
 };
 
 static void
@@ -114,6 +115,9 @@ gst_hailo_round_robin_set_property(GObject *object, guint prop_id,
 {
     switch (prop_id)
     {
+    case PROP_FUNNEL_MODE:
+        GST_HAILO_ROUND_ROBIN(object)->funnel_mode = g_value_get_boolean(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -126,6 +130,9 @@ gst_hailo_round_robin_get_property(GObject *object, guint prop_id, GValue *value
 {
     switch (prop_id)
     {
+    case PROP_FUNNEL_MODE:
+        g_value_set_boolean(value, GST_HAILO_ROUND_ROBIN(object)->funnel_mode);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -155,6 +162,15 @@ gst_hailo_round_robin_class_init(GstHailoRoundRobinClass *klass)
         GST_DEBUG_FUNCPTR(gst_hailo_round_robin_request_new_pad);
     gstelement_class->release_pad = GST_DEBUG_FUNCPTR(gst_hailo_round_robin_release_pad);
     gstelement_class->change_state = GST_DEBUG_FUNCPTR(gst_hailo_round_robin_change_state);
+
+    // install new property funnel_mode
+    g_object_class_install_property(gobject_class,
+                                    PROP_FUNNEL_MODE,
+                                    g_param_spec_boolean("funnel-mode",
+                                                         "Funnel mode",
+                                                         "Disables the round robin logic and pushes all buffers when available",
+                                                         false,
+                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 }
 
 static void
@@ -164,6 +180,7 @@ gst_hailo_round_robin_init(GstHailoRoundRobin *hailo_round_robin)
     hailo_round_robin->mutexes.clear();
     hailo_round_robin->condition_vars.clear();
     hailo_round_robin->srcpad = gst_pad_new_from_static_template(&src_template, "src");
+    hailo_round_robin->funnel_mode = false;
     gst_pad_use_fixed_caps(hailo_round_robin->srcpad);
 
     gst_element_add_pad(GST_ELEMENT(hailo_round_robin), hailo_round_robin->srcpad);
@@ -273,6 +290,7 @@ forward_events(GstPad *pad, GstEvent **event, gpointer user_data)
     return TRUE;
 }
 
+
 static GstFlowReturn
 gst_hailo_round_robin_sink_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
 {
@@ -280,10 +298,9 @@ gst_hailo_round_robin_sink_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
     GstHailoRoundRobin *hailo_round_robin = GST_HAILO_ROUND_ROBIN_CAST(parent);
 
     size_t pad_num = get_pad_num(pad);
-    // Wait for the turn of this pad.
-
-    if (hailo_round_robin->current_pad_num != pad_num)
+    if (!hailo_round_robin->funnel_mode && hailo_round_robin->current_pad_num != pad_num)
     {
+        // Wait for the turn of this pad.
         if (hailo_round_robin->condition_vars[pad_num] != NULL)
         {
             std::unique_lock lock(*hailo_round_robin->mutexes[pad_num].get());
@@ -305,23 +322,37 @@ gst_hailo_round_robin_sink_chain(GstPad *pad, GstObject *parent, GstBuffer *buf)
         }
     }
 
+    buf = gst_buffer_make_writable(buf);
+
+    gchar *pad_name = gst_pad_get_name(pad);
+    gchar *stream_id = gst_pad_get_stream_id(pad);
+
+    // Add stream meta to the buffer including the pad name and stream id.
+    gst_buffer_add_hailo_stream_meta(buf, pad_name, stream_id);
+
     // Forward sticky events.
     gst_pad_sticky_events_foreach(pad, forward_events, hailo_round_robin->srcpad);
 
     // Push out_buffer forward.
     ret = gst_pad_push(hailo_round_robin->srcpad, buf);
 
-    // Update current pad num.
-    hailo_round_robin->current_pad_num++;
-    if (hailo_round_robin->current_pad_num == hailo_round_robin->mutexes.size())
-        hailo_round_robin->current_pad_num = 0;
+    g_free(pad_name);
+    g_free(stream_id);
 
-    while(hailo_round_robin->condition_vars[hailo_round_robin->current_pad_num] == NULL){
+    if (!hailo_round_robin->funnel_mode)
+    {
+        // Update current pad num.
         hailo_round_robin->current_pad_num++;
         if (hailo_round_robin->current_pad_num == hailo_round_robin->mutexes.size())
             hailo_round_robin->current_pad_num = 0;
+
+        while(hailo_round_robin->condition_vars[hailo_round_robin->current_pad_num] == NULL){
+            hailo_round_robin->current_pad_num++;
+            if (hailo_round_robin->current_pad_num == hailo_round_robin->mutexes.size())
+                hailo_round_robin->current_pad_num = 0;
+        }
+        hailo_round_robin->condition_vars[hailo_round_robin->current_pad_num]->notify_one();
     }
-    hailo_round_robin->condition_vars[hailo_round_robin->current_pad_num]->notify_one();
 
     return ret;
 }

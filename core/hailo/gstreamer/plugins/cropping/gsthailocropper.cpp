@@ -67,7 +67,7 @@ static void gst_hailocropper_get_property(GObject *object,
 static std::vector<HailoROIPtr> gst_hailocropper_prepare_crops(GstHailoBaseCropper *hailocropper,
                                                                GstBuffer *buf);
 static GstStateChangeReturn gst_hailocropper_change_state(GstElement *element, GstStateChange transition);
-void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
+void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
 
 static void
 gst_hailocropper_class_init(GstHailoCropperClass *klass)
@@ -160,25 +160,25 @@ gst_hailocropper_get_property(GObject *object, guint prop_id,
     }
 }
 
-void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
     GstHailoCropper *hailocropper = GST_HAILO_CROPPER(basecropper);
     switch (hailocropper->method)
     {
     case GST_HAILO_CROPPER_NEAREST_NEIGHBOR:
-        resize_nearest_neighbor(basecropper, cropped_image, resized_image, roi);
+        resize_nearest_neighbor(basecropper, cropped_image, resized_image, roi, image_format);
         break;
     case GST_HAILO_CROPPER_BILINEAR:
-        resize_bilinear(basecropper, cropped_image, resized_image, roi);
+        resize_bilinear(basecropper, cropped_image, resized_image, roi, image_format);
         break;
     case GST_HAILO_CROPPER_BICUBIC:
-        resize_bicubic(basecropper, cropped_image, resized_image, roi);
+        resize_bicubic(basecropper, cropped_image, resized_image, roi, image_format);
         break;
      case GST_HAILO_CROPPER_INTER_AREA:
-        resize_inter_area(basecropper, cropped_image, resized_image, roi);
+        resize_inter_area(basecropper, cropped_image, resized_image, roi, image_format);
         break;
     case GST_HAILO_CROPPER_LETTERBOX:
-        resize_letterbox(basecropper, cropped_image, resized_image, roi);
+        resize_letterbox(basecropper, cropped_image, resized_image, roi, image_format);
         break;
     default:
         GST_ERROR_OBJECT(hailocropper, "Resize method type %d is not supported", hailocropper->method);

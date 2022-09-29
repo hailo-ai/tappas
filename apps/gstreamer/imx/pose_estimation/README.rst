@@ -42,8 +42,37 @@ The output should look like:
        <img src="readme_resources/centerpose.gif" width="640px" height="360px"/>
    </div>
 
+Model
+-----
+
+
+* ``centerpose_regnetx_1.6gf_fpn``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/centerpose_regnetx_1.6gf_fpn.yaml
+
+.. note::
+   The network that is used on TAPPAS differ from the Model-Zoo model:
+   - An additional YUY2->YUV and YUV->RGB layers
+   - More information on the retraining section
 
 How it works?
 -------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``centerpose_regnetx_1.6gf_fpn``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/centerpose>`_
+
+    - **Apply the changes** written on 'on-chip YUY2->YUV layers' section on :ref:`Retraining TAPPAS Models<retraining_tappas_models>`
+  - TAPPAS changes to replace model:
+
+    - Replace HEF_PATH on the .sh file
+    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
+      with your new paremeters, then recompile to create ``libcenterpose_post.so``

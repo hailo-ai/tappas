@@ -34,6 +34,7 @@ void yoloxx(HailoROIPtr roi, void *params_void_ptr);
 void yolov3(HailoROIPtr roi, void *params_void_ptr);
 void yolov4(HailoROIPtr roi, void *params_void_ptr);
 void tiny_yolov4_license_plates(HailoROIPtr roi, void *params_void_ptr);
+void tiny_yolov4_license_plates_yuy2(HailoROIPtr roi, void *params_void_ptr);
 void yolov5_no_persons(HailoROIPtr roi, void *params_void_ptr);
 void yolov5_counter(HailoROIPtr roi, void *params_void_ptr);
 void yolov5_vehicles_only(HailoROIPtr roi, void *params_void_ptr);

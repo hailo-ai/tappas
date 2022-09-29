@@ -33,7 +33,8 @@ typedef enum
     HAILO_MATRIX,
     HAILO_DEPTH_MASK,
     HAILO_CLASS_MASK,
-    HAILO_CONF_CLASS_MASK
+    HAILO_CONF_CLASS_MASK,
+    HAILO_USER_META
 } hailo_object_t;
 
 typedef enum
@@ -402,7 +403,7 @@ public:
         m_scaling_bbox = std::move(new_scale);
     }
 
-     /**
+    /**
      * @brief Clear the scaling bbox of this ROI
      *
      */
@@ -511,16 +512,17 @@ public:
      * @param confidence The confidence of the detection.
      */
     HailoDetection(HailoBBox bbox, int class_id, const std::string &label, float confidence) : HailoROI(bbox), m_confidence(assure_normal(confidence)), m_label(label), m_class_id(class_id){};
+
     // Move constructor
     HailoDetection(HailoDetection &&other) noexcept : HailoROI(other),
-                                                            m_confidence(assure_normal(other.m_confidence)),
-                                                            m_label(std::move(other.m_label)),
-                                                            m_class_id(other.m_class_id){};
+                                                      m_confidence(assure_normal(other.m_confidence)),
+                                                      m_label(std::move(other.m_label)),
+                                                      m_class_id(other.m_class_id){};
     // Copy constructor
     HailoDetection(const HailoDetection &other) : HailoROI(other),
-                                                        m_confidence(assure_normal(other.m_confidence)),
-                                                        m_label(std::move(other.m_label)),
-                                                        m_class_id(other.m_class_id){};
+                                                  m_confidence(assure_normal(other.m_confidence)),
+                                                  m_label(std::move(other.m_label)),
+                                                  m_class_id(other.m_class_id){};
     virtual ~HailoDetection() = default;
 
     // Move assignment
@@ -962,3 +964,56 @@ public:
     }
 };
 using HailoMatrixPtr = std::shared_ptr<HailoMatrix>;
+
+/**
+ * @brief Represents a Sample metadata for users
+ */
+class HailoUserMeta : public HailoObject
+{
+protected:
+    int m_user_int;
+    std::string m_user_string;
+    float m_user_float;
+
+public:
+    HailoUserMeta() {};
+    HailoUserMeta(int user_int, std::string user_string, float user_float) : m_user_int(user_int), m_user_string(user_string), m_user_float(user_float) {};
+
+    virtual hailo_object_t get_type()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return HAILO_USER_META;
+    }
+
+    float get_user_float()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return m_user_float;
+    }
+    std::string get_user_string()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return m_user_string;
+    }
+    int get_user_int()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return m_user_int;
+    }
+    void set_user_float(float user_float)
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        m_user_float = user_float;
+    }
+    void set_user_string(std::string user_string)
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        m_user_string = user_string;
+    }
+    void set_user_int(int user_int)
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        m_user_int = user_int;
+    }
+};
+using HailoUserMetaPtr = std::shared_ptr<HailoUserMeta>;

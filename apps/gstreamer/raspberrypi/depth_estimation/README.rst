@@ -42,7 +42,7 @@ Model
 -----
 
 
-* ``fast_depth`` in resolution of 224X224X3.
+* ``fast_depth`` in resolution of 224X224X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/fast_depth.yaml
 
 How it works
 ------------

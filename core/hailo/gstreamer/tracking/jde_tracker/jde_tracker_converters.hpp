@@ -27,14 +27,14 @@
  * @return std::vector<STrack>
  *         The translated Stracks.
  */
-inline std::vector<STrack> JDETracker::hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs)
+inline std::vector<STrack> JDETracker::hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs, int frame_id = 0)
 {
     std::vector<STrack> detections(inputs.size());
     for (uint i = 0; i < inputs.size(); i++)
     {
         HailoBBox bbox = inputs[i]->get_bbox();
         std::vector<float> detection_box = {bbox.xmin(), bbox.ymin(), bbox.width(), bbox.height()};
-        STrack strack(detection_box, inputs[i]->get_confidence(), {}, inputs[i]);
+        STrack strack(detection_box, inputs[i]->get_confidence(), {}, inputs[i], frame_id);
         detections[i] = strack;
     }
 

@@ -35,6 +35,7 @@ g++-9
 lsb-release 
 autoconf 
 automake 
+libzmq3-dev 
 
 # Specific versions
 18.04:python-gst-1.0  
@@ -47,4 +48,9 @@ automake
 
 21.04:python3-gst-1.0
 21.04:python3-dev
+21.04:gstreamer1.0-plugins-good
 
+22.04:python3-gst-1.0
+22.04:python3-dev
+22.04:python3-cairo-dev
+22.04:gstreamer1.0-plugins-good

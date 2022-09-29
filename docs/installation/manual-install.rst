@@ -5,11 +5,11 @@ Manual installation
 Manual installing TAPPAS requires preparations, our recommended method is to begin with ``Hailo SW Suite`` or ``Pre-built Docker image``.
 In this guide we instruct how to install our required components manually.
 
+.. note::
+    Only Ubuntu 18.04 and 20.04 is supported
 
-
-   **NOTE:**  Only Ubuntu 18.04 and 20.04 is supported
-
-   .. warning:: Ubuntu 18.04 will be deprecated in TAPPAS future version
+.. warning::
+    Ubuntu 18.04 will be deprecated in TAPPAS future version
 
 
 Hailort installation
@@ -62,19 +62,22 @@ Install the following APT packages:
 * x11-utils
 * python3 (pip and setuptools)
 
-.. warning:: Python 3.6 will be deprecated in TAPPAS future version
+.. warning::
+    Python 3.6 will be deprecated in TAPPAS future version
 
-* virtualenv
+* python3-virtualenv
 * python-gi-dev
 * libgirepository1.0-dev
 * gcc-9 and g++-9
 * cmake
+* libzmq3-dev
+* git
 
 To install the above packages, run the following command:
 
 .. code-block:: sh
     
-    sudo apt-get install -y ffmpeg x11-utils python3-dev python3-pip python3-setuptools virtualenv python-gi-dev libgirepository1.0-dev gcc-9 g++-9 cmake
+    sudo apt-get install -y ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-9 g++-9 cmake git libzmq3-dev
 
 The following packages are required as well, and see their installation instructions below:
 

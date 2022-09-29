@@ -48,7 +48,7 @@ image_dep = declare_dependency(
   link_with : image_lib)
 
 # App Subdirectories
-if target_platform == 'x86'
+if target_platform == 'x86' or target_platform == 'rpi'
     subdir('x86')
 elif target_platform == 'imx'
     subdir('imx')

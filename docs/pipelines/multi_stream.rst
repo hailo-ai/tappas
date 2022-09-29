@@ -33,7 +33,7 @@ Each source is a sub-pipeline
    pipeline="gst-launch-1.0 \
            funnel name=fun ! \
            queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-           hailonet  hef-path=$HEF_PATH qos=false is-active=true ! \
+           hailonet hef-path=$HEF_PATH is-active=true ! \
            queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            hailofilter so-path=$POSTPROCESS_SO qos=false ! \
            queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

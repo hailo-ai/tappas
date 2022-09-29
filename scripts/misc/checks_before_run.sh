@@ -6,6 +6,7 @@ NC='\033[0m'
 
 check_python_packages=false
 export_only=false
+check_vaapi=false
 
 function check__print_usage() {
     echo "Checks before app run:"
@@ -14,6 +15,7 @@ function check__print_usage() {
     echo "  --help                   Show this help"
     echo "  --check-python-packages  Check if python packages exists"
     echo "  --export-only            Handle setting TAPPAS_WORKSPACE only mode"
+    echo "  --check-vaapi                  Include checks for VAAPI pipelines"
     exit 1
 }
 
@@ -27,6 +29,8 @@ function check__parse_args() {
             check_python_packages=true
         elif [ "$1" == "--export-only" ]; then
             export_only=true
+        elif [ "$1" == "--check-vaapi" ]; then
+            check_vaapi=true
         fi
         shift
     done
@@ -57,19 +61,38 @@ function validate_hailo_device_connected() {
     fi
 }
 
+function check_if_python_package_found() {
+    # The two methods might be suitable, one for packages we install through pip and
+    # The other for packages we manually add through `pth files`.
+    set +e
+    python3 -c "import pkg_resources; pkg_resources.require('$1')" &> /dev/null
+    package_import_return_code_method_pkg=$?
+    set -e
+
+    if [[ package_import_return_code_method_pkg -eq 0 ]]; then
+        return 0
+    fi
+
+    set +e
+    python3 -c "import $1" &> /dev/null
+    package_import_return_code_method_direct=$?
+    set -e
+
+    if [[ $package_import_return_code_method_direct -eq 0 ]]; then        
+        return 0
+    fi
+
+    log_warning "Pip package '${1}' is missing, Perhaps the virtualenv is not activated?"
+    return 1
+}
+
 function check_python_packages_found() {
     cat $TAPPAS_WORKSPACE/core/requirements/gstreamer_requirements.txt | while read line 
     do
-        set +e
-        python3 -c "import pkg_resources; pkg_resources.require('$line')" &> /dev/null
-        package_import_return_code=$?
-        set -e
-
-        if [[ $package_import_return_code -ne 0 ]]; then
-            log_warning "Pip package '${line}' is missing, Perhaps the virtualenv is not activated?"
-            return 1
-        fi
+        check_if_python_package_found $line
     done
+
+    check_if_python_package_found "gsthailo"    
 }
 
 function validate_hailort_version() {
@@ -83,11 +106,11 @@ function validate_hailort_version() {
         return 0
     fi 
 
-    hailort_version=$(hailortcli fw-control identify | grep -a "Firmware Version" | grep -aoP "(\d+.\d+.\d+)")
+    hailort_version=$(hailortcli fw-control identify | grep -a "Firmware Version" | tail -n 1 | grep -aoP "(\d+.\d+.\d+)")
     hailort_expected_version=$(cat $TAPPAS_WORKSPACE/.config | awk -F'=' '{print $2}')
 
     if [ "$hailort_version" != "$hailort_expected_version" ]; then
-        log_warning "HailoRT version is $hailort_version, expected to be $hailort_expected_version"
+        log_warning "HailoRT version is $hailort_version, expected to be $hailort_expected_version (version was extraced using the following command: 'hailortcli fw-control identify')"
         return 1
     fi
 }
@@ -103,6 +126,20 @@ function export_xv_image_is_supported() {
 
 }
 
+function add_vaapi_fakedriver() {
+    export LIBVA_DRIVER_NAME=fakedriver
+}
+
+function check_vaapi_driver() {
+    if [[ -z "$LIBVA_DRIVER_NAME" ]]; then
+        log_warning "LIBVA_DRIVER_NAME is not set, exiting"
+        return 1
+    fi
+    if [[ "$LIBVA_DRIVER_NAME" != "iHD" ]]; then
+        export MESA_LOADER_DRIVER_OVERRIDE=$LIBVA_DRIVER_NAME
+    fi
+}
+
 function main() {
     functions_to_run=( export_workspaces validate_hailo_device_connected validate_hailort_version export_xv_image_is_supported)
 
@@ -112,6 +149,12 @@ function main() {
 
     if [ "$check_python_packages" = true ]; then
         functions_to_run+=( check_python_packages_found )
+    fi
+
+    if [ "$check_vaapi" = true ]; then
+        functions_to_run+=( check_vaapi_driver )
+    else
+        functions_to_run+=( add_vaapi_fakedriver )
     fi
 
     for func_name in "${functions_to_run[@]}"

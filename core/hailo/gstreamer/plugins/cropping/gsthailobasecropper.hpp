@@ -5,6 +5,7 @@
 #pragma once
 #include <map>
 #include <gst/gst.h>
+#include <gst/video/video-format.h>
 #include <opencv2/opencv.hpp>
 #include "hailo_objects.hpp"
 
@@ -19,7 +20,7 @@ G_BEGIN_DECLS
 #define GST_HAILO_BASE_CROPPER_GET_CLASS(obj) \
         (G_TYPE_INSTANCE_GET_CLASS ((obj),GST_TYPE_HAILO_BASE_CROPPER,GstHailoBaseCropperClass))
 
-#define HAILO_BASE_CROPPER_SUPPORTED_FORMATS "{ RGB, YUY2 }"
+#define HAILO_BASE_CROPPER_SUPPORTED_FORMATS "{ RGB, RGBA, YUY2 }"
 #define HAILO_BASE_CROPPER_VIDEO_CAPS \
     GST_VIDEO_CAPS_MAKE(HAILO_BASE_CROPPER_SUPPORTED_FORMATS)
 
@@ -42,15 +43,14 @@ struct _GstHailoBaseCropperClass
     GstElementClass parent_class;
 
     std::vector<HailoROIPtr> (*prepare_crops) (GstHailoBaseCropper *hailocropper,  GstBuffer *buf);
-    void (*resize) (GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
+    void (*resize) (GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
 };
 
 G_GNUC_INTERNAL GType gst_hailo_basecropper_get_type(void);
-void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolation);
-void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
-void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
-void resize_bicubic(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
-void resize_inter_area(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
-void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
+void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
+void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
+void resize_bicubic(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
+void resize_inter_area(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
+void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
 
 G_END_DECLS

@@ -13,7 +13,7 @@
 #include "cropping/gsthailoaggregator.hpp"
 #include <gst/video/video.h>
 #include <iostream>
-#include "cropping/gst_hailo_cropping_meta.hpp"
+#include "gst_hailo_cropping_meta.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
 #include "gst_hailo_meta.hpp"

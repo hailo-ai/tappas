@@ -12,9 +12,9 @@
       "destination": "lprnet.hef"
     },
     {
-      "bucket": "tappas",
-      "source": "general/hefs/yolov5m_vehicles_79FPS.hef",
-      "destination": "yolov5m_vehicles_79FPS.hef"
+      "bucket": "model_zoo",
+      "source": "general/hefs/yolov5m_vehicles.hef",
+      "destination": "yolov5m_vehicles.hef"
     },
     {
       "bucket": "tappas",

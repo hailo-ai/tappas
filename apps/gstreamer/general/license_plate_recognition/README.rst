@@ -46,6 +46,13 @@ The output should look like:
        <img src="readme_resources/lpr_pipeline.gif"/>
    </div>
 
+Models
+------
+
+
+* ``yolov5m_vehicles``: yolov5m pre-trained on Hailo's dataset - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_vehicles.yaml
+* ``tiny_yolov4_license_plates``: tiny_yolov4 pre-trained on Hailo's dataset - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/tiny_yolov4_license_plates.yaml
+* ``lprnet``: lprnet pre-trained on Hailo's dataset - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/lprnet.yaml
 
 How the application works
 -------------------------
@@ -109,3 +116,34 @@ The following elements are the structure of the pipeline:
   * | ``hailofilter`` captures incoming buffers. From these the ocr text is extracted and sent upstream behind the scenes. 
       These events contain both the OCR postprocess results and the unique tracking id of the vehicle they were extracted from. 
       The event is caught by the ``hailotracker`` element which updates the corresponding entry in its tracked vehicle database. 
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolov5m_vehicles``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/vehicle_detection/docs/TRAINING_GUIDE.md>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``configs/yolov5_vehicle_detection.json`` with your new post-processing parameters (NMS)
+- ``tiny_yolov4_license_plates``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/license_plate_detection/docs/TRAINING_GUIDE.md>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``configs/yolov4_licence_plate.json`` with your new post-processing parameters (NMS)
+- ``lprnet``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/license_plate_recognition/docs/TRAINING_GUIDE.md>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `ocr_postprocess.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/ocr/ocr_postprocess.cpp#L20>`_
+      with your new paremeters, then recompile to create ``libocr_post.so``

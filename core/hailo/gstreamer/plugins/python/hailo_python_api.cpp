@@ -224,6 +224,15 @@ public:
     hailo_object_t get_type() override { PYBIND11_OVERRIDE(hailo_object_t, HailoUniqueID, get_type); }
 };
 
+class __HailoUserMetaGlue : public HailoUserMeta,
+                            public std::enable_shared_from_this<__HailoUserMetaGlue>
+{
+public:
+    using HailoUserMeta::HailoUserMeta;
+
+    hailo_object_t get_type() override { PYBIND11_OVERRIDE(hailo_object_t, HailoUserMeta, get_type); }
+};
+
 HailoTensor tensor_init(pybind11::array_t<uint8_t> data, const hailo_vstream_info_t &vstream_info)
 {
     return HailoTensor(static_cast<uint8_t *>(data.request().ptr), vstream_info);
@@ -239,7 +248,7 @@ HailoTensor tensor_init_full(pybind11::array_t<uint8_t> data, std::string name, 
     info.shape.features = features;
     strcpy(info.name, name.c_str());
     pybind11::array_t<uint8_t> new_data(data);
-    return tensor_init(new_data, info); 
+    return tensor_init(new_data, info);
 }
 
 __MODULE_GEN_MACRO(hailo, m)
@@ -258,6 +267,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .value("HAILO_DEPTH_MASK", HAILO_DEPTH_MASK)
             .value("HAILO_CLASS_MASK", HAILO_CLASS_MASK)
             .value("HAILO_CONF_CLASS_MASK", HAILO_CONF_CLASS_MASK)
+            .value("HAILO_USER_META", HAILO_USER_META)
             .export_values();
     }
 
@@ -648,6 +658,38 @@ __MODULE_GEN_MACRO(hailo, m)
 
                     /* Create a new C++ instance */
                     auto instance = std::unique_ptr<HailoUniqueID>(new HailoUniqueID(t[0].cast<int>()));
+
+                    return instance;
+                }));
+    }
+
+    {
+        py::class_<HailoUserMeta, HailoObject, __HailoUserMetaGlue, std::shared_ptr<HailoUserMeta>>(
+            m, "HailoUserMeta")
+            .def(py::init<>())
+            .def(py::init<int, std::string, float>(), py::arg("user_int"), py::arg("user_string"), py::arg("user_float"))
+
+            .def("get_user_int", &HailoUserMeta::get_user_int, "Get HailoUserMeta user_int")
+            .def("get_user_string", &HailoUserMeta::get_user_string, "Get HailoUserMeta user_string")
+            .def("get_user_float", &HailoUserMeta::get_user_float, "Get HailoUserMeta user_float")
+            .def("set_user_int", &HailoUserMeta::set_user_int, "Set HailoUserMeta user_int", "user_int"_a)
+            .def("set_user_string", &HailoUserMeta::set_user_string, "Set HailoUserMeta user_string", "user_string"_a)
+            .def("set_user_float", &HailoUserMeta::set_user_float, "Set HailoUserMeta user_float", "user_float"_a)
+
+            .def("__repr__", [](const HailoUserMeta &obj)
+                 { return "<hailo.HailoUserMeta"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; })
+            .def(py::pickle(
+                [](HailoUserMeta &self) { // __getstate__
+                    return py::make_tuple(self.get_user_int(), self.get_user_string(), self.get_user_float());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 1)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    auto instance = std::unique_ptr<HailoUserMeta>(new HailoUserMeta(t[0].cast<int>(), t[1].cast<std::string>(),
+                                                                                     t[2].cast<float>()));
 
                     return instance;
                 }));

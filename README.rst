@@ -54,7 +54,8 @@ Prerequisites
 * At least 6GB's of free disk space
 
 
-   Note: This version is compatible with HailoRT v4.8.1.
+.. note::
+    This version is compatible with HailoRT v4.10.0.
 
 
 Installation
@@ -78,6 +79,9 @@ Installation
    * - Yocto installation
      - `Read more about Yocto installation <docs/installation/yocto.rst>`_
      - Yocto supported BSP's
+   * - Raspberry pi installation
+     - `Read more about Raspberry pi installation <docs/installation/raspberry-pi-install.rst>`_
+     - Raspberry Pi OS, Ubuntu 20.04
 
 
 
@@ -100,9 +104,11 @@ Example Applications built with TAPPAS
 TAPPAS comes with a rich set of pre-configured pipelines optimized for different common hosts.
 
 
-   **NOTE:** Architecture-specific application examples (i.MX, Raspberry PI, etc..) use platform-specific hardware accelerators and are not compatible with different architectures.
+.. note::
+    Architecture-specific application examples (i.MX, Raspberry PI, etc..) use platform-specific hardware accelerators and are not compatible with different architectures.
    
-   **NOTE:** Running application examples requires a direct connection to a monitor.
+.. note::
+    Running application examples requires a direct connection to a monitor.
 
 
 Basic Single Network Pipelines
@@ -262,6 +268,17 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
 Changelog
 ----------
 
+**v3.21.0 (October 2022)**
+
+* New Apps:
+  
+  * `Multi-stream detection that uses HailoRT Stream Multiplexer <apps/gstreamer/general/multistream_detection/README.rst>`_ - Demonstrates the usage of HailoRT stream multiplexer (preview)
+
+* New elements - `hailoexportfile` and `hailoexportmq` which provide an access point in the pipeline to export metadata (HailoObjects)
+* Improved pipeline profiling by adding new tracers and replacing the GUI of `gst-shark <docs/write_your_own_application/debugging.rst>`_
+* Ubuntu 22 is now supported (GStreamer 1.20, preview)
+* Yocto Kirkstone is now supported (GStreamer 1.20)
+
 **v3.20.0 (August 2022)**
 
 * New Apps:
@@ -288,9 +305,11 @@ Changelog
 * LPR (License Plate Recognition) pipeline is simplified to bash only
 * New detection post-process - Nanodet
 
-.. note:: Ubuntu 18.04 will be deprecated in TAPPAS future version
+.. note::
+    Ubuntu 18.04 will be deprecated in TAPPAS future version
 
-.. note:: Python 3.6 will be deprecated in TAPPAS future version
+.. note::
+    Python 3.6 will be deprecated in TAPPAS future version
 
 **v3.18.0 (April 2022)**
 

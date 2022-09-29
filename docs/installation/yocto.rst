@@ -14,11 +14,13 @@ The layers are stored in `Meta-Hailo Github <https://github.com/hailo-ai/meta-ha
 
 * Zeus (kernel 5.4.24)
 * Dunfell (kernel 5.4.85)
-* Gatesgarth (kernel 5.10.9)
 * Hardknott (kernel  5.10.72)
 * Honister (kernel  5.14)
+* Kirkstone (kernel 5.15)
 
- **NOTE:** Zeus and Gatesgarth will not be supported by TAPPAS from version 3.21.0
+.. note:: Zeus will not be supported by TAPPAS in future versions.
+
+.. note:: Hardknott will not be supported by TAPPAS from version 3.23.0 (2023-01 suite).
 
 Setup
 -----
@@ -59,14 +61,15 @@ Build your image
 
 Run bitbake and build your image. After the build successfully finished, burn the Image to your embedded device.
 
-   **NOTE:** building on non-IMX devices:
-             To increase the performance of our applications, we patched imx gstreamer-plugins-base.
-             In non-IMX devices you may encounter an error indicating that recipes under ``meta-hailo-tappas/recipes-multimedia/gstreamer/`` cannot be parsed.
-             In this case remove this directory under the meta-hailo-tappas layer, and re-build the image.
+.. note::
+    building on non-IMX devices:
+    To increase the performance of our applications, we patched imx gstreamer-plugins-base.
+    In non-IMX devices you may encounter an error indicating that recipes under ``meta-hailo-tappas/recipes-multimedia/gstreamer/`` cannot be parsed.
+    In this case remove this directory under the meta-hailo-tappas layer, and re-build the image.
 
-             .. code-block:: sh
+    .. code-block:: sh
 
-               rm -rf meta-hailo/meta-hailo-tappas/recipes-multimedia/gstreamer/
+        rm -rf meta-hailo/meta-hailo-tappas/recipes-multimedia/gstreamer/
 
 
 

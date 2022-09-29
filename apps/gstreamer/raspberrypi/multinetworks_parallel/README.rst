@@ -38,12 +38,13 @@ The output should look like:
    </div>
 
 
-Model
------
+Models
+------
 
+Joined together:
 
-* ``fast_depth`` in resolution of 224X224X3.
-* ``mobilenet_ssd`` in resolution of 300X300X3.
+* ``fast_depth`` in resolution of 224X224X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/fast_depth.yaml
+* ``mobilenet_ssd`` in resolution of 300X300X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1_no_alls.yaml
 
 How it works
 ------------

@@ -214,7 +214,7 @@ inline std::vector<STrack> JDETracker::update(std::vector<HailoDetectionPtr> &in
     //******************************************************************
     // Step 1: Prepare tracks for new detections
     //******************************************************************
-    detections = JDETracker::hailo_detections_to_stracks(inputs);  // Convert the new detections into STracks
+    detections = JDETracker::hailo_detections_to_stracks(inputs, this->m_frame_id);  // Convert the new detections into STracks
 
     strack_pool = joint_strack_pointers(this->m_tracked_stracks, this->m_lost_stracks); // Pool together the tracked and lost stracks
     STrack::multi_predict(strack_pool, this->m_kalman_filter);                          // Run Kalman Filter prediction step

@@ -8,15 +8,16 @@ common_args = ['-DHAVE_CONFIG_H']
 plugin_sources = [
     'gsthailotools.cpp',
     'filter/gsthailofilter.cpp',
+    'filter/gsthailocounter.cpp',
     'muxer/gsthailomuxer.cpp',
     'muxer/gsthailoroundrobin.cpp',
+    'muxer/gsthailostreamrouter.cpp',
     'common/image.cpp',
     'overlay/overlay.cpp',
     'overlay/gsthailooverlay.cpp',
     'cropping/gsthailobasecropper.cpp',
     'cropping/gsthailocropper.cpp',
     'cropping/gsthailoaggregator.cpp',
-    'cropping/gst_hailo_cropping_meta.cpp',
     'tiling/gsthailotilecropper.cpp',
     'tiling/gsthailotileaggregator.cpp',
     'tracking/gsthailotracker.cpp',
@@ -27,14 +28,24 @@ plugin_sources = [
 # equivalent to - dl_dep = dependency('dl')
 dl_dep = meson.get_compiler('c').find_library('dl', required : false)
 
+gsthailotools_deps = plugin_deps + [meta_dep, dl_dep, opencv_dep, tracker_dep]
+zmq_args = []
+# ZMQ Export Element
+if get_option('target_platform') == 'x86'
+  zmq_dep = dependency('libzmq', method : 'pkg-config')
+  plugin_sources += ['export/export_zmq/gsthailoexportzmq.cpp']
+  gsthailotools_deps += [zmq_dep]
+  zmq_args = ['-DHAVE_ZMQ']
+endif
+
 ################################################
 # Hailo Gstreamer Shared Library
 ################################################
 shared_library('gsthailotools',
     plugin_sources,
-    cpp_args : hailo_lib_args + common_args,
+    cpp_args : hailo_lib_args + common_args + zmq_args,
     include_directories: [hailo_general_inc, xtensor_inc, rapidjson_inc],
-    dependencies : plugin_deps + [meta_dep, dl_dep, opencv_dep, tracker_dep],
+    dependencies : gsthailotools_deps,
     gnu_symbol_visibility : 'default',
     version: meson.project_version(),
     install: true,

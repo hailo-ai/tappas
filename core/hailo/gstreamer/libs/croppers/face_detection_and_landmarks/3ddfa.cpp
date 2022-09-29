@@ -32,7 +32,7 @@ HailoBBox algorithm_3ddfa(cv::Mat &image, const HailoBBox &roi)
 /**
  * @brief Returns a vector of HailoROIPtr to crop and resize.
  *
- * @param image The original picure (cv::Mat).
+ * @param image The original picture (cv::Mat).
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */

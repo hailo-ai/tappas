@@ -206,3 +206,6 @@ shared_library('re_id',
     install: true,
     install_dir: post_proc_install_dir,
 )
+
+libs_postprocesses_dep = declare_dependency(
+  include_directories: [include_directories('.')])

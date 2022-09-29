@@ -25,7 +25,7 @@ function init_variables() {
     # License Plate Detection Macros
     readonly LICENSE_PLATE_DETECTION_HEF="$RESOURCES_DIR/tiny_yolov4_license_plates_yuy2.hef"
     readonly LICENSE_PLATE_DETECTION_POST_SO="$POSTPROCESS_DIR/libyolo_post.so"
-    readonly LICENSE_PLATE_DETECTION_POST_FUNC="tiny_yolov4_license_plates"
+    readonly LICENSE_PLATE_DETECTION_POST_FUNC="tiny_yolov4_license_plates_yuy2"
 
     # License Plate OCR Macros
     readonly LICENSE_PLATE_OCR_HEF="$RESOURCES_DIR/lprnet_yuy2.hef"
@@ -87,7 +87,7 @@ function parse_args() {
             debug_stats_export="GST_DEBUG=hailodevicestats:5"
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep -e hailo_display -e hailodevicestats"
+            additonal_parameters="-v | grep -e hailo_display -e hailodevicestats"
         else
             echo "Received invalid argument: $1. See expected arguments below:"
             print_usage
@@ -141,7 +141,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$VEHICLE_DETECTION_POST_SO config-path=$car_json_config_path function-name=$VEHICLE_DETECTION_POST_FUNC qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailotracker name=hailo_tracker  kalman-dist-thr=.5 iou-thr=.6 keep-tracked-frames=2 keep-lost-frames=2 ! \
+    hailotracker name=hailo_tracker keep-past-metadata=false kalman-dist-thr=.5 iou-thr=.6 keep-tracked-frames=2 keep-lost-frames=2 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     tee name=$tee_name \
     $tee_name. ! \
