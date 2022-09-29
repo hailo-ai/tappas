@@ -65,7 +65,7 @@ function parse_args() {
             print_gst_launch_only=true
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep hailo_display"
+            additonal_parameters="-v | grep hailo_display"
         elif [ "$1" = "--input" ] || [ "$1" == "-i" ]; then
             input_source="$2"
             shift

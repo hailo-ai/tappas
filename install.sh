@@ -56,7 +56,7 @@ function python_venv_create_and_install() {
     rm -rf ${VENV_PATH}/$VENV_NAME
 
     echo "Creating new virtualenv ($VENV_NAME) in ($VENV_PATH) and installing into it"
-    virtualenv -p python3 $VENV_PATH/$VENV_NAME
+    python3 -m virtualenv $VENV_PATH/$VENV_NAME
     source ${VENV_PATH}/$VENV_NAME/bin/activate
   fi
 
@@ -116,8 +116,32 @@ function install_hailo() {
     fi
   fi
 
+  # Add GstHailo to the known paths
+  # Note, extracting the user site should support both within and without a venv
+  # https://stackoverflow.com/a/46071447/5708016
+  USER_SITE_DIR=$(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
+  mkdir -p $USER_SITE_DIR
+  echo "$TAPPAS_WORKSPACE/core/hailo/gstreamer/python/" > "$USER_SITE_DIR/gsthailo.pth"
+
   $TAPPAS_WORKSPACE/scripts/gstreamer/install_gstreamer.sh
-  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores
+
+  libgsthailo_version=$(ldd /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailo.so | grep -o 'libhailort.*' | awk '{print $1}')
+  libgsthailo_ver_num=${libgsthailo_version#*libhailort.so.}
+
+  libhailort_version=$(ls /usr/lib/libhailort.so -l)
+  libhailort_version_num=${libhailort_version#*libhailort.so.}
+
+  if [ $libgsthailo_ver_num == $libhailort_version_num ]; then
+    echo "libgsthailo version was already compiled - will skip compilation"
+    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores
+
+  else
+    echo "found newer version of libgsthailo"
+    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --compile-libgsthailo $compile_num_cores
+    
+  fi
+  
+  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_tracers.sh
 }
 
 function check_systems_requirements(){

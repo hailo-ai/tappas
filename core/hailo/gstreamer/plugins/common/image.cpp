@@ -2,16 +2,6 @@
  * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
-/**
- * @file overlay.cpp
- * @author your name (you@domain.com)
- * @brief
- * @version 0.1
- * @date 2022-01-20
- *
- * @copyright Copyright (c) 2022
- *
- */
 
 #include "common/image.hpp"
 
@@ -36,6 +26,9 @@ cv::Mat get_mat(GstVideoInfo *info, GstMapInfo *map)
     case GST_VIDEO_FORMAT_RGB:
         img = cv::Mat(info->height, info->width, CV_8UC3, (char *)map->data, info->stride[0]);
         break;
+    case GST_VIDEO_FORMAT_RGBA:
+        img = cv::Mat(info->height, info->width, CV_8UC4, (char *)map->data, info->stride[0]);
+        break;
     default:
         break;
     }
@@ -56,15 +49,15 @@ void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolati
     cv::merge(y_channels, 2, merged_y_channels);
     // In order to resize the Y values together, they need to be viewed as a single channel Mat
     cv::Mat merged_y_channels_flat = cv::Mat(merged_y_channels.rows, merged_y_channels.cols * 2, CV_8UC1, (char *)merged_y_channels.data, merged_y_channels.cols * 2);
-    cv::resize(merged_y_channels_flat, resized_y_channels, cv::Size(resized_image.cols * 2, resized_image.rows), interpolation);
+    cv::resize(merged_y_channels_flat, resized_y_channels, cv::Size(resized_image.cols * 2, resized_image.rows), 0, 0, interpolation);
     // We can make a 2 channel view of the resized image in order to split the Y channels again
     cv::Mat resized_y_channels_2_split = cv::Mat(resized_image.rows, resized_image.cols, CV_8UC2, (char *)resized_y_channels.data, resized_image.cols * 2);
     cv::split(resized_y_channels_2_split, y_channels);
 
     // Resize the U and V channels
     std::vector<cv::Mat> resized_channels(2);
-    cv::resize(channels[1], resized_channels[0], cv::Size(resized_image.cols, resized_image.rows), interpolation);
-    cv::resize(channels[3], resized_channels[1], cv::Size(resized_image.cols, resized_image.rows), interpolation);
+    cv::resize(channels[1], resized_channels[0], cv::Size(resized_image.cols, resized_image.rows), 0, 0, interpolation);
+    cv::resize(channels[3], resized_channels[1], cv::Size(resized_image.cols, resized_image.rows), 0, 0, interpolation);
 
     // Merge all resized channels
     cv::Mat channels_to_merge[4] = {y_channels[0], resized_channels[0], y_channels[1], resized_channels[1]};
@@ -74,4 +67,49 @@ void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolati
     resized_y_channels.release();
     merged_y_channels_flat.release();
     resized_y_channels_2_split.release();
+}
+
+std::shared_ptr<HailoMat> get_mat_by_format(GstVideoInfo *info, GstMapInfo *map, int line_thickness, int font_thickness)
+{
+    std::shared_ptr<HailoMat> hmat = nullptr;
+
+    switch (GST_VIDEO_INFO_FORMAT(info))
+    {
+    case GST_VIDEO_FORMAT_RGB:
+    {
+        hmat = std::make_shared<HailoRGBMat>(map->data,
+                                             GST_VIDEO_INFO_HEIGHT(info),
+                                             GST_VIDEO_INFO_WIDTH(info),
+                                             GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
+                                             line_thickness,
+                                             font_thickness);
+        break;
+    }
+    case GST_VIDEO_FORMAT_RGBA:
+    {
+        hmat = std::make_shared<HailoRGBAMat>(map->data,
+                                              GST_VIDEO_INFO_HEIGHT(info),
+                                              GST_VIDEO_INFO_WIDTH(info),
+                                              GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
+                                              line_thickness,
+                                              font_thickness);
+        break;
+    }
+    case GST_VIDEO_FORMAT_YUY2:
+    {
+        hmat = std::make_shared<HailoYUY2Mat>(map->data,
+                                              GST_VIDEO_INFO_HEIGHT(info),
+                                              GST_VIDEO_INFO_WIDTH(info),
+                                              GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
+                                              line_thickness,
+                                              font_thickness);
+        break;
+    }
+    case GST_VIDEO_FORMAT_NV12:
+        break;
+
+    default:
+        break;
+    }
+    return hmat;
 }

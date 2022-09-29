@@ -18,16 +18,20 @@
 #include <iostream>
 #include "overlay.hpp"
 #include "overlay_utils.hpp"
+#include "hailo_common.hpp"
 
 #define SPACE " "
-#define TEXT_CLS_FONT_SCALE (0.0025f)
-#define TEXT_DEFAULT_HEIGHT (0.125f)
+#define TEXT_CLS_FONT_SCALE_FACTOR (0.0025f)
+#define MINIMUM_TEXT_CLS_FONT_SCALE (0.5f)
+#define TEXT_DEFAULT_HEIGHT (0.1f)
 #define TEXT_FONT_FACTOR (0.12f)
 #define MINIMAL_BOX_WIDTH_FOR_TEXT (10)
 #define LANDMARKS_COLOR (cv::Scalar(255, 0, 0))
 #define DEFAULT_DETECTION_COLOR (cv::Scalar(255, 255, 255))
-#define DEFAULT_TILE_COLOR (cv::Scalar(0, 0, 255))
-
+#define DEFAULT_TILE_COLOR (2)
+#define NULL_COLOR_ID ((size_t)NULL_CLASS_ID)
+#define DEFAULT_COLOR (cv::Scalar(255, 255, 255))
+// Transformations were taken from https://stackoverflow.com/questions/17892346/how-to-convert-rgb-yuv-rgb-both-ways.
 #define RGB2Y(R, G, B) CLIP((0.257 * (R) + 0.504 * (G) + 0.098 * (B)) + 16)
 #define RGB2U(R, G, B) CLIP((-0.148 * (R)-0.291 * (G) + 0.439 * (B)) + 128)
 #define RGB2V(R, G, B) CLIP((0.439 * (R)-0.368 * (G)-0.071 * (B)) + 128)
@@ -55,12 +59,14 @@ cv::Scalar RGB_TO_YUY2(cv::Scalar rgb)
     return cv::Scalar(y, u, y, v);
 }
 
-cv::Scalar get_color(cv::Mat &mat, cv::Scalar color)
+static cv::Scalar get_color(size_t color_id)
 {
-    if (mat.type() == CV_8UC4)
-    {
-        return RGB_TO_YUY2(color);
-    }
+    cv::Scalar color;
+    if (NULL_COLOR_ID == color_id)
+        color = DEFAULT_COLOR;
+    else
+        color = indexToColor(color_id);
+
     return color;
 }
 
@@ -69,8 +75,6 @@ cv::Scalar indexToColor(size_t index)
     return color_table[index % color_table.size()];
 }
 
-float text_height = TEXT_DEFAULT_HEIGHT;
-
 std::string confidence_to_string(float confidence)
 {
     int confidence_percentage = (confidence * 100);
@@ -78,20 +82,29 @@ std::string confidence_to_string(float confidence)
     return std::to_string(confidence_percentage) + "%";
 }
 
-static overlay_status_t draw_classification(cv::Mat &image_planes, HailoClassificationPtr result, HailoROIPtr roi, int font_thickness = 1)
+static overlay_status_t draw_classification(HailoMat &mat, HailoROIPtr roi, std::string text, uint number_of_classifications)
 {
     auto bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
-    int roi_xmin = bbox.xmin() * image_planes.cols;
-    int roi_ymin = bbox.ymin() * image_planes.rows;
-    int roi_width = image_planes.cols * bbox.width();
-    int roi_height = image_planes.rows * bbox.height();
-    auto text_position = cv::Point(roi_xmin, roi_ymin + (text_height * roi_height) + log(roi_height));
-
-    std::string text = result->get_label() + SPACE + confidence_to_string(result->get_confidence());
-    cv::putText(image_planes, text, text_position, cv::FONT_HERSHEY_SIMPLEX, TEXT_CLS_FONT_SCALE * roi_width,
-                get_color(image_planes, DEFAULT_COLOR), font_thickness);
-    text_height += TEXT_DEFAULT_HEIGHT;
+    int roi_xmin = bbox.xmin() * mat.width();
+    int roi_ymin = bbox.ymin() * mat.height();
+    int roi_width = mat.width() * bbox.width();
+    int roi_height = mat.height() * bbox.height();
+    auto text_position = cv::Point(roi_xmin, roi_ymin + (TEXT_DEFAULT_HEIGHT * number_of_classifications * roi_height) + log(roi_height));
+    double font_scale =  TEXT_CLS_FONT_SCALE_FACTOR * roi_width;
+    font_scale = (font_scale < MINIMUM_TEXT_CLS_FONT_SCALE) ? MINIMUM_TEXT_CLS_FONT_SCALE : font_scale;
+    mat.draw_text(text, text_position, font_scale, get_color(NULL_COLOR_ID));
     return OVERLAY_STATUS_OK;
+}
+
+static std::string get_classification_text(HailoClassificationPtr result, bool show_confidence = true)
+{
+    std::string text;
+    std::string label = result->get_label();
+    std::string confidence;
+    if (show_confidence)
+        confidence = confidence_to_string(result->get_confidence());
+    text = label + SPACE + confidence;
+    return text;
 }
 
 static overlay_status_t draw_landmarks(cv::Mat &image_planes, HailoLandmarksPtr landmarks, HailoROIPtr roi)
@@ -120,7 +133,7 @@ static overlay_status_t draw_landmarks(cv::Mat &image_planes, HailoLandmarksPtr 
             cv::Point joint2 = cv::Point(x2, y2);
 
             thickness = (bbox.width() < 0.05) ? 1 : 2;
-            cv::line(image_planes, joint1, joint2, get_color(image_planes, cv::Scalar(0, 255, 255)), thickness, cv::LINE_4);
+            cv::line(image_planes, joint1, joint2, get_color(4), thickness, cv::LINE_4);
         }
     }
     for (auto &point : points)
@@ -132,92 +145,76 @@ static overlay_status_t draw_landmarks(cv::Mat &image_planes, HailoLandmarksPtr 
             // Draw the keypoint (multiply x,y values by the sizes of the frame)
             auto center = cv::Point(x, y);
             cv::ellipse(image_planes, center, {R, R}, 0, 0, 360,
-                        get_color(image_planes, cv::Scalar(255, 0, 102)), 3);
+                        get_color(7), 3);
         }
     }
     return OVERLAY_STATUS_OK;
 }
 
-static overlay_status_t draw_detection(cv::Mat &image_planes, HailoDetectionPtr detection, HailoROIPtr roi, int font_thickness = 1, int line_thickness = 1)
+static cv::Rect get_rect(HailoMat &mat, HailoDetectionPtr detection, HailoROIPtr roi)
 {
     HailoBBox roi_bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
     auto detection_bbox = detection->get_bbox();
 
-    auto bbox_min = cv::Point(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * image_planes.cols,
-                              ((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * image_planes.rows);
-    auto bbox_max = cv::Point(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * image_planes.cols,
-                              ((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * image_planes.rows);
-
-    // Draw the detection box
-    auto color_rgb = (detection->get_class_id() == NULL_CLASS_ID) ? DEFAULT_DETECTION_COLOR : indexToColor(detection->get_class_id());
-    auto color = get_color(image_planes, color_rgb);
-    cv::rectangle(image_planes, bbox_min, bbox_max, color, line_thickness);
-    auto bbox_width = bbox_max.x - bbox_min.x;
-    // Adding label and confidence to the box only if the box is big enough.
-    if (bbox_width > MINIMAL_BOX_WIDTH_FOR_TEXT)
-    {
-        // Calculating the font size according to the box width.
-        float font_scale = TEXT_FONT_FACTOR * log(bbox_width);
-        std::string text;
-        std::string confidence = confidence_to_string(detection->get_confidence());
-        std::string label = detection->get_label();
-        if (label != "")
-        {
-            text = label + SPACE + confidence + SPACE;
-        }
-        else
-        {
-            text = confidence + SPACE;
-        }
-        // Get the confidence from the meta as well, round the number to significant figures
-        auto text_position = cv::Point(bbox_min.x - log(bbox_width), bbox_min.y - log(bbox_width));
-        // Draw the class and confidence text
-        cv::putText(image_planes, text, text_position, cv::FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness);
-    }
-    draw_all(image_planes, detection, font_thickness, line_thickness);
-
-    return OVERLAY_STATUS_OK;
+    auto bbox_min = cv::Point(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * mat.width(),
+                              ((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * mat.height());
+    auto bbox_max = cv::Point(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * mat.width(),
+                              ((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * mat.height());
+    return cv::Rect(bbox_min, bbox_max);
 }
 
-static overlay_status_t draw_tile(cv::Mat &image_planes, HailoTileROIPtr tile, int font_thickness = 1, int line_thickness = 1)
+static std::string get_detection_text(HailoDetectionPtr detection, bool show_confidence = true)
+{
+    std::string text;
+    std::string label = detection->get_label();
+    std::string confidence = confidence_to_string(detection->get_confidence());
+    if (!show_confidence)
+        text = label;
+    else if (!label.empty())
+    {
+        text = label + SPACE + confidence;
+    }
+    else
+    {
+        text = confidence;
+    }
+    return text;
+}
+
+static overlay_status_t draw_tile(HailoMat &mat, HailoTileROIPtr tile)
 {
     auto bbox = tile->get_bbox();
-    auto bbox_min = cv::Point(bbox.xmin() * image_planes.cols, bbox.ymin() * image_planes.rows);
-    auto bbox_max = cv::Point(bbox.xmax() * image_planes.cols, bbox.ymax() * image_planes.rows);
-
+    auto bbox_min = cv::Point(bbox.xmin() * mat.width(), bbox.ymin() * mat.height());
+    auto bbox_max = cv::Point(bbox.xmax() * mat.width(), bbox.ymax() * mat.height());
+    cv::Rect rect(bbox_min, bbox_max);
     cv::Scalar color;
     uint tile_layer = tile->get_layer();
     if (tile_layer < tile_layer_color_table.size())
-        color = get_color(image_planes, tile_layer_color_table[tile_layer % tile_layer_color_table.size()]);
+        color = tile_layer_color_table[tile_layer];
     else
-        color = get_color(image_planes, DEFAULT_TILE_COLOR);
+        color = get_color(DEFAULT_TILE_COLOR);
 
     // Draw the tile box
-    cv::rectangle(image_planes, bbox_min, bbox_max, color);
-    draw_all(image_planes, tile, font_thickness, line_thickness);
+    mat.draw_rectangle(rect, color);
 
     return OVERLAY_STATUS_OK;
 }
 
-static overlay_status_t draw_id(cv::Mat &image_planes, HailoUniqueIDPtr &hailo_id, HailoROIPtr roi, int font_thickness = 1)
+static overlay_status_t draw_id(HailoMat &mat, HailoUniqueIDPtr &hailo_id, HailoROIPtr roi)
 {
-    HailoDetectionPtr detection = std::dynamic_pointer_cast<HailoDetection>(roi);
     std::string id_text = std::to_string(hailo_id->get_id());
 
-    auto bbox = detection->get_bbox();
-    auto bbox_min = cv::Point(bbox.xmin() * image_planes.cols, bbox.ymin() * image_planes.rows);
-    auto bbox_max = cv::Point(bbox.xmax() * image_planes.cols, bbox.ymax() * image_planes.rows);
+    auto bbox = roi->get_bbox();
+    auto bbox_min = cv::Point(bbox.xmin() * mat.width(), bbox.ymin() * mat.height());
+    auto bbox_max = cv::Point(bbox.xmax() * mat.width(), bbox.ymax() * mat.height());
     auto bbox_width = bbox_max.x - bbox_min.x;
-    auto color = (detection->get_class_id() == NULL_CLASS_ID) ? DEFAULT_DETECTION_COLOR : indexToColor(detection->get_class_id());
+    auto color = get_color(NULL_CLASS_ID);
 
-    if (bbox_width > MINIMAL_BOX_WIDTH_FOR_TEXT)
-    {
-        // Calculating the font size according to the box width.
-        float font_scale = TEXT_FONT_FACTOR * log(bbox_width);
-        auto text_position = cv::Point(bbox_min.x + log(bbox_width), bbox_max.y - log(bbox_width));
-        // Draw the class and confidence text
-        cv::putText(image_planes, id_text, text_position, cv::FONT_HERSHEY_SIMPLEX, font_scale, color, font_thickness);
-    }
+    // Calculating the font size according to the box width.
+    double font_scale = TEXT_FONT_FACTOR * log(bbox_width);
+    auto text_position = cv::Point(bbox_min.x + log(bbox_width), bbox_max.y - log(bbox_width));
+    // Draw the class and confidence text
+    mat.draw_text(id_text, text_position, font_scale, color);
     return OVERLAY_STATUS_OK;
 }
 
@@ -248,7 +245,7 @@ void calc_destination_roi_and_resize_mask(cv::Mat &destinationROI, cv::Mat &imag
     roi_height = std::clamp(roi_height, 0, image_planes.rows - roi_ymin);
 
     cv::Mat mat_data = cv::Mat(mask->get_height(), mask->get_width(), cv_type, (uint8_t *)data_ptr.data());
-    cv::resize(mat_data, resized_mask_data, cv::Size(roi_width, roi_height), cv::INTER_LINEAR);
+    cv::resize(mat_data, resized_mask_data, cv::Size(roi_width, roi_height), 0, 0, cv::INTER_LINEAR);
 
     cv::Rect roi_rect(cv::Point(roi_xmin, roi_ymin), cv::Size(roi_width, roi_height));
     destinationROI = image_planes(roi_rect);
@@ -335,11 +332,11 @@ static overlay_status_t draw_conf_class_mask(cv::Mat &image_planes, HailoConfCla
     return OVERLAY_STATUS_OK;
 }
 
-overlay_status_t draw_all(cv::Mat &mat, HailoROIPtr roi, int font_thickness, int line_thickness)
+overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, bool show_confidence)
 {
     overlay_status_t ret = OVERLAY_STATUS_UNINITIALIZED;
-    text_height = TEXT_DEFAULT_HEIGHT;
-
+    uint number_of_classifications = 0;
+    cv::Mat &mat = hmat.get_mat();
     for (auto obj : roi->get_objects())
     {
         switch (obj->get_type())
@@ -347,13 +344,28 @@ overlay_status_t draw_all(cv::Mat &mat, HailoROIPtr roi, int font_thickness, int
         case HAILO_DETECTION:
         {
             HailoDetectionPtr detection = std::dynamic_pointer_cast<HailoDetection>(obj);
-            draw_detection(mat, detection, roi, font_thickness, line_thickness);
+
+            // Draw Rectangle
+            auto rect = get_rect(hmat, detection, roi);
+            const cv::Scalar color = get_color((size_t)detection->get_class_id());
+            hmat.draw_rectangle(rect, color);
+
+            // Draw text
+            std::string text = get_detection_text(detection, show_confidence);
+            auto text_position = cv::Point(rect.x - log(rect.width), rect.y - log(rect.width));
+            float font_scale = TEXT_FONT_FACTOR * log(rect.width);
+            hmat.draw_text(text, text_position, font_scale, color);
+
+            // Draw inner objects.
+            ret = draw_all(hmat, detection, show_confidence);
             break;
         }
         case HAILO_CLASSIFICATION:
         {
+            number_of_classifications++;
             HailoClassificationPtr classification = std::dynamic_pointer_cast<HailoClassification>(obj);
-            draw_classification(mat, classification, roi, font_thickness);
+            std::string text = get_classification_text(classification, show_confidence);
+            ret = draw_classification(hmat, roi, text, number_of_classifications);
             break;
         }
         case HAILO_LANDMARKS:
@@ -365,13 +377,14 @@ overlay_status_t draw_all(cv::Mat &mat, HailoROIPtr roi, int font_thickness, int
         case HAILO_TILE:
         {
             HailoTileROIPtr tile = std::dynamic_pointer_cast<HailoTileROI>(obj);
-            draw_tile(mat, tile, font_thickness, line_thickness);
+            draw_tile(hmat, tile);
+            draw_all(hmat, tile, show_confidence);
             break;
         }
         case HAILO_UNIQUE_ID:
         {
             HailoUniqueIDPtr id = std::dynamic_pointer_cast<HailoUniqueID>(obj);
-            draw_id(mat, id, roi, font_thickness);
+            draw_id(hmat, id, roi);
             break;
         }
         case HAILO_DEPTH_MASK:

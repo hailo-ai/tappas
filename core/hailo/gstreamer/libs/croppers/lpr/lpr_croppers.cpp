@@ -1,12 +1,12 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include "lpr_croppers.hpp"
 #include <iostream>
 
-#define LICENSE_PLATE_LABEL "license_plate" 
-#define OCR_LABEL "ocr" 
+#define LICENSE_PLATE_LABEL "license_plate"
+#define OCR_LABEL "ocr"
 
 /**
  * @brief Returns the calculate the variance of edges.
@@ -24,7 +24,7 @@
  *         The variance of edges in the image.
  */
 float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float crop_ratio = 0.1)
-{   
+{
     // Crop the center of the roi from the image, avoid cropping out of bounds
     float roi_width = roi.width();
     float roi_height = roi.height();
@@ -53,15 +53,17 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     cv::Mat bgr_image;
     if (image.type() == CV_8UC4)
     {
-        cv::Mat yuy2_image = cv::Mat(cropped_image.rows, cropped_image.cols*2, CV_8UC2, (char *)cropped_image.data, cropped_image.step);
+        cv::Mat yuy2_image = cv::Mat(cropped_image.rows, cropped_image.cols * 2, CV_8UC2, (char *)cropped_image.data, cropped_image.step);
         cv::cvtColor(yuy2_image, bgr_image, cv::COLOR_YUV2BGR_YUY2);
-    } else {
+    }
+    else
+    {
         bgr_image = cropped_image;
     }
 
     // Resize the frame
     cv::Mat resized_image;
-    cv::resize(bgr_image, resized_image, cv::Size(200, 40), cv::INTER_AREA);
+    cv::resize(bgr_image, resized_image, cv::Size(200, 40), 0, 0, cv::INTER_AREA);
 
     // Gaussian Blur
     cv::Mat gaussian_image;
@@ -70,8 +72,8 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     // Convert to grayscale
     cv::Mat gray_image;
     cv::Mat gray_image_normalized;
-    double minVal; 
-    double maxVal; 
+    double minVal;
+    double maxVal;
     cv::Point minLoc;
     cv::Point maxLoc;
     cv::cvtColor(gaussian_image, gray_image, cv::COLOR_BGR2GRAY);
@@ -86,7 +88,7 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     // Calculate the variance of edges
     cv::Scalar mean, stddev;
     cv::meanStdDev(laplacian_image, mean, stddev, cv::Mat());
-    float variance = stddev.val[0] * stddev.val[0]; 
+    float variance = stddev.val[0] * stddev.val[0];
 
     // Release resources
     bgr_image.release();
@@ -124,7 +126,7 @@ std::vector<HailoROIPtr> license_plate_quality_estimation(cv::Mat image, HailoRO
     {
         // For each detection, check the inner detections
         std::vector<HailoDetectionPtr> inner_detection_ptrs = hailo_common::get_hailo_detections(detection);
-        for(HailoDetectionPtr &inner_detection : inner_detection_ptrs)
+        for (HailoDetectionPtr &inner_detection : inner_detection_ptrs)
         {
             if (LICENSE_PLATE_LABEL != inner_detection->get_label())
                 continue;
@@ -169,9 +171,9 @@ std::vector<HailoROIPtr> vehicles_without_ocr(cv::Mat image, HailoROIPtr roi)
     {
         HailoBBox vehicle_bbox = detection->get_bbox();
         // If the bbox is not yet in the image, then throw it out
-        if ((vehicle_bbox.xmin() < 0.0) || 
-            (vehicle_bbox.xmax() > 1.0) || 
-            (vehicle_bbox.ymin() < 0.0) || 
+        if ((vehicle_bbox.xmin() < 0.0) ||
+            (vehicle_bbox.xmax() > 1.0) ||
+            (vehicle_bbox.ymin() < 0.0) ||
             (vehicle_bbox.ymax() > 1.0))
             continue;
 
@@ -187,7 +189,7 @@ std::vector<HailoROIPtr> vehicles_without_ocr(cv::Mat image, HailoROIPtr roi)
         has_ocr = false;
         // For each detection, check the classifications
         std::vector<HailoClassificationPtr> vehicle_classifications = hailo_common::get_hailo_classifications(detection);
-        for(HailoClassificationPtr &classification : vehicle_classifications)
+        for (HailoClassificationPtr &classification : vehicle_classifications)
         {
             if (OCR_LABEL == classification->get_classification_type())
             {

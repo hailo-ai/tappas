@@ -76,7 +76,7 @@ private:
 public:
     // Constructors
     STrack(std::vector<float> tlwh_ = {0., 0., 0., 0.}, float score_ = 0.0, std::vector<float> temp_feat = {0.0},
-           HailoDetectionPtr detection_ptr = nullptr) : m_is_activated(false), m_track_id(0), m_frame_id(0), m_tracklet_len(0), m_confidence(score_),
+           HailoDetectionPtr detection_ptr = nullptr, int frame_id = 0) : m_is_activated(false), m_track_id(0), m_frame_id(frame_id), m_tracklet_len(0), m_confidence(score_),
                                                            m_start_frame(0), m_alpha(0.9), tmp_location_tlwh(tlwh_), m_state(TrackState::New),
                                                            m_hailo_detection(detection_ptr)
     {
@@ -113,12 +113,23 @@ public:
      * @brief Update the HailoDetctionPtr bbox with the strack's m_tlwh
      *
      */
-    void update_hailo_detection(HailoDetectionPtr new_detection)
+    void update_hailo_detection(HailoDetectionPtr new_detection, bool keep_past_metadata = true)
     {
         for (auto object : this->m_hailo_detection->get_objects())
         {
-            new_detection->add_object(object);
+            if (keep_past_metadata){
+                new_detection->add_object(object);
+            }    
+            else {
+                if (object->get_type() == HAILO_UNIQUE_ID) {
+                    HailoUniqueIDPtr id = std::dynamic_pointer_cast<HailoUniqueID>(object);
+                    if (id->get_mode() == TRACKING_ID){
+                        new_detection->add_object(object);
+                    }
+                }
+            }
         }
+        
         this->m_hailo_detection = new_detection;
         update_hailo_bbox();
     }
@@ -339,7 +350,7 @@ public:
      * @param new_id  -  bool
      *        If to update this unique id
      */
-    void re_activate(STrack &new_track, int frame_id, bool new_id)
+    void re_activate(STrack &new_track, int frame_id, bool new_id, bool keep_past_metadata)
     {
         TrackerTypes::DETECTBOX xyah_box = STrack::get_detectbox_from_tlwh(new_track.m_tlwh);
 
@@ -358,7 +369,7 @@ public:
             this->m_track_id = next_id();
 
         // Update the HailoDetectionPtr to the new track and update it's id
-        update_hailo_detection(new_track.get_hailo_detection());
+        update_hailo_detection(new_track.get_hailo_detection(), keep_past_metadata);
     }
 
     /**
@@ -376,7 +387,7 @@ public:
      * @param update_feature  -  bool
      *        If to update this STrack's features
      */
-    void update(STrack &new_track, int frame_id, bool update_feature = true)
+    void update(STrack &new_track, int frame_id, bool keep_past_metadata = true, bool update_feature = true)
     {
         this->m_frame_id = frame_id;
         this->m_tracklet_len++;
@@ -397,7 +408,7 @@ public:
             update_features(new_track.m_curr_feat);
 
         // Update the HailoDetectionPtr to the new track and update it's id
-        update_hailo_detection(new_track.get_hailo_detection());
+        update_hailo_detection(new_track.get_hailo_detection(), keep_past_metadata);
     }
 
     /******************** PRIVATE FUNCTIONS ****************************/

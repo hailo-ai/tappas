@@ -20,9 +20,9 @@ Firstly, we will create the sources pipelines
 
    for ((n = $start_index; n < $num_of_src; n++)); do
        sources+="$source_element ! \
-               queue name=hailo_preprocess_q_$n leaky=no max_size_buffers=5 max-size-bytes=0 max-size-time=0 ! \
+               queue name=hailo_preprocess_q_$n leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
                videoconvert ! videoscale ! fun.sink_$n \
-               sid.src_$n ! queue name=comp_q_$n leaky=downstream max_size_buffers=30 \
+               sid.src_$n ! queue name=comp_q_$n leaky=downstream max-size-buffers=30 \
                max-size-bytes=0 max-size-time=0 ! comp.sink_$n "
    done
 
@@ -33,15 +33,15 @@ Each source is a sub-pipeline
    pipeline="gst-launch-1.0 \
            funnel name=fun ! \
            queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-           hailonet  hef-path=$HEF_PATH qos=false is-active=true ! \
+           hailonet hef-path=$HEF_PATH is-active=true ! \
            queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            hailofilter so-path=$POSTPROCESS_SO qos=false ! \
            queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            hailooverlay ! \
            streamiddemux name=sid \
            compositor name=comp start-time-selection=0 $compositor_locations ! \
-           queue name=hailo_video_q_0 leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
-           videoconvert ! queue name=hailo_display_q_0 leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+           queue name=hailo_video_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+           videoconvert ! queue name=hailo_display_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            $video_sink_element name=hailo_display sync=false \
            $sources
 

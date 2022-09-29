@@ -28,6 +28,7 @@ function init_variables() {
     additonal_parameters=""
     sync_pipeline=false
     max_devices=$(lspci -d 1e60: | wc -l)
+    max_devices=$(($max_devices>4 ? 4 : $max_devices))
 
     if (($max_devices == 0)); then
         echo "Error: No devices found."
@@ -65,7 +66,7 @@ function parse_args() {
             print_gst_launch_only=true
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep -e hailo_display -e hailodevicestats"
+            additonal_parameters="-v | grep -e hailo_display -e hailodevicestats"
         elif [ "$1" = "--input" ] || [ "$1" == "-i" ]; then
             input_source="$2"
             shift

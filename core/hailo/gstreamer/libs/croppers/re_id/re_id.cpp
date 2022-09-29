@@ -43,7 +43,7 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi)
 
     // Resize the frame
     cv::Mat resized_image;
-    cv::resize(cropped_image, resized_image, RE_ID_NETWORK_SIZE, cv::INTER_LINEAR);
+    cv::resize(cropped_image, resized_image, RE_ID_NETWORK_SIZE, 0, 0, cv::INTER_LINEAR);
 
     // Convert to grayscale
     cv::Mat gray_image;
@@ -91,7 +91,7 @@ void remove_previous_matrices(HailoROIPtr roi)
 /**
  * @brief Returns a vector of HailoROIPtr to crop and resize.
  *
- * @param image The original picure (cv::Mat).
+ * @param image The original picture (cv::Mat).
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */

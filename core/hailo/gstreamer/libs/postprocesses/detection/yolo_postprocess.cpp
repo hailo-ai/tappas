@@ -56,6 +56,13 @@ public:
             extract_boxes(layer, objects);
         }
         common::nms(objects, _iou_thr);
+        if (objects.size() > _max_boxes)
+        {
+            HailoBBox bbox(0, 0, 1, 1);
+            HailoDetection empty_detection(bbox, "None", 0.0);
+            objects.resize(_max_boxes, empty_detection);
+        }
+
         return objects;
     }
 
@@ -100,10 +107,7 @@ void YoloPost::extract_boxes(std::shared_ptr<YoloOutputLayer> layer,
                     // Get the top left corner of the object.
                     xmin = (x - (w / 2.0f));
                     ymin = (y - (h / 2.0f));
-                    if (objects.size() < _max_boxes)
-                        objects.push_back(HailoDetection(HailoBBox(xmin, ymin, w, h), class_id, m_dataset[class_id], confidence));
-                    else
-                        return;
+                    objects.push_back(HailoDetection(HailoBBox(xmin, ymin, w, h), class_id, m_dataset[class_id], confidence));
                 }
             }
         }
@@ -239,6 +243,30 @@ public:
     virtual ~TinyYolov4LicensePlates() = default;
 };
 
+class TinyYolov4LicensePlatesYUY2 : public YoloSplitted
+{
+public:
+    TinyYolov4LicensePlatesYUY2(HailoROIPtr roi, YoloParams *params)
+        : YoloSplitted(roi, params->labels, params->anchors_vec, params->detection_threshold, params->iou_threshold, params->max_boxes)
+    {
+        if (_roi->has_tensors())
+        {
+            auto anchors = params->anchors_vec;
+            m_image_width = _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv19_centers")->width() * 32;
+            m_image_height = _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv19_centers")->height() * 32;
+            _layers.push_back(std::make_shared<Yolov4OL>(_roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv19_centers"), _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv19_scales"),
+                                                         _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv19_obj"), _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv19_probs"),
+                                                         anchors[0], params->label_offset));
+            _layers.push_back(std::make_shared<Yolov4OL>(_roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv21_centers"), _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv21_scales"),
+                                                         _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv21_obj"), _roi->get_tensor("tiny_yolov4_license_plates_yuy2/conv21_probs"),
+                                                         anchors[1], params->label_offset));
+            params->check_params_logic(get_num_classes());
+        }
+    };
+
+    virtual ~TinyYolov4LicensePlatesYUY2() = default;
+};
+
 class YoloX : public YoloPost
 {
 public:
@@ -285,41 +313,10 @@ void yolov5_personface(HailoROIPtr roi, void *params_void_ptr)
 
     // Yolov5 Postprocess for faces
     auto post = Yolov5(roi, params);
-    auto face_detections = post.decode();
-    auto face_class_id = 2;
-    // Take only the faces.
-    face_detections.erase(std::remove_if(face_detections.begin(), face_detections.end(),
-                                         [face_class_id](HailoDetection obj)
-                                         { return obj.get_class_id() != face_class_id; }),
-                          face_detections.end());
+    auto detections = post.decode();
 
     // Fix the bboxes because resize was letterbox.
-    for (auto &det : face_detections)
-    {
-        auto detection_bbox = det.get_bbox();
-        auto xmin = (detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin();
-        auto ymin = (detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin();
-        auto xmax = (detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin();
-        auto ymax = (detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin();
-
-        HailoBBox new_bbox(xmin, ymin, xmax - xmin, ymax - ymin);
-        det.set_bbox(new_bbox);
-    }
-
-    // Yolov5 Postprocess for persons
-    float person_detection_thr = 0.5f;
-    auto person_class_id = 1;
-    params->detection_threshold = person_detection_thr;
-    auto persons_post = Yolov5(roi, params);
-    auto person_detections = persons_post.decode();
-    // Take only the persons.
-    person_detections.erase(std::remove_if(person_detections.begin(), person_detections.end(),
-                                           [person_class_id](HailoDetection obj)
-                                           { return obj.get_class_id() != person_class_id; }),
-                            person_detections.end());
-
-    // Fix the bboxes because resize was letterbox.
-    for (auto &det : person_detections)
+    for (auto &det : detections)
     {
         auto detection_bbox = det.get_bbox();
         auto xmin = (detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin();
@@ -335,8 +332,7 @@ void yolov5_personface(HailoROIPtr roi, void *params_void_ptr)
     roi->clear_scaling_bbox();
 
     // Add detections to main roi.
-    hailo_common::add_detections(roi, face_detections);
-    hailo_common::add_detections(roi, person_detections);
+    hailo_common::add_detections(roi, detections);
 }
 
 void yolov5_vehicles_only(HailoROIPtr roi, void *params_void_ptr)
@@ -375,6 +371,14 @@ void tiny_yolov4_license_plates(HailoROIPtr roi, void *params_void_ptr)
 {
     YoloParams *params = reinterpret_cast<YoloParams *>(params_void_ptr);
     auto post = TinyYolov4LicensePlates(roi, params);
+    auto detections = post.decode();
+    hailo_common::add_detections(roi, detections);
+}
+
+void tiny_yolov4_license_plates_yuy2(HailoROIPtr roi, void *params_void_ptr)
+{
+    YoloParams *params = reinterpret_cast<YoloParams *>(params_void_ptr);
+    auto post = TinyYolov4LicensePlatesYUY2(roi, params);
     auto detections = post.decode();
     hailo_common::add_detections(roi, detections);
 }

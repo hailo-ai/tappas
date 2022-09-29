@@ -1,23 +1,15 @@
- 
 # set gstreamer debug
 gst_set_debug() {
   export GST_SHARK_LOCATION=/tmp/profile
   export GST_DEBUG="GST_TRACER:7"
-  export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;graphic"
+  export GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log
+  export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;graphic"
+  export GST_DEBUG_NO_COLOR=1
   echo 'Options for TRACERS:"'
-  echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;graphic"'
+  echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;graphic"'
 }
 
-# set gstreamer queuelevel
-gst_set_queuelevel() {
-  export GST_SHARK_LOCATION=/tmp/profile
-  export GST_DEBUG="GST_TRACER:7"
-  export GST_TRACERS="queuelevel"
-  echo 'Options for TRACERS:"'
-  echo 'export GST_TRACERS="queuelevel"'
-}
-
-# set gst-shark graph at runtime
+# set trace to collect graphic data of gstreamer pipeline
 gst_set_graphic() {
   export GST_SHARK_LOCATION=/tmp/profile
   export GST_DEBUG_DUMP_DOT_DIR=/tmp/
@@ -26,19 +18,31 @@ gst_set_graphic() {
   echo 'export GST_TRACERS="graphic"'
 }
 
-# Unset all debug
+# unset gstreamer debug
 gst_unset_debug() {
   unset GST_TRACERS
   unset GST_DEBUG
   unset GST_DEBUG_DUMP_DOT_DIR
   unset GST_SHARK_LOCATION
+  unset GST_DEBUG_FILE
+  unset GST_DEBUG_NO_COLOR
 }
 
 # plot the gst-shark dump files
 gst_plot_debug() {
-  cd $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics
-  ./gstshark-plot $GST_SHARK_LOCATION -p
-  cd -
+  export GST_SHARK_LOCATION=/tmp/profile
+
+  split_traces_dir=$TAPPAS_WORKSPACE/tappas_traces_$(date +%d_%m_%Y_%H_%M_%S)
+  mkdir $split_traces_dir
+
+  if ls -rt $GST_SHARK_LOCATION/graphic/pipeline* 1>/dev/null 2>&1; then
+    cp $(ls -rt $GST_SHARK_LOCATION/graphic/pipeline* | tail -n 1) "$split_traces_dir"
+  fi
+
+  $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/split_traces.sh $split_traces_dir
+  python3 $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/plot_all_to_html.py -p $split_traces_dir
+  echo 'In order to plot the graphic pipeline graph, run:'
+  echo "dot $GST_SHARK_LOCATION/graphic/pipeline_<timestamp>.dot -T x11"
 }
 
 alias tappas_compile="$TAPPAS_WORKSPACE/scripts/gstreamer/install_hailo_gstreamer.sh --skip-hailort"

@@ -16,7 +16,8 @@ This app should launch first.
 
 
 
-   **NOTE:** : Open the source code in your preferred editor to see how simple this app is.
+.. note::
+    Open the source code in your preferred editor to see how simple this app is.
 
 
 In order to run the app just ``cd`` to the ``sanity_pipeline`` directory and launch the app

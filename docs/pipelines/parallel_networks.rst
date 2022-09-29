@@ -45,13 +45,13 @@ Example pipeline two displays
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        tee name=t ! queue ! videoscale ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-       hailonet hef-path=$hef_path is-active=true net-name=$network_one_name qos=false ! \
+       hailonet hef-path=$hef_path is-active=true net-name=$network_one_name ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        hailofilter so-path=$network_one_so qos=false ! videoconvert ! \
        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
        t. ! \
        videoscale ! queue ! \
-       hailonet hef-path=$hef_path is-active=true net-name=$network_two_name qos=false ! \
+       hailonet hef-path=$hef_path is-active=true net-name=$network_two_name ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        hailofilter so-path=$network_two_so function-name=mobilenet_ssd_merged qos=false ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

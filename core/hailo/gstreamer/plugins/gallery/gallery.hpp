@@ -9,7 +9,6 @@
 #include "xtensor/xsort.hpp"
 #include "xtensor/xio.hpp"
 #include "hailo_objects.hpp"
-#include "hailo_tracker.hpp"
 
 static xt::xarray<float> gallery_get_xtensor(HailoMatrixPtr matrix)
 {
@@ -40,6 +39,7 @@ private:
     // For the whole gallery there is a vector of global id's (i.e. vector of vectors of HailoMatrixPtr)
     // where the global ID is represented by the outer vector's index.
     std::vector<std::vector<HailoMatrixPtr>> m_embeddings;
+    std::map<int, int> tracking_id_to_global_id;
     float m_similarity_thr;
     uint m_queue_size;
 
@@ -78,18 +78,7 @@ public:
         }
         m_embeddings[global_id].insert(m_embeddings[global_id].begin(), matrix);
     }
-    HailoUniqueIDPtr get_global_id(HailoDetectionPtr detection)
-    {
-        for (auto obj : detection->get_objects_typed(HAILO_UNIQUE_ID))
-        {
-            HailoUniqueIDPtr id = std::dynamic_pointer_cast<HailoUniqueID>(obj);
-            if (id->get_mode() == GLOBAL_ID)
-            {
-                return id;
-            }
-        }
-        return nullptr;
-    }
+
     uint add_new_global_id(HailoMatrixPtr matrix)
     {
         std::vector<HailoMatrixPtr> queue;
@@ -107,7 +96,7 @@ public:
         return std::pair<uint, float>(global_id+1, distances[global_id]);
     }
 
-    void update(std::vector<HailoDetectionPtr> &detections, std::string tracker_stream_id = "")
+    void update(std::vector<HailoDetectionPtr> &detections)
     {
         for (auto detection : detections)
         {
@@ -123,15 +112,14 @@ public:
                 std::runtime_error("A detection has more than 1 HailoMatrixPtr");
             }
             auto new_embedding = std::dynamic_pointer_cast<HailoMatrix>(embeddings[0]);
-            auto unique_id = std::dynamic_pointer_cast<HailoUniqueID>(detection->get_objects_typed(HAILO_UNIQUE_ID)[0]);
-            HailoUniqueIDPtr global_id_obj = get_global_id(detection);
-            if (global_id_obj)
+            auto unique_id = std::dynamic_pointer_cast<HailoUniqueID>(detection->get_objects_typed(HAILO_UNIQUE_ID)[0])->get_id();
+            uint global_id;
+            if (tracking_id_to_global_id.find(unique_id) != tracking_id_to_global_id.end())
             {
-                add_embedding(global_id_obj->get_id(), new_embedding);
+                global_id = tracking_id_to_global_id[unique_id];
             }
             else
             {
-                uint global_id;
                 uint closest_global_id;
                 float min_distance;
                 // If Gallery is empty
@@ -149,19 +137,15 @@ public:
                     }
                     else
                     {
-                        add_embedding(closest_global_id, new_embedding);
                         global_id = closest_global_id;
                     }
                 }
-                // Add global id to detection.
-                global_id_obj = std::make_shared<HailoUniqueID>(global_id, GLOBAL_ID);
-                detection->add_object(global_id_obj);
-                // Update tracker with global id.
-                if (!tracker_stream_id.empty())
-                {
-                    HailoTracker::GetInstance().add_object_to_track(tracker_stream_id, unique_id->get_id(), global_id_obj);
-                }
+                tracking_id_to_global_id[unique_id] = global_id;
             }
+            // Add global id to detection.
+            add_embedding(global_id, new_embedding);
+            detection->add_object(std::make_shared<HailoUniqueID>(global_id, GLOBAL_ID));
+
         }
     };
     void set_similarity_threshold(float thr) { m_similarity_thr = thr; };

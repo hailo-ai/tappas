@@ -45,7 +45,7 @@ function parse_args() {
     while test $# -gt 0; do
         if [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep hailo_display"
+            additonal_parameters="-v | grep hailo_display"
         elif [ "$1" = "--print-gst-launch" ]; then
             print_gst_launch_only=true
         else

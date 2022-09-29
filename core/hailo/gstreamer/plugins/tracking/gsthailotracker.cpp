@@ -17,6 +17,7 @@
 #include "hailo_objects.hpp"
 // Plugin includes
 #include "gst_hailo_meta.hpp"
+#include "gst_hailo_stream_meta.hpp"
 #include "gsthailotracker.hpp"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_tracker_debug_category);
@@ -29,14 +30,9 @@ const gchar *OCR_EVENT_NAME = "OCR_LABEL";
 static void gst_hailo_tracker_set_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void gst_hailo_tracker_get_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void gst_hailo_tracker_dispose(GObject *object);
-static void gst_hailo_tracker_finalize(GObject *object);
-static gboolean gst_hailo_tracker_start(GstBaseTransform *trans);
 static gboolean gst_hailo_tracker_stop(GstBaseTransform *trans);
-static gboolean gst_hailo_tracker_set_info(GstVideoFilter *filter, GstCaps *incaps, GstVideoInfo *in_info, GstCaps *outcaps, GstVideoInfo *out_info);
 static GstFlowReturn gst_hailo_tracker_transform_frame_ip(GstVideoFilter *filter, GstVideoFrame *frame);
 static gboolean gst_hailo_tracker_sink_event(GstBaseTransform *trans, GstEvent *event);
-static gboolean gst_hailo_tracker_src_event(GstBaseTransform *trans, GstEvent *event);
-static gboolean gst_hailo_tracker_ocr_event(GstHailoTracker *hailotracker, const GstStructure *event_structure);
 
 enum
 {
@@ -48,6 +44,7 @@ enum
     PROP_KEEP_TRACKED_FRAMES,
     PROP_KEEP_NEW_FRAMES,
     PROP_KEEP_LOST_FRAMES,
+    PROP_KEEP_PAST_METADATA,
 };
 
 //******************************************************************
@@ -127,16 +124,17 @@ gst_hailo_tracker_class_init(GstHailoTrackerClass *klass)
                                                      "Number of frames to keep without a successful match before a 'lost' instance is removed from the tracking record.",
                                                      0, G_MAXINT, DEFAULT_KEEP_FRAMES,
                                                      (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_KEEP_PAST_METADATA,
+                                    g_param_spec_boolean("keep-past-metadata", "Keep past metadata on tracked object",
+                                                         "When set (default) past metadata is kept on tracked objects. When unset past metadata is removed from tracked objects.",
+                                                         DEFAULT_KEEP_PAST_METADATA,
+                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
     // Set virtual functions
     gobject_class->dispose = gst_hailo_tracker_dispose;
-    gobject_class->finalize = gst_hailo_tracker_finalize;
-    base_transform_class->start = GST_DEBUG_FUNCPTR(gst_hailo_tracker_start);
     base_transform_class->stop = GST_DEBUG_FUNCPTR(gst_hailo_tracker_stop);
-    video_filter_class->set_info = GST_DEBUG_FUNCPTR(gst_hailo_tracker_set_info);
     video_filter_class->transform_frame_ip = GST_DEBUG_FUNCPTR(gst_hailo_tracker_transform_frame_ip);
     base_transform_class->sink_event = GST_DEBUG_FUNCPTR(gst_hailo_tracker_sink_event);
-    base_transform_class->src_event = GST_DEBUG_FUNCPTR(gst_hailo_tracker_src_event);
 }
 
 /* Instance initialization */
@@ -150,41 +148,53 @@ gst_hailo_tracker_init(GstHailoTracker *hailotracker)
     hailotracker->tracker_params.keep_tracked_frames = DEFAULT_KEEP_FRAMES;
     hailotracker->tracker_params.keep_new_frames = DEFAULT_KEEP_FRAMES;
     hailotracker->tracker_params.keep_lost_frames = DEFAULT_KEEP_FRAMES;
+    hailotracker->tracker_params.keep_past_metadata = DEFAULT_KEEP_PAST_METADATA;
 }
 
 //******************************************************************
 // PROPERTY HANDLING
 //******************************************************************
 
+static std::string get_tracker_name(GstHailoTracker *hailotracker, std::string stream_id)
+{
+    std::string element_name = GST_ELEMENT_NAME(GST_ELEMENT_CAST(hailotracker));
+    return std::string(element_name + "_" + stream_id);
+}
+
 void update_active_trackers(GstHailoTracker *hailotracker, guint property_id)
 {
     for (auto &stream_id : hailotracker->active_streams)
     {
+        std::string tracker_name = get_tracker_name(hailotracker, stream_id);
         switch (property_id)
         {
         case PROP_KALMAN_DIST_THR:
-            HailoTracker::GetInstance().set_kalman_distance(stream_id,
+            HailoTracker::GetInstance().set_kalman_distance(tracker_name,
                                                             hailotracker->tracker_params.kalman_distance);
             break;
         case PROP_IOU_THR:
-            HailoTracker::GetInstance().set_iou_threshold(stream_id,
+            HailoTracker::GetInstance().set_iou_threshold(tracker_name,
                                                           hailotracker->tracker_params.iou_threshold);
             break;
         case PROP_INIT_IOU_THR:
-            HailoTracker::GetInstance().set_init_iou_threshold(stream_id,
+            HailoTracker::GetInstance().set_init_iou_threshold(tracker_name,
                                                                hailotracker->tracker_params.init_iou_threshold);
             break;
         case PROP_KEEP_TRACKED_FRAMES:
-            HailoTracker::GetInstance().set_keep_tracked_frames(stream_id,
+            HailoTracker::GetInstance().set_keep_tracked_frames(tracker_name,
                                                                 hailotracker->tracker_params.keep_tracked_frames);
             break;
         case PROP_KEEP_NEW_FRAMES:
-            HailoTracker::GetInstance().set_keep_new_frames(stream_id,
+            HailoTracker::GetInstance().set_keep_new_frames(tracker_name,
                                                             hailotracker->tracker_params.keep_new_frames);
             break;
         case PROP_KEEP_LOST_FRAMES:
-            HailoTracker::GetInstance().set_keep_lost_frames(stream_id,
+            HailoTracker::GetInstance().set_keep_lost_frames(tracker_name,
                                                              hailotracker->tracker_params.keep_lost_frames);
+            break;
+        case PROP_KEEP_PAST_METADATA:
+            HailoTracker::GetInstance().set_keep_past_metadata(tracker_name,
+                                                               hailotracker->tracker_params.keep_past_metadata);
             break;
         default:
             break;
@@ -222,6 +232,9 @@ void gst_hailo_tracker_set_property(GObject *object, guint property_id,
         break;
     case PROP_KEEP_LOST_FRAMES:
         hailotracker->tracker_params.keep_lost_frames = g_value_get_int(value);
+        break;
+    case PROP_KEEP_PAST_METADATA:
+        hailotracker->tracker_params.keep_past_metadata = g_value_get_boolean(value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -261,6 +274,9 @@ void gst_hailo_tracker_get_property(GObject *object, guint property_id,
     case PROP_KEEP_LOST_FRAMES:
         g_value_set_int(value, hailotracker->tracker_params.keep_lost_frames);
         break;
+    case PROP_KEEP_PAST_METADATA:
+        g_value_set_boolean(value, hailotracker->tracker_params.keep_past_metadata);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
@@ -284,29 +300,6 @@ void gst_hailo_tracker_dispose(GObject *object)
     G_OBJECT_CLASS(gst_hailo_tracker_parent_class)->dispose(object);
 }
 
-/* Finishes releasing the remaining resources just before the object itself will be freed from memory,
-   and therefore it will only be called once. */
-void gst_hailo_tracker_finalize(GObject *object)
-{
-    GstHailoTracker *hailotracker = GST_HAILO_TRACKER(object);
-
-    GST_DEBUG_OBJECT(hailotracker, "finalize");
-
-    /* clean up object here */
-    G_OBJECT_CLASS(gst_hailo_tracker_parent_class)->finalize(object);
-}
-
-/* Called when the element starts processing. Allows opening external resources. */
-static gboolean
-gst_hailo_tracker_start(GstBaseTransform *trans)
-{
-    GstHailoTracker *hailotracker = GST_HAILO_TRACKER(trans);
-
-    GST_DEBUG_OBJECT(hailotracker, "start");
-
-    return TRUE;
-}
-
 /* Called when the element stops processing. Allows closing external resources. */
 static gboolean
 gst_hailo_tracker_stop(GstBaseTransform *trans)
@@ -314,22 +307,11 @@ gst_hailo_tracker_stop(GstBaseTransform *trans)
     GstHailoTracker *hailotracker = GST_HAILO_TRACKER(trans);
     for (std::string stream_id : hailotracker->active_streams)
     {
-        HailoTracker::GetInstance().remove_jde_tracker(stream_id);
+        std::string tracker_name = get_tracker_name(hailotracker, stream_id);
+        HailoTracker::GetInstance().remove_jde_tracker(tracker_name);
     }
 
     GST_DEBUG_OBJECT(hailotracker, "stop");
-
-    return TRUE;
-}
-
-/* Set negotiated caps and video info. */
-static gboolean
-gst_hailo_tracker_set_info(GstVideoFilter *filter, GstCaps *incaps,
-                           GstVideoInfo *in_info, GstCaps *outcaps, GstVideoInfo *out_info)
-{
-    GstHailoTracker *hailotracker = GST_HAILO_TRACKER(filter);
-
-    GST_DEBUG_OBJECT(hailotracker, "set_info");
 
     return TRUE;
 }
@@ -345,6 +327,14 @@ gst_hailo_tracker_transform_frame_ip(GstVideoFilter *filter, GstVideoFrame *fram
     GstBuffer *buffer = frame->buffer;
     HailoROIPtr hailo_roi = get_hailo_main_roi(buffer, true);
 
+    gchar *stream_id = hailotracker->current_stream_id;
+    GstHailoStreamMeta *stream_meta = gst_buffer_get_hailo_stream_meta(buffer);
+    if (stream_meta)
+    {
+        // Get the input stream name from the stream metadata on the buffer (If there is one)
+        stream_id = gst_buffer_get_hailo_stream_meta(buffer)->stream_id;
+    }
+
     std::vector<HailoDetectionPtr> detections;
     for (auto obj : hailo_roi->get_objects_typed(HAILO_DETECTION))
     {
@@ -358,7 +348,9 @@ gst_hailo_tracker_transform_frame_ip(GstVideoFilter *filter, GstVideoFrame *fram
 
     // Swap the detections in the roi with just the online tracked detections
     GST_OBJECT_LOCK(hailotracker);
-    std::vector<HailoDetectionPtr> online_detection_ptrs = HailoTracker::GetInstance().update(std::string(hailotracker->current_stream_id), detections);
+    std::string tracker_name = get_tracker_name(hailotracker, std::string(stream_id));
+    std::vector<HailoDetectionPtr> online_detection_ptrs = HailoTracker::GetInstance().update(tracker_name, detections);
+
     hailo_common::add_detection_pointers(hailo_roi, online_detection_ptrs);
     GST_OBJECT_UNLOCK(hailotracker);
 
@@ -394,52 +386,12 @@ gst_hailo_tracker_sink_event(GstBaseTransform *trans,
                           hailotracker->active_streams.end(),
                           std::string(hailotracker->current_stream_id)) == hailotracker->active_streams.end())
             {
-                HailoTracker::GetInstance().add_jde_tracker(std::string(hailotracker->current_stream_id), hailotracker->tracker_params);
+                std::string tracker_name = get_tracker_name(hailotracker, std::string(hailotracker->current_stream_id));
+                HailoTracker::GetInstance().add_jde_tracker(tracker_name, hailotracker->tracker_params);
                 hailotracker->active_streams.emplace_back(std::string(hailotracker->current_stream_id));
             }
         }
     default:
         return GST_BASE_TRANSFORM_CLASS(gst_hailo_tracker_parent_class)->sink_event(trans, event);
     }
-}
-
-/* Handle src events. */
-static gboolean
-gst_hailo_tracker_src_event(GstBaseTransform *trans,
-                            GstEvent *event)
-{
-    GstHailoTracker *hailotracker = GST_HAILO_TRACKER(trans);
-    switch (GST_EVENT_TYPE(event))
-    {
-    case GST_EVENT_CUSTOM_UPSTREAM:
-        const GstStructure *event_structure;
-        event_structure = gst_event_get_structure(event);
-        // OCR label event
-        if (event_structure && gst_event_has_name(event, OCR_EVENT_NAME))
-        {
-            gboolean event_handled = gst_hailo_tracker_ocr_event(hailotracker, event_structure);
-            return event_handled;
-        }
-        return true;
-    default:
-        return GST_BASE_TRANSFORM_CLASS(gst_hailo_tracker_parent_class)->src_event(trans, event);
-    }
-}
-
-static gboolean
-gst_hailo_tracker_ocr_event(GstHailoTracker *hailotracker,
-                            const GstStructure *event_structure)
-{
-    GST_OBJECT_LOCK(hailotracker);
-    gint track_id;
-    gfloat confidence;
-    gst_structure_get_int(event_structure, "track_id", &track_id);
-    const gchar *ocr_label = gst_structure_get_string(event_structure, "label");
-    gst_structure_get(event_structure, "confidence", G_TYPE_FLOAT, &confidence, NULL);
-
-    HailoTracker::GetInstance().add_object_to_track(std::string(hailotracker->current_stream_id),
-                                                    track_id,
-                                                    std::make_shared<HailoClassification>("ocr", ocr_label, confidence));
-    GST_OBJECT_UNLOCK(hailotracker);
-    return true;
 }

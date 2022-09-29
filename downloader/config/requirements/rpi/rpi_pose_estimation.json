@@ -7,7 +7,7 @@
       "destination": "centerpose_regnetx_1.6gf_fpn.hef"
     },
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "raspberrypi/hefs/centerpose_repvgg_a0.hef",
       "destination": "centerpose_repvgg_a0.hef"
     }

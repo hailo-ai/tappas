@@ -62,8 +62,8 @@ Models
 ------
 
 
-* ``yolov5`` - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m.yaml
-* ``centerpose``\ - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/centerpose_repvgg_a0.yaml
+* ``yolov5m_wo_spp_60p`` - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
+* ``centerpose`` - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/centerpose_regnetx_1.6gf_fpn.yaml
 
 
 Configuration
@@ -76,3 +76,29 @@ Overview of the pipeline
 ------------------------
 
 These apps are based on our `multi stream pipeline template <../../../../docs/pipelines/multi_stream.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolov5m``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
+
+    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)
+- ``centerpose``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/centerpose>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
+       with your new paremeters, then recompile to create ``libcenterpose_post.so``

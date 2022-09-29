@@ -7,6 +7,7 @@
 #include "jde_tracker/jde_tracker.hpp"
 
 #include "hailo_tracker.hpp"
+#include "hailo_common.hpp"
 
 std::mutex HailoTracker::mutex_;
 
@@ -34,13 +35,15 @@ void HailoTracker::remove_jde_tracker(std::string name)
 void HailoTracker::add_jde_tracker(std::string name, HailoTrackerParams tracker_params)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    
     priv->trackers.emplace(std::piecewise_construct, std::forward_as_tuple(name),
                            std::forward_as_tuple(tracker_params.kalman_distance,
                                                  tracker_params.iou_threshold,
                                                  tracker_params.init_iou_threshold,
                                                  tracker_params.keep_tracked_frames,
                                                  tracker_params.keep_new_frames,
-                                                 tracker_params.keep_lost_frames));
+                                                 tracker_params.keep_lost_frames,
+                                                 tracker_params.keep_past_metadata));
 }
 
 void HailoTracker::add_jde_tracker(std::string name)
@@ -66,6 +69,16 @@ void HailoTracker::add_object_to_track(std::string name, int track_id, HailoObje
     if (nullptr != tracked_detection)
     {
         tracked_detection->add_object(obj);
+    }
+}
+
+void HailoTracker::remove_classifications_from_track(std::string name, int track_id, std::string classifier_type)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    STrack *tracked_detection = priv->trackers[name].get_detection_with_id(track_id);
+    if (tracked_detection)
+    {
+        hailo_common::remove_classifications(tracked_detection->get_hailo_detection(), classifier_type);
     }
 }
 
@@ -99,4 +112,9 @@ void HailoTracker::set_keep_lost_frames(std::string name, int new_keep_lost)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     priv->trackers[name].set_keep_lost_frames(new_keep_lost);
+}
+void HailoTracker::set_keep_past_metadata(std::string name, bool new_keep_past)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    priv->trackers[name].set_keep_past_metadata(new_keep_past);
 }

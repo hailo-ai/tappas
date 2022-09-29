@@ -13,13 +13,8 @@ PYTHON_VERSION=$(python3 --version | awk '{print $2}' | awk -F'.' '{print $1"."$
 TARGET="all"
 TARGET_PLATFORM="x86"
 
-num_cores_to_use=0
 # Occupy all the cores could sometimes freeze the PC
-if [[ $(nproc) -le 4 ]]; then
-    num_cores_to_use=$(($(nproc)/2))
-else
-    num_cores_to_use=$(($(nproc) - 1))
-fi
+num_cores_to_use=$(($(nproc)/2))
 
 function print_usage() {
     echo "Install Hailo GStreamer:"

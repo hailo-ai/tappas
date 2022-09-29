@@ -92,10 +92,10 @@ inline void JDETracker::update_matches(std::vector<std::pair<int,int>> matches,
         switch(track->get_state())
         {
             case TrackState::Tracked: // The tracklet was already tracked, so update
-                track->update(*det, this->m_frame_id);
+                track->update(*det, this->m_frame_id, this->m_keep_past_metadata);
                 break;
             case TrackState::Lost:    // The tracklet was lost but found, so re-activate
-                track->re_activate(*det, this->m_frame_id, false);
+                track->re_activate(*det, this->m_frame_id, false, this->m_keep_past_metadata);
                 break;
             case TrackState::New:     // The tracklet is brand new, so activate
                 track->activate(this->m_kalman_filter, this->m_frame_id);
@@ -214,7 +214,7 @@ inline std::vector<STrack> JDETracker::update(std::vector<HailoDetectionPtr> &in
     //******************************************************************
     // Step 1: Prepare tracks for new detections
     //******************************************************************
-    detections = JDETracker::hailo_detections_to_stracks(inputs);  // Convert the new detections into STracks
+    detections = JDETracker::hailo_detections_to_stracks(inputs, this->m_frame_id);  // Convert the new detections into STracks
 
     strack_pool = joint_strack_pointers(this->m_tracked_stracks, this->m_lost_stracks); // Pool together the tracked and lost stracks
     STrack::multi_predict(strack_pool, this->m_kalman_filter);                          // Run Kalman Filter prediction step

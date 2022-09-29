@@ -75,7 +75,7 @@ Supported Networks
 ------------------
 
 
-* 'yolov5' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m.yaml
+* 'yolov5m_wo_spp' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
 
 Overview of the pipeline
 ------------------------
@@ -88,3 +88,30 @@ RTSP specific elements used
 
 * ``rtspsrc`` Makes a connection to an rtsp server and read the data. Used as a src to get the video stream from rtsp-cameras.
 * ``rtph264depay`` Extracts h264 video from rtp packets.
+
+
+HailoRT Stream Multiplexer example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+* This app shows the usage of the HailoRT Stream Multiplexer. This feature controls the time shared on the Hailo device between all streams. The Stream Multiplexer is enabled by the ``Hailonet`` scheduling-algorithm property when in use in multiple ``Hailonet`` elements that run the same HEF file. When the Stream Multiplexer is in use, there is no need to use ``funnel`` and ``streamiddemux`` like elements because the logic is handeled internally.
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolov5m``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
+
+    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - Should use ModelZoo to compile together with ``centerpose`` for this pipeline. 
+      See `detection_pose_estimation.yaml <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/multi-networks/detection_pose_estimation/detection_pose_estimation.yaml>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)

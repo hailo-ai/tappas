@@ -37,7 +37,8 @@ TAPPAS Installation
 
 Read through on how to `pre build docker image for Raspberry Pi <./docker-install.rst>`_ or `installing TAPPAS manually <./manual-install.rst>`_ 
 
-**NOTE:** On Raspberry Pi we limit the number of cpu cores to 1 during compilation (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines like Raspberry Pi)
+.. note::
+    Raspberry Pi we limit the number of cpu cores to 1 during compilation (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines like Raspberry Pi)
 
 .. code-block:: sh
 

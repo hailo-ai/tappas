@@ -5,6 +5,8 @@
 #include "hailo_common.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_tensors.hpp"
+#include "hailo/hailort.h"
+
 #include <string>
 
 #include <pybind11/pybind11.h>
@@ -118,7 +120,7 @@ public:
 };
 
 class __HailoDetectionGlue : public HailoDetection,
-                                public std::enable_shared_from_this<__HailoDetectionGlue>
+                             public std::enable_shared_from_this<__HailoDetectionGlue>
 {
 public:
     using HailoDetection::HailoDetection;
@@ -222,6 +224,33 @@ public:
     hailo_object_t get_type() override { PYBIND11_OVERRIDE(hailo_object_t, HailoUniqueID, get_type); }
 };
 
+class __HailoUserMetaGlue : public HailoUserMeta,
+                            public std::enable_shared_from_this<__HailoUserMetaGlue>
+{
+public:
+    using HailoUserMeta::HailoUserMeta;
+
+    hailo_object_t get_type() override { PYBIND11_OVERRIDE(hailo_object_t, HailoUserMeta, get_type); }
+};
+
+HailoTensor tensor_init(pybind11::array_t<uint8_t> data, const hailo_vstream_info_t &vstream_info)
+{
+    return HailoTensor(static_cast<uint8_t *>(data.request().ptr), vstream_info);
+}
+
+HailoTensor tensor_init_full(pybind11::array_t<uint8_t> data, std::string name, uint height, uint width, uint features, float qp_zp, float qp_scale)
+{
+    hailo_vstream_info_t info;
+    info.quant_info.qp_zp = qp_zp;
+    info.quant_info.qp_scale = qp_scale;
+    info.shape.height = height;
+    info.shape.width = width;
+    info.shape.features = features;
+    strcpy(info.name, name.c_str());
+    pybind11::array_t<uint8_t> new_data(data);
+    return tensor_init(new_data, info);
+}
+
 __MODULE_GEN_MACRO(hailo, m)
 {
     m.doc() = "HAILO postprocessing python extensions library";
@@ -238,6 +267,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .value("HAILO_DEPTH_MASK", HAILO_DEPTH_MASK)
             .value("HAILO_CLASS_MASK", HAILO_CLASS_MASK)
             .value("HAILO_CONF_CLASS_MASK", HAILO_CONF_CLASS_MASK)
+            .value("HAILO_USER_META", HAILO_USER_META)
             .export_values();
     }
 
@@ -589,7 +619,7 @@ __MODULE_GEN_MACRO(hailo, m)
             .def(py::init<std::vector<float>, uint32_t, uint32_t, uint32_t>(), py::arg("data_ptr"), py::arg("mat_height"), py::arg("mat_width"), py::arg("mat_features"))
             .def_buffer([](HailoMatrix &obj) -> py::buffer_info
                         { return py::buffer_info(
-                              const_cast<float * > (obj.get_data().data()),
+                              const_cast<float *>(obj.get_data().data()),
                               sizeof(float),
                               py::format_descriptor<float>::format(),
                               3,
@@ -634,9 +664,42 @@ __MODULE_GEN_MACRO(hailo, m)
     }
 
     {
+        py::class_<HailoUserMeta, HailoObject, __HailoUserMetaGlue, std::shared_ptr<HailoUserMeta>>(
+            m, "HailoUserMeta")
+            .def(py::init<>())
+            .def(py::init<int, std::string, float>(), py::arg("user_int"), py::arg("user_string"), py::arg("user_float"))
+
+            .def("get_user_int", &HailoUserMeta::get_user_int, "Get HailoUserMeta user_int")
+            .def("get_user_string", &HailoUserMeta::get_user_string, "Get HailoUserMeta user_string")
+            .def("get_user_float", &HailoUserMeta::get_user_float, "Get HailoUserMeta user_float")
+            .def("set_user_int", &HailoUserMeta::set_user_int, "Set HailoUserMeta user_int", "user_int"_a)
+            .def("set_user_string", &HailoUserMeta::set_user_string, "Set HailoUserMeta user_string", "user_string"_a)
+            .def("set_user_float", &HailoUserMeta::set_user_float, "Set HailoUserMeta user_float", "user_float"_a)
+
+            .def("__repr__", [](const HailoUserMeta &obj)
+                 { return "<hailo.HailoUserMeta"s + "(" +
+                          std::to_string(reinterpret_cast<unsigned long>(&obj)) + ")" + ">"; })
+            .def(py::pickle(
+                [](HailoUserMeta &self) { // __getstate__
+                    return py::make_tuple(self.get_user_int(), self.get_user_string(), self.get_user_float());
+                },
+                [](py::tuple t) { // __setstate__
+                    if (t.size() != 1)
+                        throw std::runtime_error("Invalid state!");
+
+                    /* Create a new C++ instance */
+                    auto instance = std::unique_ptr<HailoUserMeta>(new HailoUserMeta(t[0].cast<int>(), t[1].cast<std::string>(),
+                                                                                     t[2].cast<float>()));
+
+                    return instance;
+                }));
+    }
+
+    {
         py::class_<HailoTensor, std::shared_ptr<HailoTensor>>(m, "HailoTensor",
-                                                                    py::buffer_protocol())
-            .def(py::init<uint8_t *, const hailo_vstream_info_t &>(), py::arg("data"), py::arg("vstream_info"))
+                                                              py::buffer_protocol())
+            .def(py::init(&tensor_init_full), py::arg("data"), py::arg("name"), py::arg("height"), py::arg("width"), py::arg("features"),
+                 py::arg("qp_zp"), py::arg("qp_scale"))
             .def_buffer([](HailoTensor &obj) -> py::buffer_info
                         { return py::buffer_info(obj.data(), sizeof(uint8_t),
                                                  py::format_descriptor<uint8_t>::format(), 3,

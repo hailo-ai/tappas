@@ -87,6 +87,33 @@ namespace hailo_common
         }
     }
 
+    inline bool has_classifications(HailoROIPtr roi, std::string classification_type)
+    {
+        for (auto obj : roi->get_objects_typed(HAILO_CLASSIFICATION))
+        {
+            HailoClassificationPtr classification = std::dynamic_pointer_cast<HailoClassification>(obj);
+            if (classification_type.compare(classification->get_classification_type()) == 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    inline void remove_classifications(HailoROIPtr roi, std::string classification_type)
+    {
+        std::vector<HailoObjectPtr> classifications;
+        for (auto obj : roi->get_objects_typed(HAILO_CLASSIFICATION))
+        {
+            HailoClassificationPtr classification = std::dynamic_pointer_cast<HailoClassification>(obj);
+            if (classification_type.compare(classification->get_classification_type()) == 0)
+            {
+                classifications.push_back(classification);
+            }
+        }
+        remove_objects(roi, classifications);
+    }
+
     /**
      * Flatten HailoBBox with parent HailoBBox.
      * re scales each bbox values (x,y,width,height min/max values) to match the parent scale.

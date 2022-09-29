@@ -56,7 +56,7 @@ function parse_args() {
     while test $# -gt 0; do
         if [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep -e hailo_display -e hailodevicestats"
+            additonal_parameters="-v | grep -e hailo_display -e hailodevicestats"
         elif [ "$1" = "--input" ] || [ "$1" == "-i" ]; then
             input_source="$2"
             shift

@@ -25,6 +25,7 @@ struct _GstHailoOverlay
     gint line_thickness;
     gint font_thickness;
     gboolean face_blur;
+    gboolean show_confidence;
 };
 
 struct _GstHailoOverlayClass

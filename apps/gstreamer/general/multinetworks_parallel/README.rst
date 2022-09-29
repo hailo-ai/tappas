@@ -45,12 +45,13 @@ The output should look like:
    </div>
 
 
-Model
------
+Models
+------
 
+Joined together:
 
-* ``fast_depth`` in resolution of 224X224X3.
-* ``mobilenet_ssd`` in resolution of 300X300X3.
+* ``fast_depth`` in resolution of 224X224X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/fast_depth.yaml
+* ``mobilenet_ssd`` in resolution of 300X300X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1_no_alls.yaml
 
 How it works
 ------------
@@ -83,14 +84,53 @@ Run
    cd /local/workspace/tappas/apps/gstreamer/general/multinetworks_parallel
    ./detection_and_pose_estimation.sh
 
-Model
------
+Models
+------
 
+Joined together:
 
-* ``centerpose`` in resolution of 416X416X3.
-* ``yolov5m`` in resolution of 640X640X3.
+* ``centerpose`` in resolution of 416X416X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/centerpose_repvgg_a0.yaml
+* ``yolov5m_wo_spp`` in resolution of 640X640X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
 
 How it works
 ------------
 
 This app is based on our `parallel networks pipeline template <../../../../docs/pipelines/parallel_networks.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolov5m_wo_spp``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
+
+    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - Should use ModelZoo to compile together with ``centerpose`` for this pipeline. 
+      See `detection_pose_estimation.yaml <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/multi-networks/detection_pose_estimation/detection_pose_estimation.yaml>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)
+- ``centerpose``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/centerpose>`_
+    
+    - This retraining docker is for the ``centerpose_regnetx_1.6gf_fpn`` model, therefore it won't fit this pipeline
+      (that uses centerpose_repvgg_a0). If you wish to retrain centernet using Hailo retraining dockers, refer to the 
+      ``multistream_multidevice`` or ``pose_estimation`` pipelines that use the ``centerpose_regnetx_1.6gf_fpn`` model.
+- ``mobilenet_ssd``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/ssd>`_
+ 
+    - Should use ModelZoo to compile together with ``fast_depth`` for this pipeline.
+      See `fast_depth_ssd.yaml <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/multi-networks/fast_depth_ssd/fast_depth_ssd.yaml>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
+      with your new paremeters, then recompile to create ``libmobilenet_ssd_post.so``

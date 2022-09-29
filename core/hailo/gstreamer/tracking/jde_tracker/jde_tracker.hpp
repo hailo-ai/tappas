@@ -27,6 +27,7 @@
 #define DEFAULT_IOU_THRESHOLD (0.8f)
 #define DEFAULT_INIT_IOU_THRESHOLD (0.9f)
 #define DEFAULT_KEEP_FRAMES (2)
+#define DEFAULT_KEEP_PAST_METADATA (true)
 
 __BEGIN_DECLS
 class JDETracker
@@ -41,6 +42,7 @@ private:
     int m_keep_tracked_frames; // number of frames to keep tracking w/o detection
     int m_keep_new_frames;     // number of frames to keep new detections w/o detection
     int m_keep_lost_frames;    // number of frames to keep lost detections w/o detection
+    bool m_keep_past_metadata; // keep past metadata for new detections
     int m_frame_id{0};         // the current frame id
 
     std::vector<STrack> m_tracked_stracks; // Currently tracked STracks
@@ -55,9 +57,9 @@ public:
     // Default Constructor
     JDETracker(float kalman_dist = DEFAULT_KALMAN_DISTANCE, float iou_thr = DEFAULT_IOU_THRESHOLD,
                float init_iou_thr = DEFAULT_INIT_IOU_THRESHOLD, int keep_tracked = DEFAULT_KEEP_FRAMES,
-               int keep_new = DEFAULT_KEEP_FRAMES, int keep_lost = DEFAULT_KEEP_FRAMES,
+               int keep_new = DEFAULT_KEEP_FRAMES, int keep_lost = DEFAULT_KEEP_FRAMES, bool keep_past_metadata = DEFAULT_KEEP_PAST_METADATA, 
                float std_weight_position = 0.01, float std_weight_pos_box = 0.01, float std_weight_velocity = 0.001, float std_weight_vel_box = 0.001) : m_kalman_dist_thr(kalman_dist), m_iou_thr(iou_thr), m_init_iou_thr(init_iou_thr),
-                                                                                                                                                         m_keep_tracked_frames(keep_tracked), m_keep_new_frames(keep_new), m_keep_lost_frames(keep_lost)
+                                                                                                                                                         m_keep_tracked_frames(keep_tracked), m_keep_new_frames(keep_new), m_keep_lost_frames(keep_lost), m_keep_past_metadata(keep_past_metadata)
     {
         m_kalman_filter = KalmanFilter(std_weight_position, std_weight_pos_box, std_weight_velocity, std_weight_vel_box);
     }
@@ -76,6 +78,7 @@ public:
     void set_keep_tracked_frames(int new_keep_tracked) { m_keep_tracked_frames = new_keep_tracked; }
     void set_keep_new_frames(int new_keep_new) { m_keep_new_frames = new_keep_new; }
     void set_keep_lost_frames(int new_keep_lost) { m_keep_lost_frames = new_keep_lost; }
+    void set_keep_past_metadata(bool new_keep_past_metadata) { m_keep_past_metadata = new_keep_past_metadata; }
 
     // Getters for members accessible at element-property level
     float get_kalman_distance() { return m_kalman_dist_thr; }
@@ -84,13 +87,14 @@ public:
     int get_keep_tracked_frames() { return m_keep_tracked_frames; }
     int get_keep_new_frames() { return m_keep_new_frames; }
     int get_keep_lost_frames() { return m_keep_lost_frames; }
+    bool get_keep_past_metadata() { return m_keep_past_metadata; }
 
     //******************************************************************
     // TRACKING FUNCTIONS
     //******************************************************************
     /******************** PUBLIC FUNCTIONS ****************************/
 public:
-    static std::vector<STrack> hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs);
+    static std::vector<STrack> hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs, int frame_id);
     static std::vector<HailoDetectionPtr> stracks_to_hailo_detections(std::vector<STrack> &stracks);
     STrack *get_detection_with_id(int track_id);
     std::vector<STrack> get_tracked_stracks();

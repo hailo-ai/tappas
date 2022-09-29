@@ -1,7 +1,7 @@
 # Project Declaration
 
 project('gst-hailo-tools', 'c', 'cpp',
-        version : '3.19.1',
+        version : '3.21.0',
         default_options : [ 'warning_level=1',
                             'buildtype=debugoptimized',
                             'c_std=c11', 'cpp_std=c++17']
@@ -110,7 +110,7 @@ if target in ['all','apps','libs']
     cxxopts_inc = [include_directories(cxxopts_inc_dir, is_system: true)]
 endif
 
-if target in ['all','libs']
+if target in ['all','libs','unit_tests','plugins']
     rapidjson_inc_dir = get_option('librapidjson')
     # rapidjson Include Directories
     rapidjson_inc = [include_directories(rapidjson_inc_dir, is_system: true)]

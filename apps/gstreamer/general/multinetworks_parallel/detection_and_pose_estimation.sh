@@ -53,7 +53,7 @@ function parse_args() {
     while test $# -gt 0; do
         if [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep hailo_display"
+            additonal_parameters="-v | grep hailo_display"
         elif [ "$1" = "--print-gst-launch" ]; then
             print_gst_launch_only=true
         elif [ "$1" = "--input" ] || [ "$1" == "-i" ]; then
@@ -89,7 +89,7 @@ PIPELINE="gst-launch-1.0 \
     tee name=t ! \
     queue ! videoscale ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path batch-size=$batch_size vdevice-key=$vdevice_key is-active=true net-name=$pose_estimation_net_name qos=false ! \
+    hailonet hef-path=$hef_path batch-size=$batch_size vdevice-key=$vdevice_key is-active=true net-name=$pose_estimation_net_name ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$pose_estimation_post_so function-name=centerpose_merged qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -97,7 +97,7 @@ PIPELINE="gst-launch-1.0 \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display_pose sync=false text-overlay=false \
     t. ! \
     videoscale ! queue ! \
-    hailonet hef-path=$hef_path batch-size=$batch_size vdevice-key=$vdevice_key is-active=true net-name=$detection_net_name qos=false ! \
+    hailonet hef-path=$hef_path batch-size=$batch_size vdevice-key=$vdevice_key is-active=true net-name=$detection_net_name ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$detection_post_so config-path=$json_config_path function-name=yolov5 qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

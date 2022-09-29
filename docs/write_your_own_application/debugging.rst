@@ -11,19 +11,21 @@ GstShark
 
 GstShark is an open-source project from RidgeRun that provides benchmarks and profiling tools for GStreamer 1.7.1 (and above). It includes tracers for generating debug information plus some tools to analyze the debug information. GstShark provides easy to use and useful tracers, paired with analysis tools to enable straightforward optimizations.
 
-GstShark leverages GStreamer's tracing hooks and open-source and standard tracing and plotting tools to simplify the process of understanding the bottlenecks in your pipeline.
+GstShark leverages GStreamer's built in tracing system and adds plotting tools to simplify the process of understanding the bottlenecks in your pipeline.
+
+As part of the TAPPAS framework, we have expanded the available profiling mechanisms to include TAPPAS related tracers and a new plotting tool.
 
 The profiling tool provides 3 general features that can be used to debug the pipeline:
 
 
 * 
-  Console printouts - At the most basic level, you should get printouts from the traces about the different measurements made. If you know what you are looking for, you may see it here at runtime.
+  Tracers log printouts - At the most basic level, you should get printouts from the traces about the different measurements made. If you know what you are looking for, you may see it here at runtime. You can see the printouts in the debug file: GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log.
 
 * 
   Graphic visualization - Shown above, gst-shark can generate a pipeline graph that shows how elements are connected and what caps were negotiated between them. This is a very convenient feature to look at the pipeline in a more comfortable way. The graph is generated at runtime so it is a great way to see and debug how elements were actually connected and what formats the data ended up in.
 
 * 
-  Gst-plot - A suite of graph generating scripts are included in gst-shark that will plot different graphs for each tracer metric enabled. This is a powerful tool to visualize each metric that can be used for deeper debugging.
+  Plotting tool - a python script that generates a graph plot for each tracer metric enabled. This is a powerful tool to visualize each metric that can be used for deeper debugging.
 
 Install
 -------
@@ -44,34 +46,44 @@ As part of our creation of the Docker image, we copy some convinet shortcuts to 
    # set gstreamer debug
    gst_set_debug() {
      export GST_SHARK_LOCATION=/tmp/profile
-     export GST_DEBUG_DUMP_DOT_DIR=<PATH YOU WANT DUMP FILES>
      export GST_DEBUG="GST_TRACER:7"
-     export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;buffer;bitrate;framerate;queuelevel;graphic"
-     echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;buffer;bitrate;framerate;queuelevel;graphic"'
+     export GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log
+     export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;graphic"
+     export GST_DEBUG_NO_COLOR=1
+     echo 'Options for TRACERS:"'
+     echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;graphic"'
    }
 
-   # set gstreamer to only show graphic
+   # set trace to collect graphic data of gstreamer pipeline
    gst_set_graphic() {
      export GST_SHARK_LOCATION=/tmp/profile
-     export GST_DEBUG_DUMP_DOT_DIR=<PATH YOU WANT DUMP FILES>
+     export GST_DEBUG_DUMP_DOT_DIR=/tmp/
      export GST_DEBUG="GST_TRACER:7"
      export GST_TRACERS="graphic"
-     echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;buffer;bitrate;framerate;queuelevel;graphic"'
+     echo 'export GST_TRACERS="graphic"'
    }
 
    # unset gstreamer debug
    gst_unset_debug() {
      unset GST_TRACERS
+     unset GST_DEBUG
+     unset GST_DEBUG_DUMP_DOT_DIR
+     unset GST_SHARK_LOCATION
+     unset GST_DEBUG_FILE
+     unset GST_DEBUG_NO_COLOR
    }
 
-   # run gst-plot
+   # plot the gst-shark dump files
    gst_plot_debug() {
-     cd <PATH TO GST-SHARK REPO FOLDER: gst-shark/scripts/graphics>
-     ./gstshark-plot $GST_SHARK_LOCATION -p
-     cd -
+     export GST_SHARK_LOCATION=/tmp/profile
+     split_traces_dir=$TAPPAS_WORKSPACE/tappas_traces_$(date +%d.%m.%Y_%H:%M:%S)
+     $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/split_traces.sh $split_traces_dir
+     python3 $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/plot_all_to_html.py -p $split_traces_dir
+     echo 'In order to plot the graphic pipeline graph, run:'
+     echo "dot $GST_SHARK_LOCATION/graphic/pipeline_<timestamp>.dot -T x11"
    }
 
-Note that we added 4 functions: two sets, an unset, and a plot function. The set functions enable gst-shark by setting environment variables, the chief of which is GST_TRACERS. This enables the different trace hooks in the pipeline. The available tracers are listed in the echo command at the end of each set. You can enable any combination of the available tracers, just chain them together with a ';' (notice that the difference between gst_set_debug and gst_set_graphic is that gst_set_debug enables all tracers whereas gst_set_graphic only enables the graphic tracer that draws the pipeline graph). GST_SHARK_LOCATION and GST_DEBUG_DUMP_DOT_DIR set locations where the dump files are stored, the first sets where the tracer dumps are (used for gst-plot), and the latter where the dot file is saved (the graphic pipeline graph). Unset disables all tracers, and gst_plot_debug runs gst-plot.
+Note that we added 4 functions: two sets, an unset, and a plot function. The set functions enable gst-shark by setting environment variables, the chief of which is GST_TRACERS. This enables the different trace hooks in the pipeline. The available tracers are listed in the echo command at the end of each set. You can enable any combination of the available tracers, just chain them together with a ';' (notice that the difference between gst_set_debug and gst_set_graphic is that gst_set_debug enables all tracers whereas gst_set_graphic only enables the graphic tracer that draws the pipeline graph). GST_SHARK_LOCATION and GST_DEBUG_DUMP_DOT_DIR set locations where the dump files are stored, the first sets where the tracer dumps are (used for gst-plot), and the latter where the dot file is saved (the graphic pipeline graph). Unset disables all tracers, and gst_plot_debug runs plot script.
 
 Using GstShark
 --------------
@@ -84,26 +96,16 @@ Let’s say you have a gstreamer app you want to profile. Start by enabling gst-
    <div align="left"><img src="../resources/using.gif"/></div>
 
 
-Then just run your app. You will start seeing all kinds of tracer prints, and when the pipeline starts playing you should see the graphic plot load.
+Then just run your app. You can see all kinds of tracer prints on the debug output file: GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log.
 
-
-
-   **NOTE:** : The graph will stay open as long as the pipeline runs. However if you have GST_DEBUG_DUMP_DOT_DIR set then afterwards a .dot file will be saved. Click this file to reopen the graph.
-
-
-
-.. raw:: html
-
-   <div align="left"><img src="../resources/full.gif"/></div>
-
-
-After you’ve run a gstreamer pipeline with tracers enabled, you can plot them using gst-plot (gst-plot will open an octave window which will runt he appropriate script to plot each tracer. Depending on how much data you have to plot this can take a while:
+   <div align="left"><img src="../resources/tappas_traces_log.png"/></div>
+After you have run a gstreamer pipeline with tracers enabled, you can plot them using the plot script, just run: gst_plot_debug. It will print to the console the path of the html file that contains the plots. You can open it in your browser. In addition it will print the command to open the pipeline graph. You can run it in a terminal to open the graph.
 
 
 .. raw:: html
 
-   <div align="left"><img src="../resources/plot_debug.gif"/></div>
-   <div align="left"><img src="../resources/queues.gif"/></div>
+   <div align="left"><img src="../resources/gst_plot_debug.png"/></div>
+   <div align="left"><img src="../resources/graphs.gif"/></div>
 
 
 Each graph inspects a different metric of the pipeline, it is recommended to read more about what each one represents here:
@@ -116,8 +118,13 @@ Each graph inspects a different metric of the pipeline, it is recommended to rea
 * Buffer (buffer) - Prints information of every buffer that passes through every sink pad in the pipeline.
 * Bitrate (bitrate) - Measures the current stream bitrate in bits per second.
 * Framerate (framerate) - Measures the amount of frames that go through a src pad every second.
-* Queue Level (queuelevel) - Measures the amount of data queued in every queue element in the pipeline
-* Graphic (graphics) - Records a graphical representation of the current pipeline
+* Queue Level (queuelevel) - Measures the amount of data queued in every queue element in the pipeline.
+* Thread Monitor (threadmonitor) - Measures the CPU usage of every thread in the pipeline.
+* Numerator (numerator) - Numerates the buffers by setting the field "offset" of the buffer metadata. This trace is different from the others because it does not collect any data, it just numerates the buffers.
+* Detections (detections) - Prints information about the objects detected in every buffer that passes through every pad in the pipeline. This trace only works with the TAPPAS framework since it collects the TAPPAS detection objects.
+* Graphic (graphics) - Records a graphical representation of the current pipeline.
+
+
 
 Modify Buffering Mode and Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -2,7 +2,7 @@
   "path": "apps/gstreamer/imx/facial_landmarks/resources",
   "requirements": [
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "imx/hefs/tddfa_mobilenet_v1.hef",
       "destination": "tddfa_mobilenet_v1.hef"
     },

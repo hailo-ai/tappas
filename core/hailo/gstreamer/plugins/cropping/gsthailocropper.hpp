@@ -14,6 +14,8 @@ G_BEGIN_DECLS
 typedef enum {
     GST_HAILO_CROPPER_NEAREST_NEIGHBOR,
     GST_HAILO_CROPPER_BILINEAR,
+    GST_HAILO_CROPPER_BICUBIC,
+    GST_HAILO_CROPPER_INTER_AREA,
     GST_HAILO_CROPPER_LETTERBOX,
 } GstHailoCropperResizeMethod;
 
@@ -25,10 +27,6 @@ typedef enum {
 #define GST_HAILO_CROPPER_CAST(obj) ((GstHailoCropper *)obj)
 #define GST_HAILO_CROPPER_GET_CLASS(obj) \
         (G_TYPE_INSTANCE_GET_CLASS ((obj),GST_TYPE_HAILO_CROPPER,GstHailoCropperClass))
-
-#define HAILO_CROPPER_SUPPORTED_FORMATS "{ RGB, YUY2 }"
-#define HAILO_CROPPER_VIDEO_CAPS \
-    GST_VIDEO_CAPS_MAKE(HAILO_CROPPER_SUPPORTED_FORMATS)
 
 typedef struct _GstHailoCropper GstHailoCropper;
 typedef struct _GstHailoCropperClass GstHailoCropperClass;

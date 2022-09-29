@@ -37,8 +37,32 @@ The output should look like:
        <img src="readme_resources/instance_segmentation_run.gif" width="640px" height="360px"/>
    </div>
 
+Model
+-----
+
+
+* ``yolact_regnetx_800mf_20classes`` - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolact_regnetx_800mf_20classes.yaml
 
 How it works?
 -------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolact_regnetx_800mf``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolact>`_
+
+   - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `yolact.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/instance_segmentation/yolact.cpp#L458>`_
+      with your new paremeters, then recompile to create ``libyolact_post.so``

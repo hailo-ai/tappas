@@ -78,7 +78,7 @@ Building with Meson
 
 `Meson <https://mesonbuild.com/>`_ is an open source build system that puts an emphasis on speed and ease of use. `GStreamer uses meson <https://gstreamer.freedesktop.org/documentation/installing/building-from-source-using-meson.html?gi-language=c>`_ for all subprojects to generate build instructions to be executed by `ninja <https://ninja-build.org/>`_\ , another build system focused soley on speed that requires a higher level build system (ie: meson) to generate its input files. \
 Like GStreamer, Tappas also uses meson, and compiling new projects requires adjusting the ``meson.build`` files. Here we will discuss how to add yours. \
-In the ``gstreamer/libs/`` path you will find a `meson.build <../../core/hailo/gstreamer/libs/meson.build>`_\ , open it and add the following entry for our postprocess:
+In the ``gstreamer/libs/postprocesses`` path you will find a `meson.build <../../core/hailo/gstreamer/libs/postprocesses/meson.build>`_\ , open it and add the following entry for our postprocess:
 
 .. code-block:: cpp
 
@@ -86,7 +86,7 @@ In the ``gstreamer/libs/`` path you will find a `meson.build <../../core/hailo/g
    # MY POST SOURCES
    ################################################
    my_post_sources = [
-     'postprocesses/my_post.cpp',
+     'my_post.cpp',
    ]
 
    my_post_lib = shared_library('my_post',
@@ -94,6 +94,8 @@ In the ``gstreamer/libs/`` path you will find a `meson.build <../../core/hailo/g
      include_directories: [hailo_general_inc] + xtensor_inc,
      dependencies : post_deps,
      gnu_symbol_visibility : 'default',
+     install: true,
+     install_dir: post_proc_install_dir,
    )
 
 This should give meson all the information it needs to compile our postprocess. In short, we are providing paths to cpp compilers, linked libraries, included directories, and dependencies. Where are all these path variables coming from? Great question: from the parent meson project, you can read that meson file to see what packages and directories are available at `core/hailo/gstreamer/meson.build <../../core/hailo/gstreamer/meson.build>`_.
@@ -108,7 +110,7 @@ Compiling the .so
 
 .. code-block:: sh
 
-   ./docker/scripts/gstreamer/install_hailo_gstreamer.sh
+   ./scripts/gstreamer/install_hailo_gstreamer.sh
 
 
 .. image:: ../resources/compiling.png
@@ -167,7 +169,7 @@ Recompile with the same `script we used earlier`_. Run a test pipeline, and this
 
 .. code-block:: sh
 
-   gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/yolov5m_wo_spp_60p.hef is-active=true qos=false ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter so-path=$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes/libmy_post.so qos=false ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
+   gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/yolov5m_wo_spp_60p.hef is-active=true ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter so-path=$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes/libmy_post.so qos=false ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
 
 
 .. image:: ../resources/tensor_data.png
@@ -269,7 +271,7 @@ Drawing
 
 .. code-block:: sh
 
-   gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/yolov5m_wo_spp_60p.hef is-active=true qos=false ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter so-path=$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes/libmy_post.so qos=false ! queue ! hailooverlay ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
+   gst-launch-1.0 filesrc location=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/detection.mp4 name=src_0 ! decodebin ! videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! queue ! hailonet hef-path=$TAPPAS_WORKSPACE/apps/gstreamer/general/detection/resources/yolov5m_wo_spp_60p.hef is-active=true ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hailofilter so-path=$TAPPAS_WORKSPACE/apps/gstreamer/libs/post_processes/libmy_post.so qos=false ! queue ! hailooverlay ! videoconvert ! fpsdisplaysink video-sink=ximagesink name=hailo_display sync=true text-overlay=false
 
 Run the expanded pipeline above to see the original video, but this time with the two detection boxes we added!
 
@@ -286,7 +288,7 @@ Multiple Filters in One .so
 
 While the ``hailofilter`` always calls on a ``filter()`` function by default, you can provide the element access to other functions in your ``.so`` to call instead. This may be of interest if you are developing a postprocess that applies to mutliple networks, but each network needs slightly different starting parameters (in the Tappas case, mutliple flavors of the `Yolo detection network are handled via the same .so <../../core/hailo/gstreamer/libs/postprocesses/yolo/yolo_postprocess.cpp>`_\ ). \
 So how do you do it? Simply by declaring the extra functions in the header file, then pointing the ``hailofilter`` to that function via the ``function-name`` property. \
-Let's look at the yolo networks as an example, open up `libs/postprocesses/yolo/yolo_postprocess.hpp <../../core/hailo/gstreamer/libs/postprocesses/yolo/yolo_postprocess.hpp>`_ to see what functions are made available to the ``hailofilter``\ :
+Let's look at the yolo networks as an example, open up `libs/postprocesses/detection/yolo_postprocess.hpp <../../core/hailo/gstreamer/libs/postprocesses/detection/yolo_postprocess.hpp>`_ to see what functions are made available to the ``hailofilter``\ :
 
 .. code-block:: cpp
 

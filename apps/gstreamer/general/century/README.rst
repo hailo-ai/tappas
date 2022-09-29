@@ -30,7 +30,7 @@ Supported Networks
 ------------------
 
 
-* 'yolox_l' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolox_l_leaky.yaml
+* 'yolox_l_leaky' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolox_l_leaky.yaml
 
 Run
 ---
@@ -54,3 +54,21 @@ How it works
 ------------
 
 This app is based on our `multi device pipeline template <../../../../docs/pipelines/multi_device.rst>`_
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolox_l``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolox>`_
+
+   - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolox.json`` with your new post-processing parameters (NMS)

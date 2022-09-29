@@ -51,3 +51,5 @@ Hailo GStreamer Elements
 * `HailoTileAggregator <elements/hailo_tile_aggregator.rst>`_ - HailoTileAggregator is an element designed for applications with tiles. It has 2 sink pads and 1 source
 * `HailoTileCropper <elements/hailo_tile_cropper.rst>`_ - HailoCropper is an element designed for applications with tiles. It has 1 sink and 2 sources
 * `HailoTracker <elements/hailo_tracker.rst>`_ - HailoTracker is an element that applies Joint Detection and Embedding (JDE) model with Kalman filtering to track object instances.
+* `HailoRoundRobin <elements/hailo_roundrobin.rst>`_ - HailoRoundRobin is an element that provides muxing functionality in roundrobin method.
+* `HailoStreamRouter <elements/hailo_stream_router.rst>`_ - HailoStreamRouter is an element that provides de-muxing functionality.

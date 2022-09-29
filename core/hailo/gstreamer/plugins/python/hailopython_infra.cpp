@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include "hailopython_infra.hpp"
 
 #include <pygobject-3.0/pygobject.h>
@@ -60,7 +60,7 @@ GstFlowReturn invoke_python_callback(PythonCallback *python_callback, char **err
         std::string msg = std::string(e.what()) + std::string(": \n") + std::string(python_err.get());
         *error_msg = strdup(msg.c_str());
         return GST_FLOW_ERROR;
-    }   
+    }
 }
 
 GstFlowReturn invoke_python_callback(PythonCallback *python_callback, GstBuffer *buffer,
@@ -68,6 +68,7 @@ GstFlowReturn invoke_python_callback(PythonCallback *python_callback, GstBuffer 
 {
     if (!python_callback)
     {
+        GST_ERROR("python_callback is not initialized");
         return GST_FLOW_ERROR;
     }
 
@@ -81,6 +82,32 @@ GstFlowReturn invoke_python_callback(PythonCallback *python_callback, GstBuffer 
         PythonError python_err;
         std::string msg = std::string(e.what()) + std::string(": \n") + std::string(python_err.get());
         *error_msg = strdup(msg.c_str());
+
+        return GST_FLOW_ERROR;
+    }
+}
+
+GstFlowReturn set_python_callback_caps(PythonCallback *python_callback, GstCaps *caps, char **error_msg)
+{
+    if (nullptr == python_callback)
+    {
+        GST_ERROR("python_callback is not initialized");
+        return GST_FLOW_ERROR;
+    }
+
+    auto context_initializer = PythonContextInitializer();
+    try
+    {
+        python_callback->SetCaps(caps);
+
+        return GST_FLOW_OK;
+    }
+    catch (const std::exception &e)
+    {
+        PythonError python_err;
+        std::string msg = std::string(e.what()) + std::string(": \n") + std::string(python_err.get());
+        *error_msg = strdup(msg.c_str());
+
         return GST_FLOW_ERROR;
     }
 }
@@ -99,8 +126,13 @@ GstFlowReturn PythonCallback::CallPython(GstBuffer *buffer, py_descriptor_t desc
     // Create a Gst.Buffer object.
     __PYFILTER_DECL_WRAPPER(py_buffer, pyg_boxed_new(buffer->mini_object.type, buffer,
                                                      FALSE /*copy_boxed*/, FALSE /*own_ref*/));
+    __PYFILTER_DECL_WRAPPER(py_caps, pyg_boxed_new(caps_ptr->mini_object.type, caps_ptr,
+                                                   FALSE /*copy_boxed*/, FALSE /*own_ref*/));
+    __PYFILTER_DECL_WRAPPER(frame, PyObject_CallFunctionObjArgs(python_frame_class, (PyObject *)py_buffer, (PyObject *)py_caps,
+                                                                (PyObject *)hailo_roi, nullptr));
+
     // Create the arguments for the user function and call it.
-    __PYFILTER_DECL_WRAPPER(args, Py_BuildValue("OO", (PyObject *)py_buffer, (PyObject *)hailo_roi));
+    __PYFILTER_DECL_WRAPPER(args, Py_BuildValue("(O)", (PyObject *)frame));
     PyObjectWrapper result(PyObject_CallObject(user_python_function, args));
 
     if (((PyObject *)result) == nullptr)
@@ -174,6 +206,15 @@ PythonCallback::PythonCallback(const char *module_path, const char *function_nam
         throw std::runtime_error("Error loading hailo module");
     }
     get_python_roi_function.reset(PyObject_GetAttrString(hailo_module, "access_HailoROI_from_desc"), "get_python_roi");
+
+    __PYFILTER_DECL_WRAPPER(gsthailo_module, PyImport_Import(__PYFILTER_WRAPPER(PyUnicode_FromString("gsthailo"))));
+
+    if (!(PyObject *)gsthailo_module)
+    {
+        throw std::runtime_error("Error getting gsthailo.VideoFrame");
+    }
+
+    python_frame_class.reset(PyObject_GetAttrString(gsthailo_module, "VideoFrame"), "videoframe_class");
 }
 
 PythonContextInitializer::PythonContextInitializer()
@@ -231,6 +272,12 @@ void PythonContextInitializer::extendPath(const std::string &module_path)
         /* PyList_Append increases the reference counter */
         PyList_Append(sys_path, __PYFILTER_WRAPPER(PyUnicode_FromString(module_path.c_str())));
     }
+}
+
+void PythonCallback::SetCaps(GstCaps *caps)
+{
+    assert(caps && "Expected vaild caps in PythonCallback::SetCaps!");
+    caps_ptr = caps;
 }
 
 PythonError::PythonError()

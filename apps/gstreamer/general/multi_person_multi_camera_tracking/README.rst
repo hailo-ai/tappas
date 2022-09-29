@@ -40,6 +40,12 @@ Expected output:
        <img src="readme_resources/re_id.gif"/>
    </div>
 
+Models
+------
+
+
+* ``yolov5s_personface``: yolov5s pre-trained on Hailo's dataset - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5s_personface.yaml
+* ``repvgg_a0_person_reid_2048``: repvgg_a0_person_reid_2048 pre-trained on Hailo's dataset - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/repvgg_a0_person_reid_2048.yaml
 
 How the application works
 -------------------------
@@ -56,3 +62,26 @@ Pipeline diagram
 
 .. image:: readme_resources/re_id_pipeline.png
 
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``yolov5s_personface``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/personface_detection/docs/TRAINING_GUIDE.md>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolov5_personface.json`` with your new post-processing parameters (NMS)
+- ``repvgg_a0_person_reid_2048``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/reid/docs/TRAINING_GUIDE.md>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `re_id.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/re_id/re_id.cpp#L32>`_
+      with your new paremeters, then recompile to create ``libre_id.so``

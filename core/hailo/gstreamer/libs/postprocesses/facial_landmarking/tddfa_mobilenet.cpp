@@ -23,7 +23,7 @@
 #include "common/tensors.hpp"
 #include "const_tensors.hpp"
 
-const char *output_layer_name = "fc1"; // there are 62 params
+const char *output_layer_name = "tddfa_mobilenet_v1/fc1"; // there are 62 params
 #define TRANS_DIM (12)
 #define SHAPE_DIM (40)
 #define OUTPUT_SIZE (68)

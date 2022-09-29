@@ -16,9 +16,9 @@
 
 #include <map>
 #include <vector>
-#include "hailo_common.hpp"
+#include "hailo_objects.hpp"
+#include "common/image.hpp"
 
-#define DEFAULT_COLOR (cv::Scalar(255, 0, 0))
 typedef enum
 {
     OVERLAY_STATUS_UNINITIALIZED = -1,
@@ -27,11 +27,10 @@ typedef enum
 } overlay_status_t;
 
 __BEGIN_DECLS
-overlay_status_t draw_all(cv::Mat &mat, HailoROIPtr roi, int font_thickness = 1, int line_thickness = 1);
+overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, bool show_confidence = true);
 void face_blur(cv::Mat &mat, HailoROIPtr roi);
 
 cv::Scalar RGB_TO_YUY2(cv::Scalar rgb);
-cv::Scalar get_color(cv::Mat &mat, cv::Scalar color = DEFAULT_COLOR);
 cv::Scalar indexToColor(size_t index);
 
 __END_DECLS

@@ -3,17 +3,19 @@ set -e
 
 # Extract GStramer version used
 GSTREAMER_VERSION=$(gst-launch-1.0 --gst-version | awk '{print $NF}' | cut -d. -f1,2)
-num_cores_to_use=$(($(nproc) - 1))
+num_cores_to_use=$(($(nproc)/2))
 
 function install_plugins_good() {
+  if [[ ! $GSTREAMER_VERSION == @(1.14|1.16) ]]; then 
+  	return 0
+  fi
+	
   pushd ${TAPPAS_WORKSPACE}/sources/
   git clone --depth 1 -b ${GSTREAMER_VERSION} https://github.com/GStreamer/gst-plugins-good.git
   pushd gst-plugins-good
 
   # Patch rtsp-plugins-good
-  if [[ $GSTREAMER_VERSION == @(1.14|1.16) ]]; then
-  	git apply ${TAPPAS_WORKSPACE}/core/patches/rtsp/rtspsrc_stream_id_path.patch
-  fi
+  git apply ${TAPPAS_WORKSPACE}/core/patches/rtsp/rtspsrc_stream_id_path.patch
 
   # Build plugins-good
   meson build --prefix /usr/
@@ -37,21 +39,8 @@ function install_gst_instruments() {
 
 }
 
-function install_gst_shark() {
-  # Build GstShark
-  pushd ${TAPPAS_WORKSPACE}/sources/
-  git clone --depth 1 --shallow-submodules -b v0.7.2 https://github.com/RidgeRun/gst-shark/
-  pushd gst-shark
-  ./autogen.sh --prefix /usr/ --libdir /usr/lib/$(uname -m)-linux-gnu/
-  sudo make install
-  popd
-  popd
-
-}
-
 install_plugins_good
 
-# Both gst_instruments and gst_shark are optional 
-# We dont want to fail our install in cases where one of them fails
+# gst_instruments is optional 
+# We dont want to fail our install in case it fails
 install_gst_instruments || true
-install_gst_shark || true

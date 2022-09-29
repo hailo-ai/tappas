@@ -128,7 +128,8 @@ An example for executing the script:
 
 
 
-   **NOTE**\ : In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain.tar.gz
+.. note::
+    In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain.tar.gz
 
 
 .. code-block:: sh
@@ -190,7 +191,8 @@ Run the compilation script
 
 
 
-   **NOTE**\ : In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain.tar.gz
+.. note::
+    In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain.tar.gz
 
 
 .. code-block:: sh

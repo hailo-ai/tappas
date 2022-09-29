@@ -33,3 +33,7 @@ gedit
 21.04:python3-dev
 21.04:python3-pip
 21.04:python3-setuptools
+
+22.04:python3-dev
+22.04:python3-pip
+22.04:python3-setuptools

@@ -39,6 +39,12 @@ Run
    cd $TAPPAS_WORKSPACE/apps/gstreamer/general/classification
    ./classification.sh
 
+Model
+-----
+
+
+* ``resnet_v1_50``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/resnet_v1_50.yaml
+
 How it works
 ------------
 

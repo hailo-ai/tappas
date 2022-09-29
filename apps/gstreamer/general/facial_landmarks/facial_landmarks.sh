@@ -49,7 +49,7 @@ function parse_args() {
     while test $# -gt 0; do
         if [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v 2>&1 | grep hailo_display"
+            additonal_parameters="-v | grep hailo_display"
         elif [ "$1" = "--print-gst-launch" ]; then
             print_gst_launch_only=true
         elif [ "$1" = "--input" ] || [ "$1" = "-i" ]; then
@@ -76,11 +76,11 @@ fi
 PIPELINE="gst-launch-1.0 \
     filesrc location=$input_source name=src_0 ! decodebin ! \
     videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! \
-    queue leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path is-active=true ! \
-    queue leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$postprocess_so qos=false ! \
-    queue leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! videoconvert ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=true text-overlay=false ${additonal_parameters}"
 

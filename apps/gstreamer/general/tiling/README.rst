@@ -12,7 +12,7 @@ Model
 ^^^^^
 
 
-* ``ssd_mobilenet_v1_visdrone`` in resolution of 300X300 - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1_visdrone.yaml.
+* ``ssd_mobilenet_v1_visdrone`` in resolution of 300X300: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1_visdrone.yaml
 
 The VisDrone dataset consists of only small objects which we can assume are always confined within an single tile. As such it is better suited for running single-scale tiling with little overlap and without additional filtering.
 
@@ -79,7 +79,7 @@ Model
 ^^^^^
 
 
-* ``mobilenet_ssd`` in resolution of 300X300X3. https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1.yaml
+* ``mobilenet_ssd`` in resolution of 300X300X3: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1.yaml
 
 Options
 ^^^^^^^
@@ -136,3 +136,20 @@ As multi scale tiling is almost equal to single scale i will mention the differe
     hailotileaggregator iou-threshold=$iou_threshold border-threshold=$border_threshold name=agg
 
  ``hailotileaggregator`` sets ``border-threshold`` used in remove tile's exceeded objects process.
+
+How to use Retraining to replace models
+---------------------------------------
+
+.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+
+You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+that are trained on your own dataset:
+
+- ``mobilenet_ssd``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/ssd>`_
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
+      with your new paremeters, then recompile to create ``libmobilenet_ssd_post.so``

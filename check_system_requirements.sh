@@ -15,24 +15,26 @@ apt_reqs[1]='x11-utils'
 apt_reqs[2]='python3-dev'
 apt_reqs[3]='python3-pip'
 apt_reqs[4]='python3-setuptools'
-apt_reqs[5]='virtualenv'
-apt_reqs[6]='libgirepository'
-apt_reqs[7]='gcc-9'
-apt_reqs[8]='g++-9'
-apt_reqs[9]='python-gi-dev'
-apt_reqs[10]='pkg-config'
-apt_reqs[11]='libcairo2-dev'
-apt_reqs[12]='libgirepository1.0-dev'
-apt_reqs[13]='libgstreamer1.0-dev'
-apt_reqs[14]='cmake'
-apt_reqs[15]='libgstreamer-plugins-base1.0-dev'
-
+apt_reqs[5]='libgirepository'
+apt_reqs[6]='gcc-9'
+apt_reqs[7]='g++-9'
+apt_reqs[8]='python-gi-dev'
+apt_reqs[9]='pkg-config'
+apt_reqs[10]='libcairo2-dev'
+apt_reqs[11]='libgirepository1.0-dev'
+apt_reqs[12]='libgstreamer1.0-dev'
+apt_reqs[13]='cmake'
+apt_reqs[14]='libgstreamer-plugins-base1.0-dev'
+apt_reqs[15]='libzmq3-dev'
 
 declare -a pkg_config_reqs
 
 pkg_config_reqs[0]='opencv_imgproc'
 pkg_config_reqs[1]='opencv_core'
 pkg_config_reqs[2]='opencv_imgcodec'
+pkg_config_reqs[3]='opencv_features2d'
+pkg_config_reqs[4]='opencv_calib3d'
+pkg_config_reqs[5]='opencv_flann'
 
 error=false
 

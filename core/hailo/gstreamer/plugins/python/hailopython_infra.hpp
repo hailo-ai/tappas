@@ -11,6 +11,7 @@
 #include <gmodule.h>
 #include <gst/base/gstbasetransform.h>
 #include <gst/gst.h>
+#include <gst/video/video.h>
 #include <iostream>
 #include <stdexcept>
 
@@ -65,7 +66,9 @@ class PythonCallback
 {
     PyObjectWrapper user_python_function;
     PyObjectWrapper get_python_roi_function;
+    PyObjectWrapper python_frame_class;
     std::string module_name;
+    GstCaps *caps_ptr;
 
 public:
     PythonCallback(const char *module_path, const char *function_name,
@@ -73,6 +76,7 @@ public:
 
     ~PythonCallback() = default;
 
+    void SetCaps(GstCaps *caps);
     GstFlowReturn CallPython();
     GstFlowReturn CallPython(GstBuffer *buffer, py_descriptor_t desc);
 };
@@ -93,6 +97,7 @@ private:
     PyObject *sys_path;
 };
 
+GstFlowReturn set_python_callback_caps(PythonCallback *python_callback, GstCaps *caps, char **error_msg);
 GstFlowReturn invoke_python_callback(PythonCallback *pycb, GstBuffer *buffer, py_descriptor_t desc, char **error_msg);
 GstFlowReturn invoke_python_callback(PythonCallback *pycb, char **error_msg);
 PythonCallback *create_python_callback(const char *module_path, const char *function_name,

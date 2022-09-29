@@ -1,9 +1,9 @@
 {
   "iou_threshold": 0.5,
-  "detection_threshold": 0.3,
+  "detection_threshold": 0.5,
   "output_activation": "none",
   "label_offset":1,
-  "max_boxes":2000,
+  "max_boxes":10000,
   "anchors": [
     [
       116,

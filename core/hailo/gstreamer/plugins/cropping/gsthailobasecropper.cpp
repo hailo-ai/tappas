@@ -13,7 +13,7 @@
 #include <typeinfo>
 #include "common/image.hpp"
 #include "cropping/gsthailobasecropper.hpp"
-#include "cropping/gst_hailo_cropping_meta.hpp"
+#include "gst_hailo_cropping_meta.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
 #include "gst_hailo_meta.hpp"
@@ -303,7 +303,7 @@ gst_hailo_basecropper_sink_event(GstPad *pad, GstObject *parent,
  * @param[in] crop_roi          Reference to a ROI Object to crop.
  * @return A new buffer, cropped and scaled for a second network.
  */
-static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuffer *buf, HailoROIPtr &crop_roi)
+static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuffer *buf, HailoROIPtr crop_roi)
 {
     GstHailoBaseCropperClass *hailo_basecropperclass = GST_HAILO_BASE_CROPPER_GET_CLASS(hailo_basecropper);
 
@@ -320,40 +320,39 @@ static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuf
     }
     cropped_buf = gst_buffer_new_allocate(NULL, get_size(outcaps), NULL);
 
-
     // get cv matrix of full image from buffer
     GstVideoInfo *full_image_info = gst_video_info_new();
     GstMapInfo full_image_map;
     gst_buffer_map(buf, &full_image_map, GST_MAP_READ);
     gst_video_info_from_caps(full_image_info, incaps);
-    cv::Mat full_image = get_mat(full_image_info, &full_image_map);
+    std::shared_ptr<HailoMat> full_image = get_mat_by_format(full_image_info, &full_image_map);
+    GstVideoFormat image_format = GST_VIDEO_INFO_FORMAT(full_image_info) ;
     gst_video_info_free(full_image_info);
 
-    
     // get cv matrix of cropped image from buffer
     GstVideoInfo *resized_image_info = gst_video_info_new();
     GstMapInfo resized_image_map;
     gst_buffer_map(cropped_buf, &resized_image_map, GST_MAP_READWRITE);
     gst_video_info_from_caps(resized_image_info, outcaps);
-    cv::Mat resized_image = get_mat(resized_image_info, &resized_image_map);
+    std::shared_ptr<HailoMat> resized_image = get_mat_by_format(resized_image_info, &resized_image_map);
     gst_video_info_free(resized_image_info);
 
     auto bbox = hailo_common::create_flattened_bbox(crop_roi->get_bbox(), crop_roi->get_scaling_bbox());
     cv::Rect rect;
-    rect.x = CLAMP(bbox.xmin() * full_image.cols, 0, full_image.cols);
-    rect.y = CLAMP(bbox.ymin() * full_image.rows, 0, full_image.rows);
-    rect.width = CLAMP(bbox.width() * full_image.cols, 0, full_image.cols - rect.x);
-    rect.height = CLAMP(bbox.height() * full_image.rows, 0, full_image.rows - rect.y);
-    cv::Mat cropped_image = full_image(rect);
+    rect.x = CLAMP(bbox.xmin() * full_image->width(), 0, full_image->width());
+    rect.y = CLAMP(bbox.ymin() * full_image->height(), 0, full_image->height());
+    rect.width = CLAMP(bbox.width() * full_image->width(), 0, full_image->width() - rect.x);
+    rect.height = CLAMP(bbox.height() * full_image->height(), 0, full_image->height() - rect.y);
+    cv::Mat cropped_cv_mat = full_image->get_mat()(rect);
+    cv::Mat &resized_cv_mat = resized_image->get_mat();
     // Crop and resize the the frame
-    hailo_basecropperclass->resize(hailo_basecropper, cropped_image, resized_image, crop_roi);
+    hailo_basecropperclass->resize(hailo_basecropper, cropped_cv_mat, resized_cv_mat, crop_roi, image_format);
 
     // Add the croopped ROI to the buffer
     gst_buffer_add_hailo_meta(cropped_buf, crop_roi);
 
-    full_image.release();
-    cropped_image.release();
-    resized_image.release();
+    cropped_cv_mat.release();
+    resized_cv_mat.release();
     gst_caps_unref(incaps);
     gst_caps_unref(outcaps);
     gst_buffer_unmap(buf, &full_image_map);
@@ -395,7 +394,7 @@ static GstFlowReturn gst_hailo_basecropper_chain(GstPad *pad, GstObject *parent,
 
     // Prepare crops
     gchar *stream_id = gst_pad_get_stream_id(pad);
-    std::string streamid_key(strdup(stream_id));
+    std::string streamid_key(stream_id);
     std::vector<HailoROIPtr> crop_rois;
     if ((hailo_basecropper->stream_ids_buff_offset[streamid_key] % hailo_basecropper->cropping_period) == 0)
         crop_rois = hailo_basecropperclass->prepare_crops(hailo_basecropper, buf);
@@ -404,6 +403,7 @@ static GstFlowReturn gst_hailo_basecropper_chain(GstPad *pad, GstObject *parent,
     // If there is nothing to crop and dropping is enabled then drop now
     if (hailo_basecropper->drop_uncropped_buffers && crop_rois.size() == 0)
     {
+        g_free(stream_id);
         gst_buffer_unref(buf);
         return GST_FLOW_OK;
     }
@@ -416,16 +416,25 @@ static GstFlowReturn gst_hailo_basecropper_chain(GstPad *pad, GstObject *parent,
     hailo_basecropper->stream_ids_buff_offset[streamid_key]++;
 
     gst_buffer_add_hailo_cropping_meta(buf, crop_rois.size());
-    // Push the main buffer into the main src pad.
-    gst_pad_push(hailo_basecropper->srcpad_main, gst_buffer_ref(buf));
 
-    handle_crops(hailo_basecropper, buf, crop_rois);
-    gst_buffer_unref(buf);
+    // Push the main buffer into the main src pad.
+    if (crop_rois.empty())
+    {
+        gst_pad_push(hailo_basecropper->srcpad_main, buf);
+    }
+    else
+    {
+        gst_pad_push(hailo_basecropper->srcpad_main, gst_buffer_ref(buf));
+        handle_crops(hailo_basecropper, buf, crop_rois);
+        gst_buffer_unref(buf);
+    }
+
+    g_free(stream_id);
     return GST_FLOW_OK;
 }
 
 /**
- * @brief Resize the an image using Bilinear stratedgy
+ * @brief Resize the an image using Bilinear strategy
  *        Supports RGB/BGR and YUY2
  *
  * @param basecropper - GstHailoBaseCropper *
@@ -441,20 +450,25 @@ static GstFlowReturn gst_hailo_basecropper_chain(GstPad *pad, GstObject *parent,
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
     {
-        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), cv::INTER_LINEAR);
-    }
-    else if (cropped_image.type() == CV_8UC4)
+    case GST_VIDEO_FORMAT_YUY2:
     {
         resize_yuy2(cropped_image, resized_image, cv::INTER_LINEAR);
+        break;
+    }
+    default:
+    {
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_LINEAR);
+        break;
+    }
     }
 }
 
 /**
- * @brief Resize the an image using Nearest Neighbors stratedgy
+ * @brief Resize the an image using Bicubic strategy
  *        Supports RGB/BGR and YUY2
  *
  * @param basecropper - GstHailoBaseCropper *
@@ -470,20 +484,93 @@ void resize_bilinear(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, c
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_bicubic(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
     {
-        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), cv::INTER_NEAREST);
+    case GST_VIDEO_FORMAT_YUY2:
+    {
+        resize_yuy2(cropped_image, resized_image, cv::INTER_CUBIC);
+        break;
     }
-    else if (cropped_image.type() == CV_8UC4)
+    default:
     {
-        resize_yuy2(cropped_image, resized_image, cv::INTER_NEAREST);
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_CUBIC);
+        break;
+    }
     }
 }
 
 /**
- * @brief Resize the an image using Letterbox stratedgy
+ * @brief Resize the an image using strategy of resampling using pixel area relation.
+ *        Supports RGB/BGR and YUY2
+ *
+ * @param basecropper - GstHailoBaseCropper *
+ *        The cropping element
+ *
+ * @param cropped_image - cv::Mat &
+ *        The cropped image to resize
+ *
+ * @param resized_image - cv::Mat &
+ *        The resized image container to fill
+ *        (dims for resizing are assumed from here)
+ *
+ * @param roi - HailoROIPtr
+ *        ROI to resize in, used in inheriting classes
+ */
+void resize_inter_area(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
+{
+    switch (image_format)
+    {
+    case GST_VIDEO_FORMAT_YUY2:
+    {
+        resize_yuy2(cropped_image, resized_image, cv::INTER_AREA);
+        break;
+    }
+    default:
+    {
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_AREA);
+        break;
+    }
+    }
+}
+
+/**
+ * @brief Resize the an image using Nearest Neighbors strategy
+ *        Supports RGB/BGR and YUY2
+ *
+ * @param basecropper - GstHailoBaseCropper *
+ *        The cropping element
+ *
+ * @param cropped_image - cv::Mat &
+ *        The cropped image to resize
+ *
+ * @param resized_image - cv::Mat &
+ *        The resized image container to fill
+ *        (dims for resizing are assumed from here)
+ *
+ * @param roi - HailoROIPtr
+ *        ROI to resize in, used in inheriting classes
+ */
+void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
+{
+    switch (image_format)
+    {
+    case GST_VIDEO_FORMAT_YUY2:
+    {
+        resize_yuy2(cropped_image, resized_image, cv::INTER_NEAREST);
+        break;
+    }
+    default:
+    {
+        cv::resize(cropped_image, resized_image, cv::Size(resized_image.cols, resized_image.rows), 0, 0, cv::INTER_NEAREST);
+        break;
+    }
+    }
+}
+
+/**
+ * @brief Resize the an image using Letterbox strategy
  *        Supports RGB/BGR
  *
  * @param basecropper - GstHailoBaseCropper *
@@ -499,9 +586,16 @@ void resize_nearest_neighbor(GstHailoBaseCropper *basecropper, cv::Mat &cropped_
  * @param roi - HailoROIPtr
  *        ROI to resize in, used in inheriting classes
  */
-void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi)
+void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
 {
-    if (cropped_image.type() == CV_8UC3)
+    switch (image_format)
+    {
+    case GST_VIDEO_FORMAT_YUY2:
+    {
+        std::cerr << "Letterbox resizing is not yet supported for YUY2, only Bilinear and Nearest Neighbors are supported." << std::endl;
+        break;
+    }
+    default:
     {
         cv::Mat tmp;
         static const cv::Scalar color(114, 114, 114);
@@ -524,12 +618,10 @@ void resize_letterbox(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, 
         roi->set_scaling_bbox(letterboxed_scale);
 
         // Reverse RGB order to BGR is required in the resize & border
-        cv::resize(cropped_image, tmp, cv::Size(new_width, new_height), cv::INTER_LINEAR);
+        cv::resize(cropped_image, tmp, cv::Size(new_width, new_height), 0, 0, cv::INTER_AREA);
         cv::copyMakeBorder(tmp, resized_image, top, bottom, left, right, cv::BORDER_CONSTANT, color);
         tmp.release();
+        break;
     }
-    else if (cropped_image.type() == CV_8UC4)
-    {
-        std::cerr << "Letterbox resizing is not yet supported for YUY2, only Bilinear and Nearest Neighbors are supported." << std::endl;
     }
 }

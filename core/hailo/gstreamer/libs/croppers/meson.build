@@ -53,6 +53,23 @@ shared_library('re_id',
 )
 
 ################################################
+# Video Monitoring System algorithms
+################################################
+vms_sources = [
+    'vms/vms_croppers.cpp',
+]
+
+shared_library('vms_croppers',
+    vms_sources,
+    cpp_args : hailo_lib_args,
+    include_directories: [hailo_general_inc],
+    dependencies : post_deps + [opencv_dep],
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: croppers_install_dir,
+)
+
+################################################
 # Whole Buffer algorithm
 ################################################
 whole_buffer_sources = [
