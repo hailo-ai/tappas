@@ -169,12 +169,6 @@ On Raspberry Pi, run:
 And then, `Get back to Raspberry Pi section <./raspberry-pi-install.rst>`_
 
 
-On NXP i.MX based devices, run:
-
-.. code-block:: sh
-
-    ./install.sh --skip-hailort --target-platform imx
-
 Upgrade TAPPAS
 --------------
 
@@ -191,3 +185,21 @@ Remove old ``libgsthailotools.so``
    rm /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailotools.so
 
 And then, `TAPPAS installation section`_
+
+Troubleshooting
+---------------
+
+Cannot allocate memory in static TLS block
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some sceneraios (especially aarch64), you might face the following error:
+
+.. code-block:: sh
+
+    (gst-plugin-scanner:15): GStreamer-WARNING **: 13:58:20.557: Failed to load plugin '/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstlibav.so': /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block 
+
+The solution is to export an enviroment variable:
+
+.. code-block:: sh
+
+    export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1

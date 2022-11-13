@@ -1,7 +1,7 @@
 import platform
 from pathlib import Path
 
-VERSION = "v3.21"
+VERSION = "v3.22"
 MODEL_ZOO_VERSION = "v2.4"
 
 CONFIG_PATH = Path(__file__).parent
@@ -36,13 +36,16 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
                       "rpi/rpi_face_detection.json",
                       "rpi/rpi_multinetworks_parallel.json",
                       "rpi/rpi_pose_estimation.json",
-                      "imx/imx_cascading_networks.json",
-                      "imx/imx_depth_estimation.json",
-                      "imx/imx_detection.json",
-                      "imx/imx_facial_landmarks.json",
-                      "imx/imx_license_plate_recognition.json",
-                      "imx/imx_pose_estimation.json",
-                      "imx/imx_segmentation.json"]
+                      "imx6/imx6_classification.json",
+                      "imx6/imx6_depth_estimation.json",
+                      "imx6/imx6_detection.json",
+                      "imx8/imx8_cascading_networks.json",
+                      "imx8/imx8_depth_estimation.json",
+                      "imx8/imx8_detection.json",
+                      "imx8/imx8_facial_landmarks.json",
+                      "imx8/imx8_license_plate_recognition.json",
+                      "imx8/imx8_pose_estimation.json",
+                      "imx8/imx8_segmentation.json"]
 
 # Used during the download to decide what the source / destination is dynamically
 RESERVED_DOWNLOADER_KEYWORDS = {

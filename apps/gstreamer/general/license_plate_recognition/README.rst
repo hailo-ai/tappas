@@ -145,5 +145,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `ocr_postprocess.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/ocr/ocr_postprocess.cpp#L20>`_
+    - Update `ocr_postprocess.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/ocr/ocr_postprocess.cpp#L20>`_
       with your new paremeters, then recompile to create ``libocr_post.so``

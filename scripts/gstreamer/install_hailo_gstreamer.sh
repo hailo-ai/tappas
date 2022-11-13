@@ -4,7 +4,7 @@ set -e
 script_dir=$(dirname $(realpath "$0"))
 source $script_dir/../misc/checks_before_run.sh --export-only
 
-BUILD_DIR="$TAPPAS_WORKSPACE/core/hailo/gstreamer"
+BUILD_DIR="$TAPPAS_WORKSPACE/core/hailo"
 BUILD_MODE=release
 SKIP_HAILORT=false
 COMPILE_LIBGSTHAILO=false

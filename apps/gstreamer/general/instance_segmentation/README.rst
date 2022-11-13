@@ -43,8 +43,8 @@ Model
 
 * ``yolact_regnetx_800mf_20classes`` - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolact_regnetx_800mf_20classes.yaml
 
-How it works?
--------------
+How does it work?
+-----------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_
 
@@ -64,5 +64,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `yolact.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/instance_segmentation/yolact.cpp#L458>`_
+    - Update `yolact.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/instance_segmentation/yolact.cpp#L458>`_
       with your new paremeters, then recompile to create ``libyolact_post.so``

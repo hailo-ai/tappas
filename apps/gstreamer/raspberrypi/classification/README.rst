@@ -5,7 +5,7 @@ Classification Pipeline
 Classification
 --------------
 
-The purpose of ``classification.sh`` is to demostrate classification on one video file source.
+The purpose of ``classification.sh`` is to demonstrate classification on one video file source.
  This is done by running a ``single-stream object classification pipeline`` on top of GStreamer using the Hailo-8 device.
 
 Options

@@ -70,5 +70,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Replace HEF_PATH on the .sh file
-    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
+    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
       with your new paremeters, then recompile to create ``libcenterpose_post.so``

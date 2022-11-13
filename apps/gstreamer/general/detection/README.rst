@@ -54,8 +54,8 @@ The output should look like:
    :height: 500px
 
 
-How it works?
--------------
+How does it work?
+-----------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_
 
@@ -102,7 +102,7 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
+    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
       with your new paremeters, then recompile to create ``libmobilenet_ssd_post.so``
 - ``nanodet_repvgg``
   
@@ -112,5 +112,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `nanodet.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/detection/nanodet.cpp#L221>`_
+    - Update `nanodet.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/nanodet.cpp#L221>`_
       with your new paremeters, then recompile to create ``libnanodet_post.so``

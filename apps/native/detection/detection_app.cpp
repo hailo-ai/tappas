@@ -202,7 +202,7 @@ hailo_status post_processing_all(std::vector<std::shared_ptr<FeatureData>> &feat
 {
     auto status = HAILO_SUCCESS;
 
-    YoloParams * init_params = init(CONFIG_FILE);
+    YoloParams * init_params = init(CONFIG_FILE, "yolov5");
 
     std::sort(features.begin(), features.end(), &FeatureData::sort_tensors_by_size);
     for (size_t i = 0; i < frames_count; i++) {

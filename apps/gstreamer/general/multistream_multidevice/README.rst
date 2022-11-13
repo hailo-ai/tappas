@@ -6,7 +6,7 @@ Overview
 --------
 
 This GStreamer pipeline demonstrates object detection on 8 camera streams over RTSP protocol.
-This pipeline also demostrates using two hailo8 devices in parallel.
+This pipeline also demonstrates using two hailo8 devices in parallel.
 
 All the streams are processed in parallel through the decode and scale phases, and enter the Hailo devices frame by frame.
 **Each** hailo device is in charge of one inference task (one for yolov5 and the other for centerpose)
@@ -100,5 +100,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
+    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
        with your new paremeters, then recompile to create ``libcenterpose_post.so``

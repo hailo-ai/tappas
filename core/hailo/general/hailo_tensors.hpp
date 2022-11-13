@@ -67,10 +67,12 @@ public:
      * @param num number to dequantize.
      * @return float dequantized number.
      */
-    float fix_scale(uint8_t num)
+    template <typename T>  
+    float fix_scale(T num)
     {
         return (float(num) - m_vstream_info.quant_info.qp_zp) * m_vstream_info.quant_info.qp_scale;
     }
+
     /**
      * @brief Gets a specific cell of this tensor.
      *
@@ -87,6 +89,15 @@ public:
         int pos = (height * features) * row + features * col + channel;
         return m_data[pos];
     }
+    uint16_t get_uint16(uint row, uint col, uint channel)
+    {
+        uint height = m_vstream_info.shape.height;
+        uint features = m_vstream_info.shape.features;
+        int pos = (height * features) * row + features * col + channel;
+        uint16_t *data_uint16 = (uint16_t *)m_data;
+        return data_uint16[pos];
+    }
+
     /**
      * @brief Gets a specific cell of this tensor in full percision (dequantized).
      *
@@ -95,9 +106,12 @@ public:
      * @param channel The channel of the cell
      * @return float value of this tensor at the specified place (dequantized).
      */
-    float get_full_percision(uint row, uint col, uint channel)
+    float get_full_percision(uint row, uint col, uint channel, bool is_uint16)
     {
-        return fix_scale(get(row, col, channel));
+        if (is_uint16)
+            return fix_scale(get_uint16(row, col, channel));
+        else
+            return fix_scale(get(row, col, channel));
     }
 };
 

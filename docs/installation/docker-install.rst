@@ -200,3 +200,18 @@ Just to make sure that it worked, run the ps command to make sure that the Docke
    :target: ../resources/ps_after_change.png
    :alt: image
 
+Cannot allocate memory in static TLS block
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some sceneraios (especially aarch64), you might face the following error:
+
+.. code-block:: sh
+
+    (gst-plugin-scanner:15): GStreamer-WARNING **: 13:58:20.557: Failed to load plugin '/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstlibav.so': /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block 
+
+The solution is to export an enviroment variable:
+
+.. code-block:: sh
+
+    export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
+

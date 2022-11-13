@@ -4,7 +4,7 @@ Python Classification Pipeline
 Classification
 --------------
 
-The purpose of ``classification.sh`` is to demostrate classification on one video file source with python post-processing
+The purpose of ``classification.sh`` is to demonstrate classification on one video file source with python post-processing
  This is done by running a ``single-stream object classification pipeline`` on top of GStreamer using the Hailo-8 device.
 
 .. raw:: html

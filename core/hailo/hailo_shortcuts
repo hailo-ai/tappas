@@ -39,9 +39,10 @@ gst_plot_debug() {
     cp $(ls -rt $GST_SHARK_LOCATION/graphic/pipeline* | tail -n 1) "$split_traces_dir"
   fi
 
-  $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/split_traces.sh $split_traces_dir
-  python3 $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/plot_all_to_html.py -p $split_traces_dir
-  echo 'In order to plot the graphic pipeline graph, run:'
+  $TAPPAS_WORKSPACE/tools/trace_analyzer/split_traces.sh $split_traces_dir
+  python3 $TAPPAS_WORKSPACE/tools/trace_analyzer/plot_all_to_html.py -p $split_traces_dir
+
+  echo 'To plot the graphic pipeline graph, run:'
   echo "dot $GST_SHARK_LOCATION/graphic/pipeline_<timestamp>.dot -T x11"
 }
 

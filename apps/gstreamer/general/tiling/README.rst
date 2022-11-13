@@ -151,5 +151,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
+    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
       with your new paremeters, then recompile to create ``libmobilenet_ssd_post.so``

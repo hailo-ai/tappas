@@ -13,6 +13,8 @@ function init_variables() {
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/face_detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/lightface_slim.hef"
     readonly DEFAULT_NETWORK_NAME="lightface"
+    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/lightface.json"
+
 
     network_name=$DEFAULT_NETWORK_NAME
     input_source=$DEFAULT_VIDEO_SOURCE
@@ -20,6 +22,8 @@ function init_variables() {
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     draw_so=$DEFAULT_DRAW_SO
     sync_pipeline=false
+    json_config_path=$DEFAULT_JSON_CONFIG_PATH
+
 
     print_gst_launch_only=false
     additonal_parameters=""
@@ -55,6 +59,7 @@ function parse_args() {
             if [ $2 == "retinaface" ]; then
                 network_name="$2"
                 hef_path="$RESOURCES_DIR/retinaface_mobilenet_v1.hef"
+                json_config_path="$RESOURCES_DIR/configs/retinaface.json"
             elif [ $2 != "lightface" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
@@ -96,7 +101,7 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path is-active=true ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! mux. \
+    hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! mux. \
     mux. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert ! \

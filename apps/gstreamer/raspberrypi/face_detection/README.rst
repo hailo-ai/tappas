@@ -5,7 +5,7 @@ Face Detection Pipeline
 Overview
 --------
 
-The purpose of ``face_detection.sh`` is to demostrate face detection on one video file source and to verify Hailo’s configuration.
+The purpose of ``face_detection.sh`` is to demonstrate face detection on one video file source and to verify Hailo’s configuration.
 This is done by running a ``single-stream face detection pipeline`` on top of GStreamer using the Hailo-8 device.
 
 Options

@@ -15,7 +15,7 @@ function check__print_usage() {
     echo "  --help                   Show this help"
     echo "  --check-python-packages  Check if python packages exists"
     echo "  --export-only            Handle setting TAPPAS_WORKSPACE only mode"
-    echo "  --check-vaapi                  Include checks for VAAPI pipelines"
+    echo "  --check-vaapi            Include checks for VAAPI pipelines"
     exit 1
 }
 

@@ -15,7 +15,7 @@ Where are all the files?
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 To begin your postprocess writng journey, it is good to understand where you can find all the relevant source files that already exist, and how to add your own. \
-From the Tappas home directory, you can find the ``core/`` folder. Inside this ``core/`` directory are a few subdirectories that host different types of source files. The ``open_source`` folder contains source files from 3rd party libraries (opencv, xtensor, etc..), while the ``hailo`` folder contains source files for all kinds of Hailo tools, such as the Hailo Gstreamer elements, the different metas provided, and the source files for the postprocesses of the networks that were already provided in the Tappas. Inside this directory is one titled ``general/``\ , which contains sources for `the different object classes <hailo-objects-api.rst>`_ (detections, classifications, etc..) available. Next to ``general`` is a directory titled ``gstreamer/``\ , and inside that are two folders of interest: ``libs/`` and ``plugins/``. The former contains the source code for all the postprocess and drawing functions packaged in the Tappas, while the latter contains source code for the different Hailo GStreamer elements, and the different metas available. This guide will mostly focus on this ``core/hailo/gstreamer/`` directory, as it has everything we need to create and compile a new .so! You can take a moment to peruse around, when you are ready to continue enter the ``postprocesses/`` directory:
+From the Tappas home directory, you can find the ``core/`` folder. Inside this ``core/`` directory are a few subdirectories that host different types of source files. The ``open_source`` folder contains source files from 3rd party libraries (opencv, xtensor, etc..), while the ``hailo`` folder contains source files for all kinds of Hailo tools, such as the Hailo Gstreamer elements, the different metas provided, and the source files for the postprocesses of the networks that were already provided in the Tappas. Inside this directory is one titled ``general/``\ , which contains sources for `the different object classes <hailo-objects-api.rst>`_ (detections, classifications, etc..) available. Next to ``general`` is a directory titled ``gstreamer/``\ , and inside that are two folders of interest: ``libs/`` and ``plugins/``. The former contains the source code for all the postprocess and drawing functions packaged in the Tappas, while the latter contains source code for the different Hailo GStreamer elements, and the different metas available. This guide will mostly focus on this ``core/hailo/`` directory, as it has everything we need to create and compile a new .so! You can take a moment to peruse around, when you are ready to continue enter the ``postprocesses/`` directory:
 
 
 .. image:: ../resources/core_hierarchy.png
@@ -78,7 +78,7 @@ Building with Meson
 
 `Meson <https://mesonbuild.com/>`_ is an open source build system that puts an emphasis on speed and ease of use. `GStreamer uses meson <https://gstreamer.freedesktop.org/documentation/installing/building-from-source-using-meson.html?gi-language=c>`_ for all subprojects to generate build instructions to be executed by `ninja <https://ninja-build.org/>`_\ , another build system focused soley on speed that requires a higher level build system (ie: meson) to generate its input files. \
 Like GStreamer, Tappas also uses meson, and compiling new projects requires adjusting the ``meson.build`` files. Here we will discuss how to add yours. \
-In the ``gstreamer/libs/postprocesses`` path you will find a `meson.build <../../core/hailo/gstreamer/libs/postprocesses/meson.build>`_\ , open it and add the following entry for our postprocess:
+In the ``libs/postprocesses`` path you will find a `meson.build <../../core/hailo/libs/postprocesses/meson.build>`_\ , open it and add the following entry for our postprocess:
 
 .. code-block:: cpp
 
@@ -98,7 +98,7 @@ In the ``gstreamer/libs/postprocesses`` path you will find a `meson.build <../..
      install_dir: post_proc_install_dir,
    )
 
-This should give meson all the information it needs to compile our postprocess. In short, we are providing paths to cpp compilers, linked libraries, included directories, and dependencies. Where are all these path variables coming from? Great question: from the parent meson project, you can read that meson file to see what packages and directories are available at `core/hailo/gstreamer/meson.build <../../core/hailo/gstreamer/meson.build>`_.
+This should give meson all the information it needs to compile our postprocess. In short, we are providing paths to cpp compilers, linked libraries, included directories, and dependencies. Where are all these path variables coming from? Great question: from the parent meson project, you can read that meson file to see what packages and directories are available at `core/hailo/meson.build <../../core/hailo/meson.build>`_.
 
 .. _script we used earlier:
 
@@ -286,9 +286,9 @@ As expected, both boxes are labeled as ``person``\ , and each is shown with the 
 Multiple Filters in One .so
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-While the ``hailofilter`` always calls on a ``filter()`` function by default, you can provide the element access to other functions in your ``.so`` to call instead. This may be of interest if you are developing a postprocess that applies to mutliple networks, but each network needs slightly different starting parameters (in the Tappas case, mutliple flavors of the `Yolo detection network are handled via the same .so <../../core/hailo/gstreamer/libs/postprocesses/yolo/yolo_postprocess.cpp>`_\ ). \
+While the ``hailofilter`` always calls on a ``filter()`` function by default, you can provide the element access to other functions in your ``.so`` to call instead. This may be of interest if you are developing a postprocess that applies to mutliple networks, but each network needs slightly different starting parameters (in the Tappas case, mutliple flavors of the `Yolo detection network are handled via the same .so <../../core/hailo/libs/postprocesses/yolo/yolo_postprocess.cpp>`_\ ). \
 So how do you do it? Simply by declaring the extra functions in the header file, then pointing the ``hailofilter`` to that function via the ``function-name`` property. \
-Let's look at the yolo networks as an example, open up `libs/postprocesses/detection/yolo_postprocess.hpp <../../core/hailo/gstreamer/libs/postprocesses/detection/yolo_postprocess.hpp>`_ to see what functions are made available to the ``hailofilter``\ :
+Let's look at the yolo networks as an example, open up `libs/postprocesses/detection/yolo_postprocess.hpp <../../core/hailo/libs/postprocesses/detection/yolo_postprocess.hpp>`_ to see what functions are made available to the ``hailofilter``\ :
 
 .. code-block:: cpp
 

@@ -207,6 +207,18 @@ namespace hailo_common
         return unique_ids;
     }
 
+    inline std::vector<HailoLandmarksPtr> get_hailo_landmarks(HailoROIPtr roi)
+    {
+        std::vector<HailoObjectPtr> objects = roi->get_objects_typed(HAILO_LANDMARKS);
+        std::vector<HailoLandmarksPtr> landmarks;
+
+        for (auto obj : objects)
+        {
+            landmarks.emplace_back(std::dynamic_pointer_cast<HailoLandmarks>(obj));
+        }
+        return landmarks;
+    }
+
     inline std::vector<HailoROIPtr> get_hailo_roi_instances(HailoROIPtr roi)
     {
         std::vector<HailoROIPtr> hailo_rois;

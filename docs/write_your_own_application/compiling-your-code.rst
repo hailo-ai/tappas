@@ -17,7 +17,7 @@ How to Compile
 | The following arguments are available:  
 
 
-* | ``--build-dir``   Path to the build directory. Defaults to ``core/hailo/gstreamer``.
+* | ``--build-dir``   Path to the build directory. Defaults to ``core/hailo``.
 * | ``--build-mode`` Build mode, debug/release, default is release.
 * | ``--skip-hailort``  Skip compiling HailoRT. 
 * | ``--python-version`` specify what Python version to use.

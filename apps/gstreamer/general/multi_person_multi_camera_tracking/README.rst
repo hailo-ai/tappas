@@ -83,5 +83,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `re_id.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/re_id/re_id.cpp#L32>`_
+    - Update `re_id.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/re_id/re_id.cpp#L32>`_
       with your new paremeters, then recompile to create ``libre_id.so``

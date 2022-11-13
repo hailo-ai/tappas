@@ -13,7 +13,7 @@ POSSIBLE_BUILD_TYPES = ['debug', 'release']
 
 TAPPAS_WORKSPACE = Path(os.environ['TAPPAS_WORKSPACE']).resolve()
 FOLDER_NAME = Path(__file__).resolve().parent
-GSTREAMER_ROOT = f'{TAPPAS_WORKSPACE}/core/hailo/gstreamer'
+GSTREAMER_ROOT = f'{TAPPAS_WORKSPACE}/core/hailo'
 
 
 class GstreamerInstall:

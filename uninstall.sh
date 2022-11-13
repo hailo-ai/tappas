@@ -6,7 +6,7 @@
 set -e
 
 #############################################
-readonly GSTREAMER_DIR=core/hailo/gstreamer
+readonly GSTREAMER_DIR=core/hailo
 readonly SHARK_DIR=sources/gst-shark/plugins
 readonly PIP_REQUIREMENTS=core/requirements/requirements.txt
 VENV_NAME=hailo_tappas_venv

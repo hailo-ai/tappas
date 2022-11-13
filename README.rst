@@ -55,7 +55,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.10.0.
+    This version is compatible with HailoRT v4.11.0.
 
 
 Installation
@@ -104,12 +104,19 @@ Example Applications built with TAPPAS
 TAPPAS comes with a rich set of pre-configured pipelines optimized for different common hosts.
 
 
+.. important:: 
+    * All example applications utilize both the host (for non-neural tasks) and the Neural-Network Core
+      (for neural-networks inference), therefore performance results are affected by the host.
+    * General application examples do not include any architecture-specific accelerator usage,
+      and therefore will provide the easiest way to run an application, but with sub-optimal performance.
+    * Architecture-specific application examples (i.MX, Raspberry PI, etc.) use platform-specific
+      hardware accelerators and are not compatible with different architectures.
+
 .. note::
-    Architecture-specific application examples (i.MX, Raspberry PI, etc..) use platform-specific hardware accelerators and are not compatible with different architectures.
-   
+    All i.MX example application are validated on i.MX8 and i.MX6 platforms and are compatible with the architectures.
+
 .. note::
     Running application examples requires a direct connection to a monitor.
-
 
 Basic Single Network Pipelines
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -120,45 +127,54 @@ Pipelines that run a single network. The diagram below shows the pipeline data-f
 .. image:: resources/single_net_pipeline.jpg
 
 
-The following table details the currently availble examples.
+The following table details the currently available examples.
 
 .. list-table::
    :header-rows: 1
 
    * - 
      - `General <apps/gstreamer/general/README.rst>`_
-     - `iMX8 <apps/gstreamer/imx/README.rst>`_
+     - `iMX8 <apps/gstreamer/imx8/README.rst>`_
+     - `iMX6 <apps/gstreamer/imx6/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - Object Detection
+     - |check_mark|
      - |check_mark|
      - |check_mark|
      - |check_mark|
    * - Pose Estimation
      - |check_mark|
      - |check_mark|
+     - 
      - |check_mark|
    * - Semantic Segmentation
      - |check_mark|
      - |check_mark|
+     - 
      - |check_mark|
    * - Depth Estimation
+     - |check_mark|
      - |check_mark|
      - |check_mark|
      - |check_mark|
    * - Face Detection
      - |check_mark|
      - 
+     - 
      - |check_mark|
    * - Facial landmark
      - |check_mark|
      - |check_mark|
      - 
+     - 
    * - HD Object Detection
      - |check_mark|
      - 
      - 
+     - 
    * - Instance segmentation
      - |check_mark|
+     - 
      - 
      - 
 
@@ -183,19 +199,23 @@ The cascaded (serial) flow shows two networks running in series. This example pi
 
    * - 
      - `General <apps/gstreamer/general/README.rst>`_
-     - `iMX8 <apps/gstreamer/imx/README.rst>`_
+     - `iMX8 <apps/gstreamer/imx8/README.rst>`_
+     - `iMX6 <apps/gstreamer/imx6/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - Parallel - Object Det + Depth Estimation
      - |check_mark|
+     - 
      - 
      - |check_mark|
    * - Parallel - Object Det + Pose Estimation
      - |check_mark|
      - 
      - 
+     - 
    * - Cascaded  - Face Detection & Landmarks
      - |check_mark|
      - |check_mark|
+     - 
      - |check_mark|
 
 
@@ -210,14 +230,17 @@ Multi-Stream Pipelines
 
    * - 
      - `General <apps/gstreamer/general/README.rst>`_
-     - `iMX8 <apps/gstreamer/imx/README.rst>`_
+     - `iMX8 <apps/gstreamer/imx8/README.rst>`_
+     - `iMX6 <apps/gstreamer/imx6/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - Multi-stream Object Detection
      - |check_mark|
      - 
      - 
+     - 
    * - Multi-stream Multi-Device Object Detection
      - |check_mark|
+     - 
      - 
      - 
 
@@ -233,10 +256,12 @@ Pipelines for High-Resolution Processing Via Tiling
 
    * - 
      - `General <apps/gstreamer/general/README.rst>`_
-     - `iMX8 <apps/gstreamer/imx/README.rst>`_
+     - `iMX8 <apps/gstreamer/imx8/README.rst>`_
+     - `iMX6 <apps/gstreamer/imx6/README.rst>`_
      - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
    * - HD Object Detection
      - |check_mark|
+     - 
      - 
      - 
 
@@ -256,7 +281,7 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
 
    * - 
      - `General <apps/gstreamer/general/README.rst>`_
-     - `iMX8 <apps/gstreamer/imx/README.rst>`_
+     - `iMX8 <apps/gstreamer/imx8/README.rst>`_
    * - LPR
      - |check_mark|
      - |check_mark|
@@ -267,6 +292,12 @@ The pipeline demonstrates inference based decision making (Vehicle detection) fo
 
 Changelog
 ----------
+
+**v3.22.0 (November 2022)**
+
+* New element `hailoimportzmq` - provides an entry point for importing metadata exported by `hailoexportzmq` (HailoObjects) into the pipeline
+* Added Depth Estimation, Object Detection and Classification pipelines for `i.MX6 Pipelines <apps/gstreamer/imx6/README.rst>`_ 
+* Changed the debugging tracers to use an internal tracing mechanism  
 
 **v3.21.0 (October 2022)**
 
@@ -297,7 +328,7 @@ Changelog
 
 * New Apps:
 
-  * Added Cascading networks, Depth Estimation, Pose Estimation and Semantic Segmentation pipelines for `i.MX Pipelines <apps/gstreamer/imx/README.rst>`_
+  * Added Cascading networks, Depth Estimation, Pose Estimation and Semantic Segmentation pipelines for `i.MX Pipelines <apps/gstreamer/imx8/README.rst>`_
 
 * Added an option to control post-process parameters via a JSON configuration for the detection application
 * Added support for Raspberry Pi Raspbian OS
@@ -315,7 +346,7 @@ Changelog
 
 * New Apps:
 
-  * LPR (License Plate Recognition) pipeline and facial landmark pipeline for `i.MX Pipelines <apps/gstreamer/imx/README.rst>`_
+  * LPR (License Plate Recognition) pipeline and facial landmark pipeline for `i.MX Pipelines <apps/gstreamer/imx8/README.rst>`_
 
 * Added the ability of compiling a specific TAPPAS target (post-processes, elements)
 * Improved the performance of Raspberry Pi example applications
