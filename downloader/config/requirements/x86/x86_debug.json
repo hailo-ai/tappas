@@ -1,0 +1,20 @@
+{
+  "path": "apps/gstreamer/x86_hw_accelerated/debug/",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/media/lpr_ayalon.mp4",
+      "destination": "lpr_ayalon.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/detection.mp4",
+      "destination": "detection.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/face_detection.mp4",
+      "destination": "face_detection.mp4"
+    }
+  ]
+}

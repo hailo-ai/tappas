@@ -7,10 +7,31 @@
 #include "hailo_objects.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xview.hpp"
+#include "xtensor/xnpy.hpp"
 #include <string>
 
 namespace hailo_common
 {
+    inline HailoMatrixPtr create_matrix_ptr(xt::xarray<float> &xmatrix)
+    {
+        // allocate and memcpy to a new memory so it points to the right data
+        std::vector<float> data(xmatrix.size());
+        memcpy(data.data(), xmatrix.data(), sizeof(float) * xmatrix.size());
+        return std::make_shared<HailoMatrix>(std::move(data),
+                                            xmatrix.shape(0), xmatrix.shape(1), xmatrix.shape(2));
+    }
+
+    inline void dump_matrix_to_file(const std::string &filename, xt::xarray<float> xmatrix)
+    {
+        xt::dump_npy(filename, xmatrix);
+    }
+
+    inline void dump_hailo_matrix_to_file(const std::string &filename, HailoMatrixPtr &hailo_matrix)
+    {
+        xt::xarray<float> xmatrix = xt::adapt(hailo_matrix->get_data(),
+                                              hailo_matrix->shape());
+        dump_matrix_to_file(filename, xmatrix);
+    }
 
     inline void add_landmarks_to_detection(HailoDetection &detection,
                                            std::string landmarks_type,

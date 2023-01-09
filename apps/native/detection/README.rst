@@ -6,16 +6,17 @@ Overview
 --------
 
 This example demonstrate the use of libhailort's C API as part of a detection application. The example uses the Yolov5m model, on top of the Hailo-8 device.
+The application also requires opevCV.
 
-Compiling with CMake
+Compiling with meson
 ^^^^^^^^^^^^^^^^^^^^
 
 Run the following commands from the application's directory.
 
 .. code-block:: sh
 
-   cmake -H. -Bbuild
-   cmake --build build
+   CC=gcc-9 CXX=g++-9 meson build
+   ninja -C build
 
 Running the example
 ^^^^^^^^^^^^^^^^^^^
@@ -40,28 +41,21 @@ Code structure
 --------------
 
 
-* 
-  main function:
-    &emsp; The main function gets the input images and passes them to ``infer`` function.
+* Main function:
+    The main function gets the input images and passes them to ``infer`` function.
 
-* 
-  infer function:
-    &emsp; First, the function is preparing the device for inference:
+* Infer function:
+    First, the function is preparing the device for inference:
 
-
-  * 
-    Device initialization
+  * Device initialization
 
     .. code-block::
 
        Open the Hailo PCIe device.
 
-
     **Used APIs**\ : ``hailo_create_pcie_device``
-    &nbsp;
 
-  * 
-    Configure the device from an HEF
+  * Configure the device from an HEF
 
     .. code-block::
 
@@ -69,31 +63,25 @@ Code structure
 
 
     **Used APIs**\ : ``hailo_create_hef_file()``\ , ``hailo_init_configure_params``\ , ``hailo_configure_device()``
-    &nbsp;
 
-  * 
-    Build VStreams
+  * Build VStreams
 
 
     * Initialize VStream parameters (both input and output).
     * Create VStreams.
 
     **Used APIs:** ``hailo_make_input_vstream_params``\ , ``hailo_make_output_vstream_params``\ , ``hailo_create_input_vstreams``\ , ``hailo_create_output_vstreams``
-    &nbsp;
 
-  * 
-    Activating the network group before starting inference
+  * Activating the network group before starting inference
     **Used APIs:** ``hailo_activate_network_group()``
-    &nbsp;
 
-    &emsp; Afterwards, the infer function starts the inference threads:
-
+    Afterwards, the infer function starts the inference threads:
 
     * One thread for writing the data to the device using the ``write_all`` function.
       **Used APIs:** ``hailo_vstream_write_raw_buffer``
-      &nbsp;
+
     * Three threads for receiving data from the device using the ``read_all`` function.
       **Used APIs:** ``hailo_vstream_read_raw_buffer``
-      &nbsp;
+
     * One thread for post-processing the data received from the device, drawing the detected objects and writing the output files to the output directory.
       FeatureData is an object used for gathering the information needed for the post-processing and is created for each feature in the model.

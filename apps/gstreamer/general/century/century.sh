@@ -10,15 +10,15 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/gstreamer/general/century/resources"
 
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
-    readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolovx_l_leaky.hef"
+    readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection_5m.mp4"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
     readonly DEVICE_COUNT=4
     readonly DEVICE_PREFIX="[-]"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolox.json"
+    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json"
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
     postprocess_so=$DEFAULT_POSTPROCESS_SO
-    network_name="yolox"
+    network_name="yolov5"
     device_count=$DEVICE_COUNT
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
@@ -28,7 +28,6 @@ function init_variables() {
     additonal_parameters=""
     sync_pipeline=false
     max_devices=$(lspci -d 1e60: | wc -l)
-    max_devices=$(($max_devices>4 ? 4 : $max_devices))
 
     if (($max_devices == 0)); then
         echo "Error: No devices found."
@@ -105,7 +104,7 @@ PIPELINE="gst-launch-1.0 \
     $source_element ! videoconvert ! \
     videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path device-count=$device_count is-active=true ! \
+    hailonet hef-path=$hef_path device-count=$device_count scheduling-algorithm=0 is-active=true ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

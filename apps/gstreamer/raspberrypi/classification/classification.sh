@@ -82,7 +82,7 @@ PIPELINE="gst-launch-1.0 \
     t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hmux. \
     t. ! videoscale n-threads=2 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path is-active=true vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hailonet hef-path=$hef_path vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! hmux. \

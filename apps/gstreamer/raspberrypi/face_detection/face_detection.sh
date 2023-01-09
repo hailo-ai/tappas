@@ -124,7 +124,7 @@ PIPELINE="gst-launch-1.0 \
     t. ! queue max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! mux. \
     t. ! videoscale ! \
     queue max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path is-active=true vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hailonet hef-path=$hef_path vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! mux. \
     mux. ! queue max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \

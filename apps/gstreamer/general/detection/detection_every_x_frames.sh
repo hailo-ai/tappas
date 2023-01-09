@@ -143,13 +143,13 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     videoscale ! videoconvert ! video/x-raw,pixel-aspect-ratio=1/1,format=RGB ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailocropper so-path=$crop_so function-name=create_crops internal-offset=$internal_offset cropping-period=$cropping_period name=cropper1 \
-    hailoaggregator name=agg1 flatten-detections=false \
+    hailoaggregator name=agg1 \
     cropper1. ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     agg1. \
     cropper1. ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$hef_path $device_id_prop is-active=true batch-size=$batch_size ! \
+        hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

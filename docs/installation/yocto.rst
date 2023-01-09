@@ -14,13 +14,12 @@ The layers are stored in `Meta-Hailo Github <https://github.com/hailo-ai/meta-ha
 
 * Zeus (kernel 5.4.24)
 * Dunfell (kernel 5.4.85)
-* Hardknott (kernel  5.10.72)
 * Honister (kernel  5.14)
 * Kirkstone (kernel 5.15)
 
-.. note:: Zeus will not be supported by TAPPAS in future versions.
+.. warning:: Kirkstone branch does not support i.MX6 devices.
 
-.. note:: Hardknott will not be supported by TAPPAS from version 3.23.0 (2023-01 suite).
+.. note:: Zeus will not be supported by TAPPAS in future versions.
 
 Setup
 -----
@@ -54,7 +53,7 @@ Add the following to your image in your ``conf/local.conf``\ :
 
 .. code-block:: sh
 
-   IMAGE_INSTALL_append = "libgsthailotools tappas-apps hailo-post-processes"
+   IMAGE_INSTALL_append = "libgsthailotools tappas-apps hailo-post-processes tappas-tracers"
 
 Build your image
 ----------------
@@ -71,12 +70,6 @@ Run bitbake and build your image. After the build successfully finished, burn th
 
         rm -rf meta-hailo/meta-hailo-tappas/recipes-multimedia/gstreamer/
 
-
-
-Copy the IMX apps
-^^^^^^^^^^^^^^^^^
-
-From within the x86 container, copy the ``imx`` apps into the embedded device using your preferred way of copying
 
 Validating the integration's success
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -102,6 +95,7 @@ Make sure that the following conditions have been met on the target device:
 
      hailotools: hailomuxer: Muxer pipe fitting
      hailotools: hailofilter: Hailo postprocessing and drawing element
+     ...
 
 * 
   post-processes shared object files exists at ``/usr/lib/hailo-post-processes``
@@ -121,7 +115,7 @@ libgsthailotools
 ^^^^^^^^^^^^^^^^
 
 Hailo's TAPPAS gstreamer elements. Depends on ``libgsthailo``, GStreamer, opencv, xtensor and xtl.
-the source files located in the TAPPAS release under ``core/hailo/gstreamer``.
+The source files located in the TAPPAS release under ``core/hailo``.
 The recipe compiles with meson and copies the ``libgsthailotools.so`` file to ``/usr/lib/gstreamer-1.0`` 
 on the target device's root file system.
 
@@ -135,5 +129,66 @@ Depends on GStreamer, opencv, cxxopts, xtensor and xtl.
 hailo-post-processes
 ^^^^^^^^^^^^^^^^^^^^
 
-the recipe compiles and copies the post processes to ``/usr/lib/hailo-post-processes``.
+The recipe compiles and copies the post processes to ``/usr/lib/hailo-post-processes``.
 Deppends on opencv, xtensor, xtl, rapidjson and cxxopts.
+
+tappas-tracers
+^^^^^^^^^^^^^^
+Hailo's TAPPAS gstreamer tracers. Depends on ``libgsthailo`` and GStreamer.
+The source files located in the TAPPAS release under ``core/hailo/tracers``.
+The recipe compiles with meson and copies the ``libgstsharktracers.so`` file to ``/usr/lib/gstreamer-1.0`` 
+on the target device's root file system.
+
+For instructions on how to use the tracers on a yocto built machine, see `debugging <../write_your_own_application/debugging.rst>`_\ 
+
+
+Troubleshooting
+---------------
+
+1. The device does not appear on lspci
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the device does not appear after running lspci, there may be two possible reasons:
+
+*
+   Symptom:
+   
+   The device is not connected correctly
+
+*
+   Symptom:
+
+   The u-boot device tree does not support pcie.
+
+   Solution:
+
+   To fix this, replace the ftd_file you are using on u-boot.
+
+   .. code-block:: sh
+
+      setenv fdt_file imx6q-sabresd-pcie.dtb
+
+
+2. HDMI port is connected but there is no display
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Symptom:
+
+On some imx devices you need to manually configure the u-boot to show video using HDMI port.
+
+Solution:
+
+To fix this issue you should set the u-boot to use HDMI port, defining the resolution, FPS and output format.
+The configuration is "added" (do not override this) to the mmcargs:
+
+For example on IMX6Q-Sabresd, this the default value of mmargs:
+
+   .. code-block:: sh
+
+      mmcargs="setenv bootargs console=${console},${baudrate} ${smp} root=${mmcroot}"
+
+Using this command we add the needed info to this variable:
+
+   .. code-block:: sh
+   
+      setenv mmcargs "setenv bootargs console=${console},${baudrate} ${smp} root=${mmcroot} video=mxcfb0:dev=hdmi,1280x720M@30,if=RGB24"

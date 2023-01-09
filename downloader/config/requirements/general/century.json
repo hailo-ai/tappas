@@ -2,14 +2,14 @@
   "path": "apps/gstreamer/general/century/resources",
   "requirements": [
     {
-      "bucket": "model_zoo",
-      "source": "general/hefs/yolox_l_leaky.hef",
-      "destination": "yolovx_l_leaky.hef"
+        "bucket": "model_zoo",
+        "source": "general/hefs/yolov5m_wo_spp_60p.hef",
+        "destination": "yolov5m_wo_spp_60p.hef"
     },
     {
       "bucket": "tappas",
-      "source": "general/media/detection.mp4",
-      "destination": "detection.mp4"
+      "source": "general/media/detection_5m.mp4",
+      "destination": "detection_5m.mp4"
     }
   ]
 }

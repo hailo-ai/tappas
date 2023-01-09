@@ -49,12 +49,15 @@ function init_variables() {
     stats_element=""
     debug_stats_export=""
     sync_pipeline=true
+    video_sink="fpsdisplaysink video-sink=$video_sink_element text-overlay=false "
     device_id_prop=""
     tee_name="context_tee"
     internal_offset=false
     pipeline_1=""
     licence_plate_json_config_path=$DEFAULT_LICENCE_PLATE_JSON_CONFIG_PATH 
     car_json_config_path=$DEFAULT_VEHICLE_JSON_CONFIG_PATH 
+    tcp_host=""
+    tcp_port=""
 }
 
 function print_help_if_needed() {
@@ -75,6 +78,7 @@ function print_usage() {
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
     echo "  --print-device-stats       Print the power and temperature measured"
+    echo "  --tcp-address              If specified, set the sink to a TCP client (expected format is 'host:port')"
     exit 0
 }
 
@@ -87,6 +91,10 @@ function parse_args() {
             device_id_prop="device_id=$hailo_bus_id"
             stats_element="hailodevicestats $device_id_prop"
             debug_stats_export="GST_DEBUG=hailodevicestats:5"
+        elif [ "$1" = "--tcp-address" ]; then
+            tcp_host=$(echo $2 | awk -F':' '{print $1}')
+            tcp_port=$(echo $2 | awk -F':' '{print $2}')
+            shift
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
             additonal_parameters="-v | grep -e hailo_display -e hailodevicestats"
@@ -102,13 +110,22 @@ function parse_args() {
 
 init_variables $@
 parse_args $@
+
+# Since tcp-address need to get the bitrate from the input file, it has to be after the parse_args completed
+if [[ -n "$tcp_host" && -n "$tcp_port" ]]; then
+    bitrate=$(python3 "$TAPPAS_WORKSPACE/scripts/misc/get_max_bitrate.py" -v "$input_source")
+    video_sink="queue name=queue_before_sink leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+                x264enc speed-preset=ultrafast bitrate=$bitrate ! \
+                queue max-size-bytes=0 max-size-time=0 ! matroskamux ! tcpclientsink host=$tcp_host port=$tcp_port" 
+fi
+
 source_element="filesrc location=$input_source name=src_0 ! decodebin"
 internal_offset=true
 
 function create_lp_detection_pipeline() {
     pipeline_1="queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                 hailocropper so-path=$LICENSE_PLATE_CROP_SO function-name=$LICENSE_PLATE_DETECTION_CROP_FUNC internal-offset=$internal_offset drop-uncropped-buffers=true name=cropper1 \
-                hailoaggregator name=agg1 flatten-detections=false \
+                hailoaggregator name=agg1 \
                 cropper1. ! \
                     queue leaky=no max-size-buffers=50 max-size-bytes=0 max-size-time=0 ! \
                 agg1. \
@@ -121,7 +138,7 @@ function create_lp_detection_pipeline() {
                 agg1. \
                 agg1. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                 hailocropper so-path=$LICENSE_PLATE_CROP_SO function-name=$LICENSE_PLATE_OCR_CROP_FUNC internal-offset=$internal_offset drop-uncropped-buffers=true name=cropper2 \
-                hailoaggregator name=agg2 flatten-detections=false \
+                hailoaggregator name=agg2 \
                 cropper2. ! \
                     queue leaky=no max-size-buffers=50 max-size-bytes=0 max-size-time=0 ! \
                 agg2. \
@@ -144,7 +161,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$VEHICLE_DETECTION_POST_SO function-name=$VEHICLE_DETECTION_POST_FUNC config-path=$car_json_config_path qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailotracker name=hailo_tracker keep-past-metadata=false kalman-dist-thr=.5 iou-thr=.6 keep-tracked-frames=2 keep-lost-frames=2 ! \
+    hailotracker name=hailo_tracker keep-past-metadata=true kalman-dist-thr=.5 iou-thr=.6 keep-tracked-frames=2 keep-lost-frames=2 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     tee name=$tee_name \
     $tee_name. ! \
@@ -154,7 +171,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     hailooverlay line-thickness=3 font-thickness=1 qos=false ! \
     hailofilter use-gst-buffer=true so-path=$LPR_OVERLAY qos=false ! \
     videoconvert ! \
-    fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false \
+    $video_sink name=hailo_display sync=$sync_pipeline \
     $tee_name. ! \
     $pipeline_1 ! \
     hailofilter use-gst-buffer=true so-path=$LPR_OCR_SINK qos=false ! \

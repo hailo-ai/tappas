@@ -113,7 +113,7 @@ fi
 # Detection section
 DETECTION_PIPELINE="\
         queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$hef_path is-active=true ! \
+        hailonet hef-path=$hef_path ! \
         queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
         hailofilter function-name=$postprocess_func_name so-path=$detection_postprocess_so qos=false ! \
         queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"
@@ -123,7 +123,7 @@ TILE_CROPPER_ELEMENT="hailotilecropper internal-offset=$internal_offset name=cro
 
 PIPELINE="gst-launch-1.0 $source_element ! \
     video/x-raw,pixel-aspect-ratio=1/1,format=RGB ! queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-    $TILE_CROPPER_ELEMENT hailotileaggregator iou-threshold=$iou_threshold name=agg \
+    $TILE_CROPPER_ELEMENT hailotileaggregator flatten-detections=true iou-threshold=$iou_threshold name=agg \
     cropper. ! queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! agg. \
     cropper. ! $DETECTION_PIPELINE ! agg. \
     agg. ! queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \

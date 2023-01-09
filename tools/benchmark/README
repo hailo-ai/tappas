@@ -1,0 +1,77 @@
+# Decode Benchmarks Tool
+
+## Possible Flags
+
+```bash
+$ ./benchmark.sh --help
+Benchmark - pipeline usage:
+
+Options:
+  --help                          Show this help
+ 
+  --video-prefix-path PATH        Video prefix path
+ 
+  --min-num-of-sources NUM        Setting number of sources to given input (Default is 1)
+  --max-num-of-sources NUM        Setting number of sources to given input (Default is 4)
+  --num-of-buffers NUM            Number of buffers for each stream (Default is 500)
+ 
+  --use-vaapi                     Whther to use vaapi decodeing or not
+  --no-display                    Whther to use display or not
+ 
+  --format FORMAT                 Required format
+ 
+  --add-video-scale               Add Video Scale
+  --scale-width NUM               Scale Width of each stream
+  --scale-height NUM              Scale Height of each stream
+
+```
+
+## Creating soft links
+
+We would begin by creating soft-links for files in three common resolution:
+
+```sh
+# 640x640 Video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/gstreamer/resources/mp4/detection.mp4 --output-prefix 640x640_video
+
+# 1280x720 Video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/gstreamer/resources/mp4/instance_segmentation.mp4 --output-prefix 1280x720_video
+
+# 1920x1080 Video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/gstreamer/resources/mp4/lpr_ayalon.mp4 --output-prefix 1920x1080_video
+```
+
+## Running the benchmarks
+
+```sh
+$ ./benchmark.sh --use-vaapi --no-display --add-video-scale --video-prefix-path 640x640_video --format RGBA --max-num-of-sources 8                                                                                                                                                                                  
+Num of sources: 1, Average FPS: -nan                                                                                                                                                   
+Num of sources: 2, Average FPS: -nan                                                                                                                                                   
+Num of sources: 3, Average FPS: 2268.17                                                                                                                                                
+Num of sources: 4, Average FPS: 2151.19                                                                                                                                                
+Num of sources: 5, Average FPS: 2180.49                                                                                                                                                
+Num of sources: 6, Average FPS: 2032.81                                                                                                                                                
+Num of sources: 7, Average FPS: 1960.4                                                                                                                                                 
+Num of sources: 8, Average FPS: 2020.77                                                                                                                                                
+
+$ ./benchmark.sh --use-vaapi --no-display --add-video-scale --video-prefix-path 1280x720_video --format RGBA --max-num-of-sources 8                                                                                      
+Num of sources: 1, Average FPS: 211.077
+Num of sources: 2, Average FPS: 332.512
+Num of sources: 3, Average FPS: 364.933
+Num of sources: 4, Average FPS: 363.073
+Num of sources: 5, Average FPS: 363.204
+Num of sources: 6, Average FPS: 367.545
+Num of sources: 7, Average FPS: 364.404
+Num of sources: 8, Average FPS: 355.913
+
+$ ./benchmark.sh --use-vaapi --no-display --add-video-scale --video-prefix-path 1920x1080_video --format RGBA --max-num-of-sources 8
+Num of sources: 1, Average FPS: 96.7667
+Num of sources: 2, Average FPS: 161.755
+Num of sources: 3, Average FPS: 173.417
+Num of sources: 4, Average FPS: 170.314
+Num of sources: 5, Average FPS: 164.752
+Num of sources: 6, Average FPS: 162.227
+Num of sources: 7, Average FPS: 159.741
+Num of sources: 8, Average FPS: 162.831
+
+```

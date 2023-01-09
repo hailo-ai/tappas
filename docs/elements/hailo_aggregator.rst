@@ -86,4 +86,4 @@ Hierarchy
      flatten-detections  : perform a 'flattening' functionality on the detection metadata 
                            when receiving each frame.
                            flags: readable, writable, changeable only in NULL or READY state
-                           Boolean. Default: true
+                           Boolean. Default: false

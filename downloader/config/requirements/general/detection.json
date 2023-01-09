@@ -12,7 +12,7 @@
       "destination": "yolov4_leaky.hef"
     },
     {
-      "bucket": "model_zoo",
+      "bucket": "tappas",
       "source": "general/hefs/yolov3.hef",
       "destination": "yolov3.hef"
     },

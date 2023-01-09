@@ -19,6 +19,7 @@ function init_variables() {
 
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
+    video_sink="fpsdisplaysink video-sink=$video_sink_element text-overlay=false"
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
     input_source=$DEFAULT_VIDEO_SOURCE
@@ -32,6 +33,8 @@ function init_variables() {
     debug_stats_export=""
     sync_pipeline=false
     device_id_prop=""
+    tcp_host=""
+    tcp_port=""
 }
 
 function print_help_if_needed() {
@@ -54,6 +57,7 @@ function print_usage() {
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
     echo "  --print-device-stats       Print the power and temperature measured"
+    echo "  --tcp-address              If specified, set the sink to a TCP client (expected format is 'host:port')"
     exit 0
 }
 
@@ -72,6 +76,7 @@ function parse_args() {
                 json_config_path="$RESOURCES_DIR/configs/yolov3.json"
             elif [ $2 == "mobilenet_ssd" ]; then
                 network_name="mobilenet_ssd"
+                batch_size="4"
                 hef_path="$RESOURCES_DIR/ssd_mobilenet_v1.hef"
                 postprocess_so="$POSTPROCESS_DIR/libmobilenet_ssd_post.so"
                 json_config_path="null"
@@ -99,6 +104,10 @@ function parse_args() {
         elif [ "$1" = "--input" ] || [ "$1" == "-i" ]; then
             input_source="$2"
             shift
+        elif [ "$1" = "--tcp-address" ]; then
+            tcp_host=$(echo $2 | awk -F':' '{print $1}')
+            tcp_port=$(echo $2 | awk -F':' '{print $2}')
+            shift
         else
             echo "Received invalid argument: $1. See expected arguments below:"
             print_usage
@@ -112,6 +121,14 @@ function parse_args() {
 init_variables $@
 parse_args $@
 
+# Since tcp-address need to get the bitrate from the input file, it has to be after the parse_args completed
+if [[ -n "$tcp_host" && -n "$tcp_port" ]]; then
+    bitrate=$(python3 "$TAPPAS_WORKSPACE/scripts/misc/get_max_bitrate.py" -v "$input_source")
+    video_sink="queue name=queue_before_sink leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+                x264enc speed-preset=ultrafast bitrate=$bitrate ! \
+                queue max-size-bytes=0 max-size-time=0 ! matroskamux ! tcpclientsink host=$tcp_host port=$tcp_port" 
+fi
+
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
     source_element="v4l2src device=$input_source name=src_0 ! videoflip video-direction=horiz"
@@ -121,15 +138,20 @@ fi
 
 PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     $source_element ! \
-    videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! videoconvert ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path $device_id_prop is-active=true batch-size=$batch_size ! \
+    videoscale qos=false n-threads=2 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    videoconvert n-threads=2 qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailooverlay ! \
-    videoconvert ! \
-    fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
+    hailooverlay qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    videoconvert n-threads=2 qos=false ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    $video_sink name=hailo_display sync=$sync_pipeline ${additonal_parameters}"
 
 echo "Running $network_name"
 echo ${PIPELINE}

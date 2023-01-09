@@ -25,7 +25,7 @@ The profiling tool provides 3 general features that can be used to debug the pip
   Graphic visualization - Shown above, gst-shark can generate a pipeline graph that shows how elements are connected and what caps were negotiated between them. This is a very convenient feature to look at the pipeline in a more comfortable way. The graph is generated at runtime so it is a great way to see and debug how elements were actually connected and what formats the data ended up in.
 
 * 
-  Plotting tool - a python script that generates a graph plot for each tracer metric enabled. This is a powerful tool to visualize each metric that can be used for deeper debugging.
+  Plotting tool - A python script that generates a graph plot for each tracer metric enabled. This is a powerful tool to visualize each metric that can be used for deeper debugging.
 
 Install
 -------
@@ -34,6 +34,10 @@ Our docker image already contains GstShark! If you decide to not use our Docker 
 
 Bash shortcuts
 --------------
+      
+.. note::
+    These shortcuts are only available if you are using the docker tappas installation, Otherwise, please refer to the following section: `Using GstShark in yocto-compiled images`_
+
 
 As part of our creation of the Docker image, we copy some convinet shortcuts to GstShark:
 
@@ -85,6 +89,48 @@ As part of our creation of the Docker image, we copy some convinet shortcuts to 
 
 Note that we added 4 functions: two sets, an unset, and a plot function. The set functions enable gst-shark by setting environment variables, the chief of which is GST_TRACERS. This enables the different trace hooks in the pipeline. The available tracers are listed in the echo command at the end of each set. You can enable any combination of the available tracers, just chain them together with a ';' (notice that the difference between gst_set_debug and gst_set_graphic is that gst_set_debug enables all tracers whereas gst_set_graphic only enables the graphic tracer that draws the pipeline graph). GST_SHARK_LOCATION and GST_DEBUG_DUMP_DOT_DIR set locations where the dump files are stored, the first sets where the tracer dumps are (used for gst-plot), and the latter where the dot file is saved (the graphic pipeline graph). Unset disables all tracers, and gst_plot_debug runs plot script.
 
+.. _Using GstShark in yocto-compiled images:
+
+Using GstShark in yocto-compiled images
+---------------------------------------
+Enable TAPPAS tracers:
+
+* 
+  Export the following environment variables:
+
+  .. code-block:: sh
+
+     export GST_SHARK_LOCATION=/tmp/profile
+     export GST_DEBUG="GST_TRACER:7"
+     export GST_DEBUG_NO_COLOR=1
+
+* 
+  Select the tracers by setting the GST_TRACERS environment variable to the list of tracers, seperated by ; as in the example:
+
+  .. code-block:: sh
+
+     export GST_TRACERS="scheduletime;bitrate;threadmonitor;numerator;buffer;detections"
+
+* 
+  You should export only some of the tracers, exporting too many tracers may fail the embedded device. All tracers explained: `Understanding GstShark tappas plotted graphs`_
+
+* 
+  If you want to save the output to a file, run the following command before running the app:
+
+  .. code-block:: sh
+
+     export GST_DEBUG_FILE=<file_path>
+
+* 
+  If you want to plot the tracers output, use a strong machine (not an embedded device) with a full tappas installation and copy there the output file, then run the following commands:
+    
+  .. code-block:: sh
+    
+     export GST_DEBUG_FILE=<file_path>
+     gst_plot_debug
+
+
+
 Using GstShark
 --------------
 
@@ -98,8 +144,18 @@ Let’s say you have a gstreamer app you want to profile. Start by enabling gst-
 
 Then just run your app. You can see all kinds of tracer prints on the debug output file: GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log.
 
+.. raw:: html
+
    <div align="left"><img src="../resources/tappas_traces_log.png"/></div>
-After you have run a gstreamer pipeline with tracers enabled, you can plot them using the plot script, just run: gst_plot_debug. It will print to the console the path of the html file that contains the plots. You can open it in your browser. In addition it will print the command to open the pipeline graph. You can run it in a terminal to open the graph.
+
+
+After you have run a gstreamer pipeline with tracers enabled, you can plot them using the plot script, just run: 
+
+.. code-block:: sh
+
+   gst_plot_debug
+
+It will print to the console the path of the html file that contains the plots. You can open it in your browser. In addition it will print the command to open the pipeline graph. You can run it in a terminal to open the graph.
 
 
 .. raw:: html
@@ -107,6 +163,11 @@ After you have run a gstreamer pipeline with tracers enabled, you can plot them 
    <div align="left"><img src="../resources/gst_plot_debug.png"/></div>
    <div align="left"><img src="../resources/graphs.gif"/></div>
 
+
+.. _Understanding GstShark tappas plotted graphs:
+
+Understanding GstShark tappas plotted graphs
+--------------------------------------------
 
 Each graph inspects a different metric of the pipeline, it is recommended to read more about what each one represents here:
 
@@ -173,6 +234,7 @@ Print the amount of frames that flow every 5 through the identity:
    GST_TRACERS="framerate(period=5,filter=identity);bitrate(period=3)" GST_DEBUG=GST_TRACER:7
 
 Good luck, happy hunting.
+
 
 Using gst-instruments
 ---------------------

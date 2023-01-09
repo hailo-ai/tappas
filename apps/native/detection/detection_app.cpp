@@ -1,248 +1,161 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 /**
  * @file detection_app_c_api.cpp
  * @brief This example demonstrates running inference with virtual streams using the Hailort's C API on yolov5m
  **/
 
-#include "hailo/hailort.h"
-#include "double_buffer.hpp"
-#include "bitmap_utils.hpp"
-#include "yolo_postprocess.hpp"
-#include "hailo_objects.hpp"
-#include "hailo_tensors.hpp"
+#include "detection_app.hpp"
 
-#include <algorithm>
-#include <future>
-#include <stdio.h>
-#include <stdlib.h>
-
-#define INPUT_COUNT (1)
-#define OUTPUT_COUNT (3)
-#define INPUT_FILES_COUNT (10)
-#define HEF_FILE ("yolov5m_wo_spp_60p.hef")
-#define CONFIG_FILE ("yolov5.json")
-#define YOLOV5M_IMAGE_WIDTH 640
-#define YOLOV5M_IMAGE_HEIGHT 640
-#define MAX_BOXES 50
-
-#define REQUIRE_ACTION(cond, action, label, ...)                \
-    do {                                                        \
-        if (!(cond)) {                                          \
-            std::cout << (__VA_ARGS__) << std::endl;            \
-            action;                                             \
-            goto label;                                         \
-        }                                                       \
-    } while(0)
-
-#define REQUIRE_SUCCESS(status, label, ...) REQUIRE_ACTION((HAILO_SUCCESS == (status)), , label, __VA_ARGS__)
-
-// Colors' names were taken from: https://en.wikipedia.org/wiki/Lists_of_colors
-static const std::pair<Color, std::string> g_colors[] = {
-        {Color(0x00,0xFF,0x00), "Green"},
-        {Color(0xFF,0x00,0x00), "Red"},
-        {Color(0x00,0x00,0xFF), "Blue"},
-        {Color(0x00,0xFF,0xFF), "Cyan"},
-        {Color(0xA5,0x2A,0x2A), "Brown"},
-        {Color(0xFF,0xD7,0x00), "Gold"},
-        {Color(0x40,0x40,0x40), "Blue"},
-        {Color(0xFF,0x00,0xFF), "Magenta"},
-        {Color(0xFF,0xA5,0x00), "Orange"},
-        {Color(0xFF,0xC0,0xCB), "Pink"},
-        {Color(0x8B,0x00,0x00), "Dark Red"},
-        {Color(0xAB,0x27,0x4F), "Amaranth purple"},
-        {Color(0x3B,0x7A,0x57), "Amazon"},
-        {Color(0xFF,0xBF,0x00), "Amber"},
-        {Color(0x3D,0xDC,0x84), "Android green"},
-        {Color(0xCD,0x95,0x75), "Antique brass"},
-        {Color(0x66,0x5D,0x1E), "Antique bronze"},
-        {Color(0x8D,0xB6,0x00), "Apple green"},
-        {Color(0xFB,0xCE,0xB1), "Apricot"},
-        {Color(0x8F,0x97,0x79), "Artichoke"},
-        {Color(0xA2,0xA2,0xD0), "Blue bell"},
-        {Color(0xD8,0x91,0xEF), "Bright lilac"},
-        {Color(0xC3,0x21,0x48), "Bright maroon"},
-        {Color(0xFF,0xAA,0x1D), "Bright yellow (Crayola)"},
-        {Color(0x00,0x42,0x25), "British racing green"},
-        {Color(0x88,0x54,0x0B), "Brown"},
-        {Color(0x80,0x00,0x20), "Burgundy"},
-        {Color(0xDE,0xB8,0x87), "Burlywood"},
-        {Color(0x5F,0x9E,0xA0), "Cadet blue"},
-        {Color(0xEF,0xBB,0xCC), "Cameo pink"},
-        {Color(0x59,0x27,0x20), "Caput mortuum"},
-        {Color(0xC4,0x1E,0x3A), "Cardinal"},
-        {Color(0xAC,0xE1,0xAF), "Celadon"},
-        {Color(0xF7,0xE7,0xCE), "Champagne"},
-        {Color(0x36,0x45,0x4F), "Charcoal"},
-        {Color(0x58,0x11,0x1A), "Chocolate Cosmos"},
-        {Color(0xFF,0xA7,0x00), "Chrome yellow"},
-        {Color(0x98,0x81,0x7B), "Cinereous"},
-        {Color(0XE3,0X42,0X34), "Cinnabar"},
-        {Color(0XE4,0XD0,0X0A), "Citrine"},
-        {Color(0X7F,0X17,0X34), "Claret"},
-        {Color(0XD2,0X69,0X1E), "Cocoa brown"},
-        {Color(0X6F,0X4E,0X37), "Coffee"},
-        {Color(0xB9,0xD9,0xEB), "Columbia Blue"},
-        {Color(0x8C,0x92,0xAC), "Cool grey"},
-        {Color(0xB8,0x73,0x33), "Cordovan"},
-        {Color(0x81,0x61,0x3C), "Coyote brown"},
-        {Color(0x01,0x32,0x20), "Dark green"},
-        {Color(0x1A,0x24,0x21), "Dark jungle green"},
-        {Color(0xBD,0xB7,0x6B), "Dark khaki"}};
-
-class FeatureData {
-public:
-    FeatureData(uint32_t buffers_size, float32_t qp_zp, float32_t qp_scale, uint32_t width, hailo_vstream_info_t vstream_info) :
-    m_buffers(buffers_size), m_qp_zp(qp_zp), m_qp_scale(qp_scale), m_width(width), m_vstream_info(vstream_info)
-    {}
-    static bool sort_tensors_by_size (std::shared_ptr<FeatureData> i, std::shared_ptr<FeatureData> j) { return i->m_width < j->m_width; };
-
-    DoubleBuffer m_buffers;
-    float32_t m_qp_zp;
-    float32_t m_qp_scale;
-    uint32_t m_width;
-    hailo_vstream_info_t m_vstream_info;
-};
 
 hailo_status create_feature(hailo_output_vstream vstream,
                             std::shared_ptr<FeatureData> &feature)
 {
     hailo_vstream_info_t vstream_info = {};
     auto status = hailo_get_output_vstream_info(vstream, &vstream_info);
-    if (HAILO_SUCCESS != status) {
+    if (HAILO_SUCCESS != status)
+    {
         std::cerr << "Failed to get output vstream info with status = " << status << std::endl;
         return status;
     }
 
     size_t output_frame_size = 0;
     status = hailo_get_output_vstream_frame_size(vstream, &output_frame_size);
-    if (HAILO_SUCCESS != status) {
+    if (HAILO_SUCCESS != status)
+    {
         std::cerr << "Failed getting output virtual stream frame size with status = " << status << std::endl;
         return status;
     }
 
     feature = std::make_shared<FeatureData>(static_cast<uint32_t>(output_frame_size), vstream_info.quant_info.qp_zp,
-        vstream_info.quant_info.qp_scale, vstream_info.shape.width, vstream_info);
+                                            vstream_info.quant_info.qp_scale, vstream_info.shape.width, vstream_info);
 
     return HAILO_SUCCESS;
 }
 
-hailo_status dump_detected_object(const HailoDetectionPtr &detection, std::ofstream &detections_file, const std::string &color)
+hailo_status dump_detected_object(const HailoDetectionPtr &detection, std::ofstream &detections_file)
 {
-    if (detections_file.fail()) {
+    if (detections_file.fail())
+    {
         return HAILO_FILE_OPERATION_FAILURE;
     }
 
     HailoBBox bbox = detection->get_bbox();
     detections_file << "Detection object name:          " << detection->get_label() << "\n";
-    detections_file << "Detection object color:         " << color << "\n";
     detections_file << "Detection object id:            " << detection->get_class_id() << "\n";
     detections_file << "Detection object confidence:    " << detection->get_confidence() << "\n";
-    detections_file << "Detection object Xmax:          " << bbox.xmax()*YOLOV5M_IMAGE_WIDTH << "\n";
-    detections_file << "Detection object Xmin:          " << bbox.xmin()*YOLOV5M_IMAGE_WIDTH << "\n";
-    detections_file << "Detection object Ymax:          " << bbox.ymax()*YOLOV5M_IMAGE_HEIGHT << "\n";
-    detections_file << "Detection object Ymin:          " << bbox.ymin()*YOLOV5M_IMAGE_HEIGHT << "\n" << std::endl;
+    detections_file << "Detection object Xmax:          " << bbox.xmax() * YOLOV5M_IMAGE_WIDTH << "\n";
+    detections_file << "Detection object Xmin:          " << bbox.xmin() * YOLOV5M_IMAGE_WIDTH << "\n";
+    detections_file << "Detection object Ymax:          " << bbox.ymax() * YOLOV5M_IMAGE_HEIGHT << "\n";
+    detections_file << "Detection object Ymin:          " << bbox.ymin() * YOLOV5M_IMAGE_HEIGHT << "\n"
+                    << std::endl;
 
     return HAILO_SUCCESS;
 }
 
-hailo_status draw(std::unique_ptr<BMPImage> &image, HailoROIPtr roi)
-{
-    hailo_status status = HAILO_SUCCESS;
-
-    //Get the detections
-    std::vector<HailoDetectionPtr> detections = hailo_common::get_hailo_detections(roi);
-    if (detections.size() == 0) {
-        std::cout << "No detections were found in file '" << image->name() << "'\n";
-        return HAILO_SUCCESS;
-    }
-
-    // Prepare output files
-    auto detections_file = OUTPUT_DIR_PATH + image->name() + "_detections.txt";
-    std::ofstream ofs(detections_file, std::ios::out);
-    if (ofs.fail()) {
-        std::cerr << "Failed opening output file: '" << detections_file << "'\n";  
-        status = HAILO_OPEN_FILE_FAILURE;
-    }
-    
-    uint32_t color_index = 0;
-    for (auto &detection : detections) {
-        if (0 == detection->get_confidence()) {
-            continue;
-        }
-
-        HailoBBox bbox = detection->get_bbox();
-        int xmax = std::clamp((int)(bbox.xmax()*YOLOV5M_IMAGE_WIDTH), 0, YOLOV5M_IMAGE_WIDTH - 1);
-        int xmin = std::clamp((int)(bbox.xmin()*YOLOV5M_IMAGE_WIDTH), 0, xmax - 1);
-        int ymax = std::clamp((int)(bbox.ymax()*YOLOV5M_IMAGE_HEIGHT), 0, YOLOV5M_IMAGE_HEIGHT - 1);
-        int ymin = std::clamp((int)(bbox.ymin()*YOLOV5M_IMAGE_HEIGHT), 0, ymax - 1);
-
-        static_assert((MAX_BOXES == sizeof(g_colors)/sizeof(g_colors[0])), "The size of g_colors array must be MAX_BOXES");
-        auto color_name_pair = g_colors[color_index];
-        image->draw_border(static_cast<uint32_t>(xmin),
-                           static_cast<uint32_t>(xmax),
-                           static_cast<uint32_t>(ymin),
-                           static_cast<uint32_t>(ymax),
-                           color_name_pair.first);
-
-        auto dump_status = dump_detected_object(detection, ofs, color_name_pair.second);
-        if (HAILO_SUCCESS != dump_status) {
-            status = dump_status;
-        }
-        color_index++;
-    }
-
-    return status;
-}
-
 hailo_status post_processing_all(std::vector<std::shared_ptr<FeatureData>> &features, const size_t frames_count,
-    std::vector<std::unique_ptr<BMPImage>> &input_images)
+                                 std::vector<HailoRGBMat> &input_images)
 {
     auto status = HAILO_SUCCESS;
 
-    YoloParams * init_params = init(CONFIG_FILE);
+    YoloParams *init_params = init(CONFIG_FILE, "yolov5");
 
     std::sort(features.begin(), features.end(), &FeatureData::sort_tensors_by_size);
-    for (size_t i = 0; i < frames_count; i++) {
+    for (size_t i = 0; i < frames_count; i++)
+    {
 
         // Gather the features into HailoTensors in a HailoROIPtr
         HailoROIPtr roi = std::make_shared<HailoROI>(HailoROI(HailoBBox(0.0f, 0.0f, 1.0f, 1.0f)));
         for (uint j = 0; j < features.size(); j++)
             roi->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(features[j]->m_buffers.get_read_buffer().data()), features[j]->m_vstream_info));
-        
+
         // Perform the actual postprocess
         yolov5(roi, init_params);
-    
-        for (auto &feature : features) {
+
+        for (auto &feature : features)
+        {
             feature->m_buffers.release_read_buffer();
         }
 
-        // Draw the results
-        auto draw_status = draw(input_images[i], roi);
-        if (HAILO_SUCCESS != draw_status) {
-            std::cerr << "Failed drawing detecftions on image '" << input_images[i]->name() << "'. Got status "<< draw_status << "\n";
-            status = draw_status;
-        }
+        status = write_txt_file(roi, input_images[i].get_name());
 
-        // Dump the image
-        auto dump_image_status = input_images[i]->dump_image();
-        if (HAILO_SUCCESS != draw_status) {
-            std::cerr << "Failed dumping image '" << input_images[i]->name() << "'. Got status "<< dump_image_status << "\n";
-            status = dump_image_status;
+        status = write_image(input_images[i], roi);
+    }
+    return status;
+}
+
+hailo_status write_image(HailoRGBMat &image, HailoROIPtr roi)
+{
+    std::string file_name = image.get_name();
+    // Draw the results
+    auto draw_status = draw_all(image, roi, true);
+    if (OVERLAY_STATUS_OK != draw_status)
+    {
+        std::cerr << "Failed drawing detections on image '" << file_name << "'. Got status " << draw_status << "\n";
+    }
+
+    // convert back to BGR
+    cv::Mat write_mat;
+    cv::cvtColor(image.get_mat(), write_mat, cv::COLOR_RGB2BGR);
+
+    // write to file
+    auto write_status = cv::imwrite("output_images/" + file_name + ".bmp", write_mat);
+    if (true != write_status)
+    {
+        std::cerr << "Failed dumping image '" << file_name << std::endl;
+        return HAILO_FILE_OPERATION_FAILURE;
+    }
+    return HAILO_SUCCESS;
+}
+
+hailo_status write_txt_file(HailoROIPtr roi, std::string file_name)
+{
+    std::vector<HailoDetectionPtr> detections = hailo_common::get_hailo_detections(roi);
+    hailo_status status = HAILO_SUCCESS;
+
+    // check if detections were found
+    if (detections.size() == 0)
+    {
+        std::cout << "No detections were found in file '" << file_name << "'\n";
+        return status;
+    }
+
+    // Prepare output files
+    auto detections_file = "output_images/" + file_name + "_detections.txt";
+    std::ofstream ofs(detections_file, std::ios::out);
+    if (ofs.fail())
+    {
+        std::cerr << "Failed opening output file: '" << detections_file << "'\n";
+        return HAILO_OPEN_FILE_FAILURE;
+    }
+
+    // write detections info in the text file
+    for (auto &detection : detections)
+    {
+        if (0 == detection->get_confidence())
+        {
+            continue;
+        }
+        status = dump_detected_object(detection, ofs);
+        if (HAILO_SUCCESS != status)
+        {
+            std::cerr << "Failed dumping detected object in output file: '" << detections_file << "'\n";
         }
     }
     return status;
 }
 
-hailo_status write_all(hailo_input_vstream input_vstream, const std::vector<std::unique_ptr<BMPImage>> &input_images)
+hailo_status write_all(hailo_input_vstream input_vstream, std::vector<HailoRGBMat> &input_images)
 {
-    for (auto &input_image : input_images) {
-        const auto &input_data = input_image->get_data();
-        hailo_status status = hailo_vstream_write_raw_buffer(input_vstream, input_data.data(), input_data.size());
-        if (HAILO_SUCCESS != status) {
-            std::cerr << "Failed writing to device data of image '" << input_image->name() << "'. Got status = " <<  status << std::endl;
+    for (auto &input_image : input_images)
+    {
+        auto image_mat = input_image.get_mat();
+        hailo_status status = hailo_vstream_write_raw_buffer(input_vstream, image_mat.data, image_mat.total() * image_mat.elemSize());
+        if (HAILO_SUCCESS != status)
+        {
+            std::cerr << "Failed writing to device data of image '" << input_image.get_name() << "'. Got status = " << status << std::endl;
             return status;
         }
     }
@@ -251,13 +164,15 @@ hailo_status write_all(hailo_input_vstream input_vstream, const std::vector<std:
 
 hailo_status read_all(hailo_output_vstream output_vstream, const size_t frames_count, std::shared_ptr<FeatureData> feature)
 {
-    for (size_t i = 0; i < frames_count; i++) {
+    for (size_t i = 0; i < frames_count; i++)
+    {
         auto &buffer = feature->m_buffers.get_write_buffer();
         hailo_status status = hailo_vstream_read_raw_buffer(output_vstream, buffer.data(), buffer.size());
         feature->m_buffers.release_write_buffer();
 
-        if (HAILO_SUCCESS != status) {
-            std::cerr << "Failed reading with status = " <<  status << std::endl;
+        if (HAILO_SUCCESS != status)
+        {
+            std::cerr << "Failed reading with status = " << status << std::endl;
             return status;
         }
     }
@@ -265,16 +180,18 @@ hailo_status read_all(hailo_output_vstream output_vstream, const size_t frames_c
 }
 
 hailo_status run_inference_threads(hailo_input_vstream input_vstream, hailo_output_vstream *output_vstreams,
-    const size_t output_vstreams_size, std::vector<std::unique_ptr<BMPImage>> &input_images)
+                                   const size_t output_vstreams_size, std::vector<HailoRGBMat> &input_images)
 {
     // Create features data to be used for post-processing
     std::vector<std::shared_ptr<FeatureData>> features;
 
     features.reserve(output_vstreams_size);
-    for (size_t i = 0; i < output_vstreams_size; i++) {
+    for (size_t i = 0; i < output_vstreams_size; i++)
+    {
         std::shared_ptr<FeatureData> feature(nullptr);
         auto status = create_feature(output_vstreams[i], feature);
-        if (HAILO_SUCCESS != status) {
+        if (HAILO_SUCCESS != status)
+        {
             std::cerr << "Failed creating feature with status = " << status << std::endl;
             return status;
         }
@@ -286,7 +203,8 @@ hailo_status run_inference_threads(hailo_input_vstream input_vstream, hailo_outp
     const size_t frames_count = input_images.size();
     std::vector<std::future<hailo_status>> output_threads;
     output_threads.reserve(output_vstreams_size);
-    for (size_t i = 0; i < output_vstreams_size; i++) {
+    for (size_t i = 0; i < output_vstreams_size; i++)
+    {
         output_threads.emplace_back(std::async(read_all, output_vstreams[i], frames_count, features[i]));
     }
 
@@ -298,24 +216,29 @@ hailo_status run_inference_threads(hailo_input_vstream input_vstream, hailo_outp
 
     // End threads
     hailo_status out_status = HAILO_SUCCESS;
-    for (size_t i = 0; i < output_threads.size(); i++) {
+    for (size_t i = 0; i < output_threads.size(); i++)
+    {
         auto status = output_threads[i].get();
-        if (HAILO_SUCCESS != status) {
+        if (HAILO_SUCCESS != status)
+        {
             out_status = status;
         }
     }
     auto input_status = input_thread.get();
     auto pp_status = pp_thread.get();
 
-    if (HAILO_SUCCESS != input_status) {
+    if (HAILO_SUCCESS != input_status)
+    {
         std::cerr << "Write thread failed with status " << input_status << std::endl;
         return input_status;
     }
-    if (HAILO_SUCCESS != out_status) {
+    if (HAILO_SUCCESS != out_status)
+    {
         std::cerr << "Read failed with status " << out_status << std::endl;
         return out_status;
     }
-    if (HAILO_SUCCESS != pp_status) {
+    if (HAILO_SUCCESS != pp_status)
+    {
         std::cerr << "Post-processing failed with status " << pp_status << std::endl;
         return pp_status;
     }
@@ -325,7 +248,7 @@ hailo_status run_inference_threads(hailo_input_vstream input_vstream, hailo_outp
     return HAILO_SUCCESS;
 }
 
-hailo_status infer(std::vector<std::unique_ptr<BMPImage>> &input_images)
+hailo_status infer(std::vector<HailoRGBMat> &input_images)
 {
     hailo_status status = HAILO_UNINITIALIZED;
     hailo_device device = NULL;
@@ -355,15 +278,15 @@ hailo_status infer(std::vector<std::unique_ptr<BMPImage>> &input_images)
     REQUIRE_ACTION(network_group_size == 1, status = HAILO_INVALID_ARGUMENT, l_release_hef, "Invalid network group size");
 
     status = hailo_make_input_vstream_params(network_group, true, HAILO_FORMAT_TYPE_AUTO,
-        input_vstream_params, &input_vstreams_size);
+                                             input_vstream_params, &input_vstreams_size);
     REQUIRE_SUCCESS(status, l_release_hef, "Failed making input virtual stream params");
 
     status = hailo_make_output_vstream_params(network_group, true, HAILO_FORMAT_TYPE_AUTO,
-        output_vstream_params, &output_vstreams_size);
+                                              output_vstream_params, &output_vstreams_size);
     REQUIRE_SUCCESS(status, l_release_hef, "Failed making output virtual stream params");
 
     REQUIRE_ACTION(((input_vstreams_size == INPUT_COUNT) || (output_vstreams_size == OUTPUT_COUNT)),
-        status = HAILO_INVALID_OPERATION, l_release_hef, "Expected one input vstream and three outputs vstreams");
+                   status = HAILO_INVALID_OPERATION, l_release_hef, "Expected one input vstream and three outputs vstreams");
 
     status = hailo_create_input_vstreams(network_group, input_vstream_params, input_vstreams_size, input_vstreams);
     REQUIRE_SUCCESS(status, l_release_hef, "Failed creating input virtual streams");
@@ -392,18 +315,49 @@ l_exit:
     return status;
 }
 
+hailo_status get_images(std::vector<HailoRGBMat> &input_images, const size_t inputs_count, int image_width, int image_height)
+{
+    for (uint32_t i = 0; i < inputs_count; i++)
+    {
+        std::string file_name = "image" + std::to_string(i);
+        std::string file_path = "input_images/" + file_name + ".bmp";
+        cv::Mat bgr_mat = cv::imread(file_path);
+        if (bgr_mat.empty())
+        {
+            std::cerr << "Failed reading file: " << file_path << std::endl;
+            return HAILO_OPEN_FILE_FAILURE;
+        }
+
+        // Validate input image match the yolov5 net
+        if ((image_width != bgr_mat.cols) || (image_height != bgr_mat.rows))
+        {
+            std::cerr << "Input image '" << file_path << "' has the wrong size! Size should be" << image_width << "x" << image_height << ", received: " << bgr_mat.cols << "x" << bgr_mat.rows << std::endl;
+            return HAILO_INVALID_ARGUMENT;
+        }
+
+        // convert mat to rgb and save cv::mat as HailoRGBMat
+        cv::Mat rgb_mat;
+        cv::cvtColor(bgr_mat, rgb_mat, cv::COLOR_BGR2RGB);
+        HailoRGBMat image = HailoRGBMat(rgb_mat, file_name);
+        input_images.emplace_back(image);
+    }
+    return HAILO_SUCCESS;
+}
+
 int main()
 {
-    std::vector<std::unique_ptr<BMPImage>> input_images;
+    std::vector<HailoRGBMat> input_images;
     input_images.reserve(INPUT_FILES_COUNT);
-    auto status = BMPImage::get_images(input_images, INPUT_FILES_COUNT, YOLOV5M_IMAGE_WIDTH, YOLOV5M_IMAGE_HEIGHT);
-    if (HAILO_SUCCESS != status) {
+    auto status = get_images(input_images, INPUT_FILES_COUNT, YOLOV5M_IMAGE_WIDTH, YOLOV5M_IMAGE_HEIGHT);
+    if (HAILO_SUCCESS != status)
+    {
         std::cerr << "get_images() failed to with status = " << status << std::endl;
         return status;
     }
-    
+
     status = infer(input_images);
-    if (HAILO_SUCCESS != status) {
+    if (HAILO_SUCCESS != status)
+    {
         std::cerr << "Inference failed with status = " << status << std::endl;
         return status;
     }

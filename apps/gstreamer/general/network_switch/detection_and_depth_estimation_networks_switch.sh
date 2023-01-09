@@ -26,7 +26,7 @@ function init_variables() {
 
     input_source=$DEFAULT_VIDEO
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
-    sync_pipeline=true
+    sync_pipeline=false
     additonal_parameters=""
     json_config_path=$DEFAULT_DETECTION_JSON_CONFIG_PATH 
 }
@@ -77,33 +77,51 @@ parse_args $@
 # If the video provided is from a camera
 if [[ $input_source =~ "/dev/video" ]]; then
     source_element="v4l2src device=$input_source name=src_0 ! videoflip video-direction=horiz"
+    sync_pipeline=true
 else
     source_element="filesrc location=$input_source name=src_0 ! decodebin"
 fi
 
+DETECTION_PIPELINE="\
+        videoscale n-threads=2 qos=false ! video/x-raw, width=640, height=640 ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailonet hef-path=$DETECTION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailofilter so-path=$DETECTION_POST_SO config-path=$json_config_path function-name=$DETECTION_POST_FUNC qos=false ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailooverlay qos=false ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        videoconvert n-threads=2 qos=false ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        fpsdisplaysink video-sink=$video_sink_element name=hailo_display2 sync=$sync_pipeline text-overlay=false"
+
+DEPTH_ESTIMATION_PIPELINE="\
+        aspectratiocrop aspect-ratio=1/1 ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        videoscale qos=false ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailonet hef-path=$DEPTH_ESTIMATION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailofilter so-path=$DEPTH_ESTIMATION_POST_SO qos=false ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailooverlay mask-overlay-n-threads=2 qos=false ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        videoscale qos=false ! video/x-raw, width=400, height=400 ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        videoconvert n-threads=2 qos=false ! \
+        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
+
 PIPELINE="gst-launch-1.0 \
     $source_element ! \
-    videoconvert ! video/x-raw ! \
+    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    videoconvert n-threads=2 qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     tee name=t \
-    t. ! videoscale qos=false ! \
-        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-            hailonet hef-path=$DETECTION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
-            queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-            hailofilter so-path=$DETECTION_POST_SO config-path=$json_config_path function-name=$DETECTION_POST_FUNC qos=false ! \
-        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailooverlay qos=false ! \
-        videoconvert ! \
-        fpsdisplaysink video-sink=$video_sink_element name=hailo_display2 sync=$sync_pipeline text-overlay=false \
-    t. ! videoscale qos=false ! \
-        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-            hailonet hef-path=$DEPTH_ESTIMATION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
-            queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-            hailofilter so-path=$DEPTH_ESTIMATION_POST_SO qos=false ! \
-        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailooverlay qos=false ! \
-        videoconvert ! \
-        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false ${additonal_parameters}"
+    t. ! \
+        $DETECTION_PIPELINE
+    t. ! \
+        $DEPTH_ESTIMATION_PIPELINE"
 
 echo "Running License Plate Recognition"
 echo ${PIPELINE}

@@ -99,7 +99,7 @@ HailoRT Stream Multiplexer example
 How to use Retraining to replace models
 ---------------------------------------
 
-.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+.. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
 You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
 that are trained on your own dataset:

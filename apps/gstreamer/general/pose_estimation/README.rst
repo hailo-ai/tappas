@@ -49,15 +49,15 @@ Models
 * ``centerpose_regnetx_1.6gf_fpn``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/centerpose_regnetx_1.6gf_fpn.yaml
 * ``centerpose_repvgg_a0``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/centerpose_repvgg_a0.yaml
 
-How it works?
--------------
+How does it work?
+-----------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_
 
 How to use Retraining to replace models
 ---------------------------------------
 
-.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+.. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
 You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
 that are trained on your own dataset:
@@ -68,5 +68,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
+    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
       with your new paremeters, then recompile to create ``libcenterpose_post.so``

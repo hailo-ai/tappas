@@ -15,6 +15,16 @@
       "bucket": "tappas",
       "source": "general/media/instance_segmentation.mp4",
       "destination": "instance_segmentation.mp4"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/yolov5m_wo_spp_60p.hef",
+      "destination": "yolov5m_wo_spp_60p.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/mspn_regnetx_800mf.hef",
+      "destination": "mspn_regnetx_800mf.hef"
     }
   ]
 }

@@ -89,7 +89,7 @@ PIPELINE="gst-launch-1.0 \
     tee name=t ! \
     queue ! videoscale ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path batch-size=$batch_size vdevice-key=$vdevice_key is-active=true net-name=$pose_estimation_net_name ! \
+    hailonet hef-path=$hef_path is-active=true scheduling-algorithm=0 batch-size=$batch_size vdevice-key=$vdevice_key net-name=$pose_estimation_net_name ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$pose_estimation_post_so function-name=centerpose_merged qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -97,7 +97,7 @@ PIPELINE="gst-launch-1.0 \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display_pose sync=false text-overlay=false \
     t. ! \
     videoscale ! queue ! \
-    hailonet hef-path=$hef_path batch-size=$batch_size vdevice-key=$vdevice_key is-active=true net-name=$detection_net_name ! \
+    hailonet hef-path=$hef_path is-active=true scheduling-algorithm=0 batch-size=$batch_size vdevice-key=$vdevice_key net-name=$detection_net_name ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$detection_post_so config-path=$json_config_path function-name=yolov5 qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

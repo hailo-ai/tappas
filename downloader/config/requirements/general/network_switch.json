@@ -2,7 +2,7 @@
   "path": "apps/gstreamer/general/network_switch/resources",
   "requirements": [
     {
-      "bucket": "model_zoo",
+      "bucket": "tappas",
       "source": "general/hefs/yolov5s.hef",
       "destination": "yolov5s.hef"
     },

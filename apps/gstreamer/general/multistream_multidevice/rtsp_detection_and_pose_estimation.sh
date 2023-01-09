@@ -32,9 +32,12 @@ function init_variables() {
     gst_top_command=""
     additonal_parameters=""
     rtsp_sources=""
+    screen_width=0
+    screen_height=0
+    fpsdisplaysink_elemet=""
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=300 sink_1::ypos=0 sink_2::xpos=600 sink_2::ypos=0 sink_3::xpos=900 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=300 sink_5::xpos=300 sink_5::ypos=300 sink_6::xpos=600 sink_6::ypos=300 sink_7::xpos=900 sink_7::ypos=300"
     print_gst_launch_only=false
-    decode_scale_elements="decodebin ! queue leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! videoscale n-threads=8 ! video/x-raw,pixel-aspect-ratio=1/1"
+    decode_scale_elements="decodebin ! queue leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! videoscale n-threads=2 ! video/x-raw,pixel-aspect-ratio=1/1"
     json_config_path=$DEFAULT_JSON_CONFIG_PATH 
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
@@ -93,44 +96,65 @@ function create_rtsp_sources() {
         rtsp_sources+="rtspsrc location=$src_name name=source_$n message-forward=true ! \
                           rtph264depay ! \
                           queue name=hailo_preprocess_q_$n leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-                          $decode_scale_elements ! videoconvert n-threads=8 ! \
+                          $decode_scale_elements ! \
+                          queue name=hailo_preconvert_q_$n leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
+                          videoconvert n-threads=2 ! \
                           video/x-raw,pixel-aspect-ratio=1/1 ! \
-                          fun.sink_$n sid.src_$n ! \
+                          fun.sink_$n disp_router.src_$n ! \
                           queue name=comp_q_$n leaky=downstream max-size-buffers=500 max-size-bytes=0 max-size-time=0 ! \
                           comp.sink_$n "
+
+        streamrouter_disp_element+=" src_$n::input-streams=\"<sink_$n>\""
     done
+}
+
+function configure_fpsdisplaysink_element() {
+    ubuntu_version=$(lsb_release -r | awk '{print $2}' | awk -F'.' '{print $1}')
+
+    if [ $ubuntu_version -eq 22 ]; then
+        fpsdisplaysink_elemet="fpsdisplaysink video-sink='$video_sink_element window-width=$screen_width window-height=$screen_height'"
+    else
+        fpsdisplaysink_elemet="fpsdisplaysink video-sink='$video_sink_element' window-width=$screen_width window-height=$screen_height"
+    fi
+    fpsdisplaysink_elemet+=" name=hailo_display sync=false text-overlay=false"
+}
+
+function determine_screen_size() {
+    screen_width=(4 * $STREAM_DISPLAY_SIZE)
+    if [ "$num_of_src" -lt "4" ]; then
+        screen_width=($num_of_src * $STREAM_DISPLAY_SIZE)
+    fi
+    screen_height=($(($num_of_src+3)) / $STREAM_DISPLAY_SIZE*4)
 }
 
 function main() {
     init_variables $@
     parse_args $@
 
-    # determine screen size
-    ((screen_width = (4 * $STREAM_DISPLAY_SIZE)))
-    if [ "$num_of_src" -lt "4" ]; then
-        ((screen_width = (num_of_src * $STREAM_DISPLAY_SIZE)))
-    fi
-    ((screen_height = (num_of_src + 3) / 4 * $STREAM_DISPLAY_SIZE))
-
+    streamrouter_disp_element="hailostreamrouter name=disp_router"
     create_rtsp_sources
 
+    determine_screen_size
+    configure_fpsdisplaysink_element
+
     pipeline="$gst_top_command gst-launch-1.0 \
-         funnel name=fun ! queue name=hailo_pre_split leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
+         hailoroundrobin funnel-mode=true name=fun ! video/x-raw, width=640, height=640 ! \
+         queue name=hailo_pre_split leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
          hailomuxer name=hailomuxer ! queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-         hailooverlay qos=false ! videoscale n-threads=8 ! video/x-raw,width=300,height=300 ! streamiddemux name=sid \
+         hailooverlay qos=false ! videoscale n-threads=8 ! video/x-raw,width=300,height=300 ! $streamrouter_disp_element \
          splitter. ! queue name=hailo_pre_infer_q_1 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-         hailonet hef-path=$DETECTION_HEF_PATH is-active=true ! \
+         hailonet hef-path=$DETECTION_HEF_PATH scheduling-algorithm=0 is-active=true ! \
          queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailofilter so-path=$DETECTION_POSTPROCESS_SO config-path=$json_config_path function-name=$DETECTION_POSTPROCESS_FUNCTION_NAME qos=false ! \
          hailomuxer. \
          splitter. ! queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-         hailonet hef-path=$POSE_ESTIMATION_HEF_PATH is-active=true ! \
+         hailonet hef-path=$POSE_ESTIMATION_HEF_PATH scheduling-algorithm=0 is-active=true ! \
          queue name=hailo_postprocess1 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailofilter so-path=$POSE_ESTIMATION_POSTPROCESS_SO function-name=$POSE_ESTIMATION_POSTPROCESS_FUNCTION_NAME qos=false ! \
          hailomuxer. \
          compositor name=comp start-time-selection=0 $compositor_locations ! \
-         queue leaky=downstream max-size-buffers=1 max-size-bytes=0 max-size-time=0 ! videoscale n-threads=8 name=disp_scale ! video/x-raw,width=$screen_width,height=$screen_height ! \
-         fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false window-width=$screen_width window-height=$screen_height \
+         queue leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! videoscale n-threads=8 name=disp_scale ! video/x-raw,width=$screen_width,height=$screen_height ! \
+         $fpsdisplaysink_elemet \
          $rtsp_sources ${additonal_parameters}"
 
     echo ${pipeline}

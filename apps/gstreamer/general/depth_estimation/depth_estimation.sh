@@ -73,19 +73,28 @@ else
 fi
 
 PIPELINE="gst-launch-1.0 \
-    $source_element ! queue ! videoconvert ! queue ! \
-    tee name=t ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    aspectratiocrop aspect-ratio=1/1 ! queue ! videoscale ! queue ! \
-    hailonet hef-path=$hef_path is-active=true ! \
+    $source_element ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter so-path=$post_so qos=false ! videoconvert ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailooverlay qos=false ! \
-    queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoconvert ! fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
-    t. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoscale ! video/x-raw, width=300, height=300 ! queue ! videoconvert ! \
-    $video_sink_element sync=false ${additonal_parameters}"
+    videoconvert qos=false ! video/x-raw, format=RGB ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    aspectratiocrop aspect-ratio=1/1 ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    videoscale qos=false ! \
+    queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+    tee name=t ! \
+        queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailonet hef-path=$hef_path ! \
+        queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailofilter so-path=$post_so qos=false ! \
+        queue name=pre_overlay_q max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        hailooverlay mask-overlay-n-threads=1 qos=false ! \
+        queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        videoconvert qos=false ! \
+        queue max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
+    t. ! \
+        videoconvert qos=false ! \
+        $video_sink_element sync=false ${additonal_parameters}"
 
 echo "Running"
 echo ${PIPELINE}

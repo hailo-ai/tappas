@@ -140,7 +140,7 @@ fi
 PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     $source_element ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path $device_id_prop is-active=true batch-size=$batch_size ! \
+    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name config-path=$json_config_path so-path=$postprocess_so qos=false ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \

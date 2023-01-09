@@ -116,14 +116,14 @@ fi
 FACE_DETECTION_PIPELINE="videoscale n-threads=4 qos=false ! \
     queue max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailonet net-name=joined_lightface_slim_tddfa_mobilenet_v1/lightface_slim \
-    hef-path=$hef_path is-active=true vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hef-path=$hef_path is-active=true scheduling-algorithm=0 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$detection_postprocess_so function-name=lightface qos=false ! \
     queue max-size-buffers=3 max-size-bytes=0 max-size-time=0"
 
 FACIAL_LANDMARKS_PIPELINE="queue max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailonet net-name=joined_lightface_slim_tddfa_mobilenet_v1/tddfa_mobilenet_v1 \
-    hef-path=$hef_path is-active=true vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hef-path=$hef_path is-active=true scheduling-algorithm=0 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=facial_landmarks_merged so-path=$landmarks_postprocess_so qos=false ! \
     queue max-size-buffers=3 max-size-bytes=0 max-size-time=0"

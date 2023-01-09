@@ -7,6 +7,7 @@ Where should I start?
 
 That's a great question! Hailo provides a `Sanity Pipeline <sanity_pipeline/README.rst>`_ that helps you verify that the installation phase went well. This is a good starting point.
 
+.. important:: Example applications performance varies on different hosts (affected by the host's processing power and throughput).
 
 #. `Sanity Pipeline <sanity_pipeline/README.rst>`_ - Helps you verify that all the required components are installed correctly
 #. `Detection <detection/README.rst>`_ - single-stream object detection pipeline on top of GStreamer using the Hailo-8 device.
@@ -26,3 +27,4 @@ That's a great question! Hailo provides a `Sanity Pipeline <sanity_pipeline/READ
 #. `Python <python/README.rst>`_ - Classification app using ``resnet_v1_50`` with python post-processing.
 #. `License Plate Recognition <license_plate_recognition/README.rst>`_ - LPR app using ``yolov5m`` vehicle detection, ``tiny-yolov4`` license plate detection, and ``lprnet`` OCR extraction with Hailonet network-switch capability.
 #. `Multi Person Multi Camera Tracking Pipeline <multi_person_multi_camera_tracking/README.rst>`_ - Tracking persons across multiple streams.
+#. `Century Pipeline <century/README.rst>`_ - Detection Pipeline with multiple devices.

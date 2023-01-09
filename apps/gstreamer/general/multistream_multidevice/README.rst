@@ -6,7 +6,7 @@ Overview
 --------
 
 This GStreamer pipeline demonstrates object detection on 8 camera streams over RTSP protocol.
-This pipeline also demostrates using two hailo8 devices in parallel.
+This pipeline also demonstrates using two hailo8 devices in parallel.
 
 All the streams are processed in parallel through the decode and scale phases, and enter the Hailo devices frame by frame.
 **Each** hailo device is in charge of one inference task (one for yolov5 and the other for centerpose)
@@ -21,7 +21,7 @@ Prerequisites
 
 
 * TensorPC
-* Ubuntu 18.04
+* Ubuntu 20.04
 * `RTSP <../../../../docs/terminology.rst#real-time-streaming-protocol-rtsp>`_ Cameras, We recommend using: `AXIS M10 Network Cameras <https://www.axis.com/products/axis-m1045-lw>`_
 * Two Hailo-8 devices connected via PCIe
 
@@ -80,7 +80,7 @@ These apps are based on our `multi stream pipeline template <../../../../docs/pi
 How to use Retraining to replace models
 ---------------------------------------
 
-.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+.. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
 You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
 that are trained on your own dataset:
@@ -100,5 +100,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
+    - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
        with your new paremeters, then recompile to create ``libcenterpose_post.so``

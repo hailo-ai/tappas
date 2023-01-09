@@ -100,7 +100,7 @@ This app is based on our `parallel networks pipeline template <../../../../docs/
 How to use Retraining to replace models
 ---------------------------------------
 
-.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+.. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
 You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
 that are trained on your own dataset:
@@ -132,5 +132,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
+    - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
       with your new paremeters, then recompile to create ``libmobilenet_ssd_post.so``

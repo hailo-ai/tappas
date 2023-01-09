@@ -1,0 +1,10 @@
+{
+  "path": "apps/gstreamer/imx8/detection/resources",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "imx8/hefs/yolov5m_yuv.hef",
+      "destination": "yolov5m_yuv.hef"
+    }
+  ]
+}

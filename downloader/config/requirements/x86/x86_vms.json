@@ -1,0 +1,75 @@
+{
+  "path": "apps/gstreamer/x86_hw_accelerated/video_management_system/resources/",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolov5s_personface_rgba.hef",
+      "destination": "yolov5s_personface_rgba.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/person_attr_resnet_v1_18_rgbx.hef",
+      "destination": "person_attr_resnet_v1_18_rgbx.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/face_attr_resnet_v1_18_rgbx.hef",
+      "destination": "face_attr_resnet_v1_18_rgbx.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/arcface_mobilefacenet_rgbx.hef",
+      "destination": "arcface_mobilefacenet_rgbx.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/face_recognition/face_recognition_local_gallery.json",
+      "destination": "gallery/face_recognition_local_gallery.json"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/scrfd_2.5g.hef",
+      "destination": "scrfd_2.5g.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video0.mp4",
+      "destination": "vms_video0.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video1.mp4",
+      "destination": "vms_video1.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video2.mp4",
+      "destination": "vms_video2.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video3.mp4",
+      "destination": "vms_video3.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video4.mp4",
+      "destination": "vms_video4.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video5.mp4",
+      "destination": "vms_video5.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video6.mp4",
+      "destination": "vms_video6.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/vms/vms_video7.mp4",
+      "destination": "vms_video7.mp4"
+    }
+  ]
+}

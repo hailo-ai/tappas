@@ -312,6 +312,19 @@ public:
         }
         return filtered_subobjects;
     }
+
+    /**
+     * @brief Removes all the objects of a given type, attached to this main object.
+     *
+     * @param type The type of object to get.
+     */
+    void remove_objects_typed(hailo_object_t type)
+    {
+        for (auto obj : this->get_objects_typed(type))
+        {
+            this->remove_object(obj);
+        }
+    }
 };
 using HailoMainObjectPtr = std::shared_ptr<HailoMainObject>;
 
@@ -351,6 +364,17 @@ public:
         std::shared_ptr<HailoROI> possible_roi = std::dynamic_pointer_cast<HailoROI>(obj);
         if (nullptr != possible_roi)
             possible_roi->set_scaling_bbox(this->get_bbox());
+        HailoMainObject::add_object(obj);
+    };
+
+    /**
+     * @brief Add an object to the main object.
+     *        Ignore possible scaling of rois
+     *
+     * @param obj Object to add.
+     */
+    void add_unscaled_object(HailoObjectPtr obj)
+    {
         HailoMainObject::add_object(obj);
     };
 
@@ -475,6 +499,7 @@ public:
     {
         return HAILO_TILE;
     }
+
     float get_overlap_x_axis() { return m_overlap_x_axis; }
     float get_overlap_y_axis() { return m_overlap_y_axis; }
     uint get_index() { return m_index; }
@@ -566,6 +591,12 @@ public:
         return HAILO_DETECTION;
     }
 
+    std::shared_ptr<HailoObject> clone()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return std::make_shared<HailoDetection>(*this);
+    }
+
     // Getters of DetectionObject.
 
     float get_confidence()
@@ -618,6 +649,15 @@ public:
      * @brief Construct a new Hailo Classification object
      *
      * @param classification_type The type of classification.
+     * @param label classification result.
+     */
+    HailoClassification(const std::string &classification_type,
+                        const std::string &label) : m_confidence(assure_normal(1.0f)), m_classification_type(classification_type), m_label(label), m_class_id(NULL_CLASS_ID){};
+
+    /**
+     * @brief Construct a new Hailo Classification object
+     *
+     * @param classification_type The type of classification.
      * @param class_id Class ID of the classification result.
      * @param label classification result.
      * @param confidence confidence of classification result.
@@ -661,6 +701,12 @@ public:
         }
         return *this;
     };
+
+    std::shared_ptr<HailoObject> clone()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return std::make_shared<HailoClassification>(*this);
+    }
 
     virtual hailo_object_t get_type()
     {
@@ -747,13 +793,33 @@ public:
      */
     void add_point(HailoPoint point)
     {
+        std::lock_guard<std::mutex> lock(*mutex);
         m_points.emplace_back(point);
     };
+
+    /**
+     * @brief Set a new vector of points to this Landmarks object.
+     *
+     * @param points std::vector<HailoPoint> to set.
+     */
+    void set_points(std::vector<HailoPoint> points)
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        m_points.clear();
+        m_points = std::move(points);
+    };
+
+    std::shared_ptr<HailoObject> clone()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return std::make_shared<HailoLandmarks>(*this);
+    }
 
     // Getters for HailoLandmarks object.
 
     std::vector<HailoPoint> get_points()
     {
+        std::lock_guard<std::mutex> lock(*mutex);
         return m_points;
     }
     float get_threshold()
@@ -799,6 +865,12 @@ public:
     int get_mode()
     {
         return m_mode;
+    }
+
+    std::shared_ptr<HailoObject> clone()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return std::make_shared<HailoUniqueID>(*this);
     }
 
     virtual hailo_object_t get_type()
@@ -933,6 +1005,12 @@ public:
                                                                                    m_mat_height(mat_height),
                                                                                    m_mat_width(mat_width),
                                                                                    m_mat_features(mat_features){};
+
+    std::shared_ptr<HailoObject> clone()
+    {
+        return std::dynamic_pointer_cast<HailoObject>(std::make_shared<HailoMatrix>(*this));
+    }
+
     const uint32_t width()
     {
         return m_mat_width;
@@ -976,8 +1054,8 @@ protected:
     float m_user_float;
 
 public:
-    HailoUserMeta() {};
-    HailoUserMeta(int user_int, std::string user_string, float user_float) : m_user_int(user_int), m_user_string(user_string), m_user_float(user_float) {};
+    HailoUserMeta(){};
+    HailoUserMeta(int user_int, std::string user_string, float user_float) : m_user_int(user_int), m_user_string(user_string), m_user_float(user_float){};
 
     virtual hailo_object_t get_type()
     {

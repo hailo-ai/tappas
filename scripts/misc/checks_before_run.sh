@@ -7,6 +7,7 @@ NC='\033[0m'
 check_python_packages=false
 export_only=false
 check_vaapi=false
+no_hailo=false
 
 function check__print_usage() {
     echo "Checks before app run:"
@@ -15,7 +16,8 @@ function check__print_usage() {
     echo "  --help                   Show this help"
     echo "  --check-python-packages  Check if python packages exists"
     echo "  --export-only            Handle setting TAPPAS_WORKSPACE only mode"
-    echo "  --check-vaapi                  Include checks for VAAPI pipelines"
+    echo "  --check-vaapi            Include checks for VAAPI pipelines"
+    echo "  --no-hailo               Exclude checks for Hailo device"
     exit 1
 }
 
@@ -31,6 +33,8 @@ function check__parse_args() {
             export_only=true
         elif [ "$1" == "--check-vaapi" ]; then
             check_vaapi=true
+        elif [ "$1" == "--no-hailo" ]; then
+            no_hailo=true
         fi
         shift
     done
@@ -132,19 +136,16 @@ function add_vaapi_fakedriver() {
 
 function check_vaapi_driver() {
     if [[ -z "$LIBVA_DRIVER_NAME" ]]; then
-        log_warning "LIBVA_DRIVER_NAME is not set, exiting"
-        return 1
-    fi
-    if [[ "$LIBVA_DRIVER_NAME" != "iHD" ]]; then
-        export MESA_LOADER_DRIVER_OVERRIDE=$LIBVA_DRIVER_NAME
+        log_warning "LIBVA_DRIVER_NAME is not set, sourcing VA-API 'set_env' file"
+        . $TAPPAS_WORKSPACE/scripts/vaapi/set_env.sh
     fi
 }
 
 function main() {
-    functions_to_run=( export_workspaces validate_hailo_device_connected validate_hailort_version export_xv_image_is_supported)
+    functions_to_run=( export_workspaces export_xv_image_is_supported )
 
-    if [ "$export_only" = true ]; then
-        functions_to_run=( export_workspaces )
+    if [ "$no_hailo" = false ]; then
+        functions_to_run+=( validate_hailo_device_connected validate_hailort_version )
     fi
 
     if [ "$check_python_packages" = true ]; then
@@ -155,6 +156,10 @@ function main() {
         functions_to_run+=( check_vaapi_driver )
     else
         functions_to_run+=( add_vaapi_fakedriver )
+    fi
+
+    if [ "$export_only" = true ]; then
+        functions_to_run=( export_workspaces )
     fi
 
     for func_name in "${functions_to_run[@]}"

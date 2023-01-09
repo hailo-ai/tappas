@@ -1,7 +1,7 @@
 import platform
 from pathlib import Path
 
-VERSION = "v3.21"
+VERSION = "v3.23"
 MODEL_ZOO_VERSION = "v2.4"
 
 CONFIG_PATH = Path(__file__).parent
@@ -16,6 +16,7 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
                       "general/depth_estimation.json",
                       "general/detection.json",
                       "general/face_detection.json",
+                      "general/face_recognition.json",
                       "general/facial_landmarks.json",
                       "general/instance_segmentation.json",
                       "general/license_plate_recognition.json",
@@ -29,6 +30,10 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
                       "general/re_id.json",
                       "general/segmentation.json",
                       "general/tiling.json",
+                      "x86/x86_sanity.json",
+                      "x86/x86_vms.json",
+                      "x86/x86_multistream_detection.json",
+                      "x86/x86_century.json",
                       "rpi/rpi_cascading_networks.json",
                       "rpi/rpi_classification.json",
                       "rpi/rpi_depth_estimation.json",
@@ -36,13 +41,16 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
                       "rpi/rpi_face_detection.json",
                       "rpi/rpi_multinetworks_parallel.json",
                       "rpi/rpi_pose_estimation.json",
-                      "imx/imx_cascading_networks.json",
-                      "imx/imx_depth_estimation.json",
-                      "imx/imx_detection.json",
-                      "imx/imx_facial_landmarks.json",
-                      "imx/imx_license_plate_recognition.json",
-                      "imx/imx_pose_estimation.json",
-                      "imx/imx_segmentation.json"]
+                      "imx6/imx6_classification.json",
+                      "imx6/imx6_depth_estimation.json",
+                      "imx6/imx6_detection.json",
+                      "imx8/imx8_cascading_networks.json",
+                      "imx8/imx8_depth_estimation.json",
+                      "imx8/imx8_detection.json",
+                      "imx8/imx8_facial_landmarks.json",
+                      "imx8/imx8_license_plate_recognition.json",
+                      "imx8/imx8_pose_estimation.json",
+                      "imx8/imx8_segmentation.json"]
 
 # Used during the download to decide what the source / destination is dynamically
 RESERVED_DOWNLOADER_KEYWORDS = {

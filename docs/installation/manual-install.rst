@@ -6,14 +6,11 @@ Manual installing TAPPAS requires preparations, our recommended method is to beg
 In this guide we instruct how to install our required components manually.
 
 .. note::
-    Only Ubuntu 18.04 and 20.04 is supported
-
-.. warning::
-    Ubuntu 18.04 will be deprecated in TAPPAS future version
+    Only Ubuntu 20.04 and 22.04 are supported
 
 
 Hailort installation
----------------
+--------------------
 
 First you will need to install `HailoRT <https://github.com/hailo-ai/hailort>`_ + `HailoRT PCIe driver <https://github.com/hailo-ai/hailort-drivers>`_\ , follow HailoRT installation guide for further instructions.
 And then `Make sure that HailoRT works <./verify_hailoRT.rst>`_
@@ -88,8 +85,9 @@ The following packages are required as well, and see their installation instruct
 In case any requirements are missing, a requirements table will be printed when calling manual installation.
 
 .. _OpenCV4 installation:
+
 OpenCV installation
---------------
+-------------------
 
 .. code-block:: sh
 
@@ -124,20 +122,20 @@ OpenCV installation
 .. _GStreamer installation:
 
 GStreamer installation
------------------
+----------------------
 
 Run the following command to install GStreamer:
 
 .. code-block:: sh
 
-    apt-get install -y libcairo2-dev libgirepository1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio gcc-9 g++-9 python-gi-dev
+    apt-get install -y libcairo2-dev libgirepository1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio gcc-9 g++-9 python-gi-dev
 
 Please refer to: `GStreamer offical installation guide <https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c#install-gstreamer-on-ubuntu-or-debian>`_ for more details
 
 .. _PyGobject installation:
 
 PyGobject installation
------------------
+----------------------
 
 Run the following command to install PyGobject:
 
@@ -150,7 +148,7 @@ Please refer to: `PyGobject offical installation guide <https://pygobject.readth
 .. _TAPPAS installation section:
 
 TAPPAS installation
---------------
+-------------------
 
 On x86, run: 
 
@@ -169,12 +167,6 @@ On Raspberry Pi, run:
 And then, `Get back to Raspberry Pi section <./raspberry-pi-install.rst>`_
 
 
-On NXP i.MX based devices, run:
-
-.. code-block:: sh
-
-    ./install.sh --skip-hailort --target-platform imx
-
 Upgrade TAPPAS
 --------------
 
@@ -191,3 +183,21 @@ Remove old ``libgsthailotools.so``
    rm /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailotools.so
 
 And then, `TAPPAS installation section`_
+
+Troubleshooting
+---------------
+
+Cannot allocate memory in static TLS block
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some sceneraios (especially aarch64), you might face the following error:
+
+.. code-block:: sh
+
+    (gst-plugin-scanner:15): GStreamer-WARNING **: 13:58:20.557: Failed to load plugin '/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstlibav.so': /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block 
+
+The solution is to export an enviroment variable:
+
+.. code-block:: sh
+
+    export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1

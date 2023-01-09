@@ -9,6 +9,7 @@ if [[ -z "$TAPPAS_WORKSPACE" ]]; then
   export TAPPAS_WORKSPACE=$(dirname "$(realpath "$0")")
   echo "No TAPPAS_WORKSPACE in environment found, using the default one $TAPPAS_WORKSPACE"
 fi
+
 readonly GST_HAILO_BUILD_MODE='release'
 readonly VENV_NAME='hailo_tappas_venv'
 readonly VENV_PATH="$(pwd)"
@@ -19,7 +20,7 @@ function print_usage() {
   echo "Options:"
   echo "  --help                 Show this help"
   echo "  --skip-hailort         Skips installation of HailoRT Deb package"
-  echo "  --target-platform      Target platform [x86, arm, imx, rpi(raspberry pi)], used for downloading only required media and hef files (Default is $target_platform)"
+  echo "  --target-platform      Target platform [x86, rpi(raspberry pi)], used for downloading only required media and hef files (Default is $target_platform)"
   echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
   exit 1
 }
@@ -121,7 +122,7 @@ function install_hailo() {
   # https://stackoverflow.com/a/46071447/5708016
   USER_SITE_DIR=$(python3 -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
   mkdir -p $USER_SITE_DIR
-  echo "$TAPPAS_WORKSPACE/core/hailo/gstreamer/python/" > "$USER_SITE_DIR/gsthailo.pth"
+  echo "$TAPPAS_WORKSPACE/core/hailo/python/" > "$USER_SITE_DIR/gsthailo.pth"
 
   $TAPPAS_WORKSPACE/scripts/gstreamer/install_gstreamer.sh
 
@@ -140,8 +141,6 @@ function install_hailo() {
     ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --compile-libgsthailo $compile_num_cores
     
   fi
-  
-  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_tracers.sh
 }
 
 function check_systems_requirements(){
@@ -151,8 +150,20 @@ function check_systems_requirements(){
     fi
 }
 
+function verify_that_hailort_found_if_needed() {
+    if [ "$target_platform" != "x86" ]; then
+        hailort_sources_dir="$TAPPAS_WORKSPACE/hailort/sources"
+
+        if [ ! -d "$hailort_sources_dir" ]; then 
+            echo "HailoRT sources directory not found ($hailort_sources_dir), Please follow our manual installation guide"
+            exit 1
+        fi
+    fi
+}
+
 function main() {
   check_systems_requirements
+  verify_that_hailort_found_if_needed
   python_venv_create_and_install
   clone_external
   install_hailo

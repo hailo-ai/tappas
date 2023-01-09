@@ -113,7 +113,8 @@ PIPELINE="gst-launch-1.0 \
     aspectratiocrop aspect-ratio=1/1 ! \
     queue ! videoscale n-threads=2 ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path vdevice-key=$DEFAULT_VDEVICE_KEY is-active=true net-name=$depth_estimation_net_name ! \
+    hailonet hef-path=$hef_path is-active=true scheduling-algorithm=0 \
+    vdevice-key=$DEFAULT_VDEVICE_KEY net-name=$depth_estimation_net_name ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$depth_estimation_post_so qos=false ! videoconvert ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
@@ -125,7 +126,8 @@ PIPELINE="gst-launch-1.0 \
     t. ! \
     videoscale n-threads=2 ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path vdevice-key=$DEFAULT_VDEVICE_KEY is-active=true net-name=$detection_net_name ! \
+    hailonet hef-path=$hef_path is-active=true scheduling-algorithm=0 \
+    vdevice-key=$DEFAULT_VDEVICE_KEY net-name=$detection_net_name ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$detection_post_so function-name=mobilenet_ssd_merged qos=false ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \

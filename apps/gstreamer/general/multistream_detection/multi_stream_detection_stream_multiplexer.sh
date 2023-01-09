@@ -69,7 +69,8 @@ function create_sources() {
     for ((n = 0; n < $num_of_src; n++)); do
         sources+="uridecodebin3 uri=file://$RESOURCES_DIR/detection$n.mp4 name=source_$n ! \
                 queue name=hailo_preprocess_q_$n leaky=no max-size-buffers=5 max-size-bytes=0  \
-                max-size-time=0 ! videoconvert ! videoscale method=0 add-borders=false ! \
+                max-size-time=0 ! videoconvert qos=false ! videoscale qos=false ! \
+                video/x-raw, pixel-aspect-ratio=1/1 ! \
                 queue name=hailo_pre_infer_q_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                 hailonet hef-path=$HEF_PATH scheduling-algorithm=1 batch-size=1 vdevice-key=1 ! \
                 queue name=hailo_postprocess0_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

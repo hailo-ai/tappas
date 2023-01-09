@@ -8,6 +8,16 @@
     },
     {
       "bucket": "tappas",
+      "source": "general/hefs/yolact_regnetx_800mf.hef",
+      "destination": "yolact_regnetx_800mf.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolact_regnetx_1.6gf.hef",
+      "destination": "yolact_regnetx_1.6gf.hef"
+    },
+    {
+      "bucket": "tappas",
       "source": "general/media/instance_segmentation.mp4",
       "destination": "instance_segmentation.mp4"
     }

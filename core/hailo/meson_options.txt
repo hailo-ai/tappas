@@ -1,0 +1,26 @@
+option('libargs', type : 'array', value : [])
+option('target', type : 'string', value : 'all')
+option('target_platform', type : 'string', value : 'x86')
+
+# External requirements (default values under)
+option('include_blas', type : 'boolean', value : false)
+option('libblas', type : 'string', value : '../../open_source/xtensor_stack/blas')
+option('libxtensor', type : 'string', value : '../../open_source/xtensor_stack/base')
+
+# Python requirements
+option('include_python', type : 'boolean', value : false)
+option('pybind11', type : 'string', value : '../../open_source/pybind11/')
+option('python_version', type : 'string', value : '3.6')
+
+# Unit tests
+
+option('libcatch2', type : 'string', value : '../../../open_source/catch2')
+
+# APPS
+option('apps_install_dir', type : 'string', value : '')
+option('install_lpr', type : 'boolean', value : true)
+option('libcxxopts', type : 'string', value : '../../open_source/cxxopts')
+
+# POST PROCESSES
+option('post_processes_install_dir', type : 'string', value : '')
+option('librapidjson', type : 'string', value : '../../open_source/rapidjson')

@@ -6,9 +6,7 @@
  * @file double_buffer.hpp
  * @brief Implementation of DoubleBuffer class for detection app example
  **/
-
-#ifndef _HAILO_DOUBLE_BUFFER_HPP_
-#define _HAILO_DOUBLE_BUFFER_HPP_
+#pragma once
 
 #include <stdint.h>
 #include <vector>
@@ -92,8 +90,6 @@ private:
     SafeBuffer m_first_buffer;
     SafeBuffer m_second_buffer;
 
-    SafeBuffer *m_read_ptr;
     SafeBuffer *m_write_ptr;
+    SafeBuffer *m_read_ptr;
 };
-
-#endif /* _HAILO_DOUBLE_BUFFER_HPP_ */

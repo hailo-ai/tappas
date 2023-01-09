@@ -15,7 +15,7 @@ function init_variables() {
     readonly RE_ID_DEWARP_SO="$APPS_LIBS_DIR/libre_id_dewarp.so"
     readonly HEF_PATH="$RESOURCES_DIR/yolov5s_personface.hef"
     readonly REID_HEF_PATH="$RESOURCES_DIR/repvgg_a0_person_reid_2048.hef"
-    readonly FUNCTION_NAME="yolov5_personface"
+    readonly FUNCTION_NAME="yolov5_personface_letterbox"
     readonly RE_ID_OVERLAY="$APPS_LIBS_DIR/libre_id_overlay.so"
     readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5_personface.json"
     readonly WHOLE_BUFFER_CROP_SO="$POSTPROCESS_DIR/cropping_algorithms/libwhole_buffer.so"
@@ -29,7 +29,6 @@ function init_variables() {
     print_gst_launch_only=false
     vdevice_key=1
     json_config_path=$DEFAULT_JSON_CONFIG_PATH
-    sync_mode=true
     dewarp_element=""
     source_prefix="reid"
 }
@@ -71,7 +70,6 @@ function parse_args() {
             echo "Setting number of sources to $1"
             num_of_src=$1
         elif [ "$1" = "--online-dewarp" ]; then
-            sync_mode=false
             dewarp_element="queue name=pre_dewarp_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                              hailofilter so_path=$RE_ID_DEWARP_SO use-gst-buffer=true qos=false ! "
             source_prefix="reid_orig"
@@ -105,7 +103,7 @@ function main() {
 
     RE_ID_PIPELINE="queue name=hailo_pre_cropper2_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailocropper so-path=$CROPPER_SO function-name=create_crops internal-offset=true name=cropper2 \
-        hailoaggregator name=agg2 flatten-detections=false \
+        hailoaggregator name=agg2 \
         cropper2. ! queue name=bypess2_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! agg2. \
         cropper2. ! queue name=pre_reid_q leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
         hailonet hef-path=$REID_HEF_PATH scheduling-algorithm=1 vdevice-key=1 ! \
@@ -115,8 +113,8 @@ function main() {
         agg2. agg2. "
 
     DETECTION_PIPELINE="queue name=hailo_pre_cropper1_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailocropper so-path=$WHOLE_BUFFER_CROP_SO function-name=create_crops method=2 internal-offset=true name=cropper1 \
-        hailoaggregator name=agg1 flatten-detections=false \
+        hailocropper so-path=$WHOLE_BUFFER_CROP_SO function-name=create_crops use-letterbox=true resize-method=inter-area internal-offset=true name=cropper1 \
+        hailoaggregator name=agg1 \
         cropper1. ! queue name=bypess1_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! agg1. \
         cropper1. ! queue name=hailo_pre_detector_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailonet hef-path=$HEF_PATH scheduling-algorithm=1 vdevice-key=1 ! \
@@ -126,7 +124,7 @@ function main() {
         agg1. agg1."
 
     pipeline="gst-launch-1.0 \
-        funnel name=fun ! \
+        hailoroundrobin name=fun ! \
         queue name=hailo_pre_convert_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         videoconvert n-threads=1 qos=false ! video/x-raw,format=RGB ! \
         $dewarp_element \
@@ -146,7 +144,7 @@ function main() {
         queue name=hailo_video_q_0 leaky=no max_size_buffers=30 max-size-bytes=0 max-size-time=0 ! \
         videoconvert n-threads=2 qos=false ! \
         queue name=hailo_display_q_0 leaky=no max_size_buffers=300 max-size-bytes=0 max-size-time=0 ! \
-        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_mode text-overlay=false \
+        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
         $sources ${additonal_parameters}"
 
     echo ${pipeline}

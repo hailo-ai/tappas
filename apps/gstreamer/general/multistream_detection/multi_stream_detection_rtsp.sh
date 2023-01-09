@@ -26,6 +26,9 @@ function init_variables() {
     debug=false
     gst_top_command=""
     additonal_parameters=""
+    screen_width=0
+    screen_height=0
+    fpsdisplaysink_elemet=""
     rtsp_sources=""
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=640 sink_1::ypos=0 sink_2::xpos=1280 sink_2::ypos=0 sink_3::xpos=1920 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=640 sink_5::xpos=640 sink_5::ypos=640 sink_6::xpos=1280 sink_6::ypos=640 sink_7::xpos=1920 sink_7::ypos=640"
     print_gst_launch_only=false
@@ -96,29 +99,44 @@ function create_rtsp_sources() {
     done
 }
 
+function configure_fpsdisplaysink_element() {
+    ubuntu_version=$(lsb_release -r | awk '{print $2}' | awk -F'.' '{print $1}')
+
+    if [ $ubuntu_version -eq 22 ]; then
+        fpsdisplaysink_elemet="fpsdisplaysink video-sink='$video_sink_element window-width=$screen_width window-height=$screen_height'"
+    else
+        fpsdisplaysink_elemet="fpsdisplaysink video-sink='$video_sink_element' window-width=$screen_width window-height=$screen_height"
+    fi
+    fpsdisplaysink_elemet+=" name=hailo_display sync=false text-overlay=false"
+}
+
+function determine_screen_size() {
+    screen_width=(4 * $STREAM_DISPLAY_SIZE)
+    if [ "$num_of_src" -lt "4" ]; then
+        screen_width=($num_of_src * $STREAM_DISPLAY_SIZE)
+    fi
+    screen_height=($(($num_of_src+3)) / $STREAM_DISPLAY_SIZE*4)
+}
+
 function main() {
     init_variables $@
     parse_args $@
 
-    # determine screen size
-    ((screen_width = (4 * $STREAM_DISPLAY_SIZE)))
-    if [ "$num_of_src" -lt "4" ]; then
-        ((screen_width = (num_of_src * $STREAM_DISPLAY_SIZE)))
-    fi
-    ((screen_height = (num_of_src + 3) / 4 * $STREAM_DISPLAY_SIZE))
-
     create_rtsp_sources
+
+    determine_screen_size
+    configure_fpsdisplaysink_element
 
     pipeline="$gst_top_command gst-launch-1.0 \
          funnel name=fun ! \
          queue name=hailo_pre_infer_q_0 leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-         hailonet  hef-path=$HEF_PATH is-active=true ! \
+         hailonet  hef-path=$HEF_PATH ! \
          queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailofilter so-path=$POSTPROCESS_SO config-path=$json_config_path qos=false ! \
          queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailooverlay ! streamiddemux name=sid \
          compositor name=comp start-time-selection=0 $compositor_locations ! videoscale n-threads=8 name=disp_scale ! video/x-raw,width=$screen_width,height=$screen_height ! \
-         fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false window-width=$screen_width window-height=$screen_height \
+         $fpsdisplaysink_elemet \
          $rtsp_sources ${additonal_parameters}"
 
     echo ${pipeline}

@@ -10,7 +10,7 @@ Overview
 Parameters
 ^^^^^^^^^^
 
-The HailoExportFile element allows the user to change the output port/protocol. The default is `tcp://*:5555`. 
+The HailoExportZMQ element allows the user to change the output port/protocol. The default is `tcp://*:5555`. 
 Currently only PUB behvaior (`PUB/SUB <https://zeromq.org/socket-api/#publish-subscribe-pattern>`_) is supported.
 
 Hierarchy

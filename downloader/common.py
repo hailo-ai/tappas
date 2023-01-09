@@ -15,7 +15,8 @@ from models import FolderRequirements
 class Platform(Enum):
     X86 = 'x86'
     ARM = 'arm'
-    IMX = 'imx'
+    IMX8 = 'imx8'
+    IMX6 = 'imx6'
     RaspberryPI = 'rpi'
     ANY = 'any'
 
@@ -57,7 +58,7 @@ class Downloader(ABC):
 
         for requirements_file in config.REQUIREMENTS_FILES:
             req_path = config.REQUIREMENTS_PATH / requirements_file
-            is_general_req = str(requirements_file).startswith(f'general/') and platform != Platform.IMX
+            is_general_req = str(requirements_file).startswith(f'general/') and platform not in [Platform.IMX8, Platform.IMX6]
             is_platform_req = str(requirements_file).startswith(f'{str(platform)}/')
             if platform == Platform.ANY or is_platform_req or is_general_req:
                 requirements_file_content = req_path.read_text()

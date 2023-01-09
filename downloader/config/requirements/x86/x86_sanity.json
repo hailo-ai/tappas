@@ -1,0 +1,10 @@
+{
+  "path": "apps/gstreamer/x86_hw_accelerated/sanity/resources",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/media/detection.mp4",
+      "destination": "street.mp4"
+    }
+  ]
+}

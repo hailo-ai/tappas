@@ -1,7 +1,7 @@
 {
   "iou_threshold": 0.45,
   "detection_threshold": 0.3,
-  "output_activation": "none",
+  "output_activation": "sigmoid",
   "label_offset":1,
   "max_boxes":200,
   "anchors": [

@@ -22,7 +22,7 @@ function init_variables() {
     debug=false
     gst_top_command=""
     additonal_parameters=""
-    decode_scale_elements="decodebin ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! videoscale n-threads=8 ! video/x-raw,pixel-aspect-ratio=1/1"
+    decode_element="decodebin"
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=640 sink_1::ypos=0 sink_2::xpos=1280 sink_2::ypos=0 sink_3::xpos=1920 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=640 sink_5::xpos=640 sink_5::ypos=640 sink_6::xpos=1280 sink_6::ypos=640 sink_7::xpos=1920 sink_7::ypos=640"
     print_gst_launch_only=false
     json_config_path=$DEFAULT_JSON_CONFIG_PATH 
@@ -39,7 +39,6 @@ function print_usage() {
     echo "  --show-fps                      Printing fps"
     echo "  --num-of-sources NUM            Setting number of video sources to given input (default value is 8)"
     echo "  --print-gst-launch              Print the ready gst-launch command without running it"
-    echo "  --print-devices-stats           Print the power and temperature measured"
     exit 0
 }
 
@@ -63,7 +62,7 @@ function parse_args() {
             print_gst_launch_only=true
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
-            additonal_parameters="-v | grep -e hailo_display -e hailodevicestats"
+            additonal_parameters="-v | grep -e hailo_display"
         elif [ "$1" = "--num-of-sources" ]; then
             shift
             echo "Setting number of video sources to $1"
@@ -81,30 +80,36 @@ function create_sources() {
     for ((n = 0; n < $num_of_src; n++)); do
         input_source="$RESOURCES_DIR/detection${n}.mp4"
         input_sources+="filesrc location=$input_source ! \
-                          queue name=hailo_preprocess_q_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                          $decode_scale_elements ! videoconvert n-threads=8 ! \
-                          video/x-raw,pixel-aspect-ratio=1/1 ! \
-                          fun.sink_$n sid.src_$n ! \
+                          $decode_element ! \
+                          queue leaky=no name=hailo_pre_scale_q_$n max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+                          videoscale qos=false ! video/x-raw,pixel-aspect-ratio=1/1 ! \
+                          queue name=hailo_pre_videoconvert_q_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+                          videoconvert qos=false ! \
+                          queue name=hailo_pre_funnel_q_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+                          fun.sink_$n disp_router.src_$n ! \
                           queue name=comp_q_$n leaky=downstream max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                           comp.sink_$n "
+
+        streamrouter_disp_element+=" src_$n::input-streams=\"<sink_$n>\""
     done
 }
 
 function main() {
     init_variables $@
     parse_args $@
+    streamrouter_disp_element="hailostreamrouter name=disp_router"
     create_sources
 
     pipeline="$gst_top_command gst-launch-1.0 \
-         funnel name=fun ! queue name=hailo_pre_split leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
+         hailoroundrobin name=fun ! queue name=hailo_pre_split leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
          hailomuxer name=hailomuxer ! queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-         hailooverlay qos=false ! streamiddemux name=sid \
-         splitter. ! queue name=hailo_pre_infer_q_1 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-         hailonet hef-path=$DETECTION_HEF_PATH is-active=true ! \
+         hailooverlay qos=false ! $streamrouter_disp_element \
+         splitter. ! queue name=hailo_pre_infer_q_1 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+         hailonet hef-path=$DETECTION_HEF_PATH scheduling-algorithm=0 is-active=true ! \
          queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailofilter so-path=$DETECTION_POSTPROCESS_SO config-path=$json_config_path function-name=$DETECTION_POSTPROCESS_FUNCTION_NAME qos=false ! hailomuxer. \
-         splitter. ! queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-         hailonet hef-path=$POSE_ESTIMATION_HEF_PATH is-active=true ! \
+         splitter. ! queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+         hailonet hef-path=$POSE_ESTIMATION_HEF_PATH scheduling-algorithm=0 is-active=true ! \
          queue name=hailo_postprocess1 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailofilter so-path=$POSE_ESTIMATION_POSTPROCESS_SO function-name=$POSE_ESTIMATION_POSTPROCESS_FUNCTION_NAME qos=false ! hailomuxer. \
          compositor name=comp start-time-selection=0 $compositor_locations ! \

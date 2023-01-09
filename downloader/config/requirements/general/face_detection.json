@@ -13,6 +13,11 @@
     },
     {
       "bucket": "tappas",
+      "source": "general/hefs/scrfd_10g.hef",
+      "destination": "scrfd_10g.hef"
+    },
+    {
+      "bucket": "tappas",
       "source": "general/media/face_detection.mp4",
       "destination": "face_detection.mp4"
     }

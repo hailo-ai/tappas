@@ -120,30 +120,30 @@ The following elements are the structure of the pipeline:
 How to use Retraining to replace models
 ---------------------------------------
 
-.. note:: It is recommended to first read the :ref:`Retraining TAPPAS Models<retraining_tappas_models>` page. 
+.. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
 You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
 that are trained on your own dataset:
 
 - ``yolov5m_vehicles``
   
-  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/vehicle_detection/docs/TRAINING_GUIDE.md>`_
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/vehicle_detection/docs/TRAINING_GUIDE.rst>`_
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
     - Update ``configs/yolov5_vehicle_detection.json`` with your new post-processing parameters (NMS)
 - ``tiny_yolov4_license_plates``
   
-  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/license_plate_detection/docs/TRAINING_GUIDE.md>`_
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/license_plate_detection/docs/TRAINING_GUIDE.rst>`_
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
     - Update ``configs/yolov4_licence_plate.json`` with your new post-processing parameters (NMS)
 - ``lprnet``
   
-  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/license_plate_recognition/docs/TRAINING_GUIDE.md>`_
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/license_plate_recognition/docs/TRAINING_GUIDE.rst>`_
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `ocr_postprocess.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/gstreamer/libs/postprocesses/ocr/ocr_postprocess.cpp#L20>`_
+    - Update `ocr_postprocess.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/ocr/ocr_postprocess.cpp#L20>`_
       with your new paremeters, then recompile to create ``libocr_post.so``

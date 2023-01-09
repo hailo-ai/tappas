@@ -1,0 +1,15 @@
+{
+  "path": "apps/gstreamer/imx6/detection/resources",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolov5s_personface_rgba.hef",
+      "destination": "yolov5s_personface_rgba.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/detection0.mp4",
+      "destination": "detection0.mp4"
+    }
+  ]
+}

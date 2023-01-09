@@ -18,7 +18,7 @@ Once the zip is downloaded, extract the folder with:
 
 .. code-block:: sh
 
-   tar -xf hailo_sw_suite_2022_01.tar.gz
+   tar -xf hailo_sw_suite_2023_01.tar.gz
 
 | You have three options for installing the ``Suite``\ : ``Docker`` installation, ``Manual`` installation, and a ``Self Extractable`` installation.
 | You can find instructions for all install flows, along with their required pre-requisites and sanity checks, `here in the Hailo Developer Zone <https://hailo.ai/developer-zone/documentation/dataflow-compiler/latest/?sp_referrer=suite/suite_install.html>`_.

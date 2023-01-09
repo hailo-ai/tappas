@@ -44,7 +44,7 @@ Model
 
 * ``tddfa_mobilenet_v1`` in resolution of 120X120X3 - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/tddfa_mobilenet_v1.yaml
 
-How it works?
--------------
+How does it work?
+-----------------
 
 This app is based on our `single network pipeline template <../../../../docs/pipelines/single_network.rst>`_

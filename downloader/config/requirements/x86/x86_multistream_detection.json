@@ -1,0 +1,50 @@
+{
+  "path": "apps/gstreamer/x86_hw_accelerated/multistream_detection/resources/",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolov5s_personface_rgba.hef",
+      "destination": "yolov5s_personface_rgba.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video0.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video1.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video2.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video3.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video4.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video5.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video6.mp4"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/instance_segmentation.mp4",
+      "destination": "video7.mp4"
+    }
+  ]
+}
