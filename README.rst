@@ -58,7 +58,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.12.0.
+    This version is compatible with HailoRT v4.12.1.
 
 
 Installation
@@ -381,6 +381,12 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 
 Changelog
 ----------
+
+**v3.23.1 (February 2023)**
+
+* Updated to HailoRT 4.12.1
+* Fixed a documentation mistake in `Writing your own Python postprocess <docs/write_your_own_application/write-your-own-python-postprocess.rst>`_
+
 
 **v3.23.0 (December 2022)**
 

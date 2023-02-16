@@ -108,7 +108,7 @@ You can also add objects to detections:
        # Now, Adds a face to the person, at the top of the person. (normalized only)
        face_bbox  = hailo.HailoBBox(xmin=0.0, ymin=0.0, width=1, height=0.2)
        face = hailo.HailoDetection(bbox=face_bbox, label='face', confidence=0.84)
-       person.add_detection(face)
+       person.add_object(face)
        # No need to add the face to the roi because it is already in the person that is in the roi.
 
 Next Steps

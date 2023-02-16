@@ -62,7 +62,7 @@ function python_venv_create_and_install() {
   fi
 
   # Install pip packages & Call the downloader script
-  pip3 install --upgrade pip setuptools
+  pip3 install --upgrade pip 'setuptools<=66.0.0'
   pip3 install -r $TAPPAS_WORKSPACE/core/requirements/requirements.txt
   pip3 install -r $TAPPAS_WORKSPACE/core/requirements/gstreamer_requirements.txt
   pip3 install -r $TAPPAS_WORKSPACE/downloader/requirements.txt

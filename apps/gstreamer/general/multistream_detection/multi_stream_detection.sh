@@ -19,7 +19,6 @@ function init_variables() {
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=640 sink_1::ypos=0 sink_2::xpos=1280 sink_2::ypos=0 sink_3::xpos=1920 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=640 sink_5::xpos=640 sink_5::ypos=640 sink_6::xpos=1280 sink_6::ypos=640 sink_7::xpos=1920 sink_7::ypos=640 sink_8::xpos=0 sink_8::ypos=1280 sink_9::xpos=640 sink_9::ypos=1280 sink_10::xpos=1280 sink_10::ypos=1280 sink_11::xpos=1920 sink_11::ypos=1280 sink_12::xpos=0 sink_12::ypos=1920 sink_13::xpos=640 sink_13::ypos=1920 sink_14::xpos=1280 sink_14::ypos=1920 sink_15::xpos=1920 sink_15::ypos=1920"
     print_gst_launch_only=false
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
-    video_sink="fpsdisplaysink video-sink=$video_sink_element text-overlay=false"
     json_config_path=$DEFAULT_JSON_CONFIG_PATH         
 }
 
@@ -32,7 +31,6 @@ function print_usage() {
     echo "  --set-live-source LIVE_SOURCE   Use the live source given (example: /dev/video2). this flag is optional. if it's in use, num_of_sources is limited to 4."
     echo "  --num-of-sources NUM            Setting number of sources to given input (default value is 12, maximum value is 16)"
     echo "  --print-gst-launch              Print the ready gst-launch command without running it"
-    echo "  --tcp-address                   If specified, set the sink be a TCP (expected format is 'host:port')"
     exit 0
 }
 
@@ -64,14 +62,6 @@ function parse_args() {
             shift
             echo "Setting number of sources to $1"
             num_of_src=$1
-         elif [ "$1" = "--tcp-address" ]; then
-            tcp_host=$(echo $2 | awk -F':' '{print $1}')
-            tcp_port=$(echo $2 | awk -F':' '{print $2}')
-            bitrate=$(python3 "$TAPPAS_WORKSPACE/scripts/misc/get_max_bitrate.py" -v "$RESOURCES_DIR/detection0.mp4")
-            video_sink="queue name=queue_before_sink leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                        x264enc speed-preset=ultrafast bitrate=$bitrate ! \
-                        queue max-size-bytes=0 max-size-time=0 ! matroskamux ! tcpclientsink host=$tcp_host port=$tcp_port"
-            shift
         else
             echo "Received invalid argument: $1. See expected arguments below:"
             print_usage
@@ -124,8 +114,8 @@ function main() {
            streamiddemux name=sid compositor name=comp start-time-selection=0 $compositor_locations ! \
            queue name=hailo_video_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            videoconvert ! queue name=hailo_display_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-           $video_sink name=hailo_display sync=false ${additonal_parameters} \
-           $sources"
+           fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
+           $sources ${additonal_parameters}"
 
     echo ${pipeline}
     if [ "$print_gst_launch_only" = true ]; then
