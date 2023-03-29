@@ -50,7 +50,7 @@ void draw_lpr(cv::Mat &mat)
     }
 }
 
-void filter(HailoROIPtr roi, GstVideoFrame *frame, gchar *current_stream_id)
+void filter(HailoROIPtr roi, GstVideoFrame *frame)
 {
     auto image_planes = get_mat_from_gst_frame(frame);
     draw_lpr(image_planes);

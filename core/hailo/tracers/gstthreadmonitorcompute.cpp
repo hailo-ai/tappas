@@ -30,6 +30,10 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <string>
+#include <vector>
+
+std::vector<std::string> blacklist_thread_names = {"gst-launch-1.0", "qtdemux0:sink", "gmain", "typefind:sink", "pool-gst-launch"};
 
 void gst_thread_monitor_init(GstThreadMonitor *thread_monitor)
 {
@@ -117,7 +121,8 @@ void gst_thread_monitor_compute(GstTracerRecord *tr_threadmonitor, GstThreadMoni
   char *line = NULL;
   ssize_t read;
 
-  command = g_strdup_printf("top -H -b -p %d -n 1 | sed -n '/PID/,/^$/p' | tail -n +2 | tr -s ' ' | grep -E 'src|multiqueue' | sed -e 's/\x1b\[[0-9;]*m//g' | awk '{print $%d,$%d,$%d}'", getpid(), thread_monitor->thread_name_loc, thread_monitor->thread_cpu_usage_loc, thread_monitor->thread_memory_usage_loc);
+  command = g_strdup_printf("top -H -b -p %d -n 1 | sed -n '/PID/,/^$/p' | tail -n +2 | tr -s ' ' | sed -e 's/\x1b\[[0-9;]*m//g' | awk '{print $%d,$%d,$%d}'", getpid(), thread_monitor->thread_name_loc, thread_monitor->thread_cpu_usage_loc, thread_monitor->thread_memory_usage_loc);
+
   fp = popen(command, "r");
   if (fp == NULL)
   {
@@ -132,7 +137,21 @@ void gst_thread_monitor_compute(GstTracerRecord *tr_threadmonitor, GstThreadMoni
     *thread_cpu_usage = tokens[1];
     *thread_memory_usage = tokens[2];
 
-    gst_tracer_record_log(tr_threadmonitor, *thread_name, atof(*thread_cpu_usage), atof(*thread_memory_usage));
+    bool blacklist = false;
+
+    for (std::string name : blacklist_thread_names)
+    {
+      if (strcmp(*thread_name, name.c_str()) == 0)
+      {
+        blacklist = true;
+        break;
+      }
+    }
+
+    if (!blacklist)
+    {
+      gst_tracer_record_log(tr_threadmonitor, *thread_name, atof(*thread_cpu_usage), atof(*thread_memory_usage));
+    }
     line = NULL;
     len = 0;
   }

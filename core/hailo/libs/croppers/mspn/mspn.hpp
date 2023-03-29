@@ -7,8 +7,9 @@
 #include <opencv2/opencv.hpp>
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
+#include "hailomat.hpp"
 
 __BEGIN_DECLS
-std::vector<HailoROIPtr> create_crops_only_person(cv::Mat image, HailoROIPtr roi);
+std::vector<HailoROIPtr> create_crops_only_person(std::shared_ptr<HailoMat> image, HailoROIPtr roi);
 
 __END_DECLS

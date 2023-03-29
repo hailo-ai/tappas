@@ -69,12 +69,13 @@ Install the following APT packages:
 * cmake
 * libzmq3-dev
 * git
+* rsync
 
 To install the above packages, run the following command:
 
 .. code-block:: sh
     
-    sudo apt-get install -y ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-9 g++-9 cmake git libzmq3-dev
+    sudo apt-get install -y rsync ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-9 g++-9 cmake git libzmq3-dev
 
 The following packages are required as well, and see their installation instructions below:
 
@@ -128,7 +129,7 @@ Run the following command to install GStreamer:
 
 .. code-block:: sh
 
-    apt-get install -y libcairo2-dev libgirepository1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio gcc-9 g++-9 python-gi-dev
+    sudo apt-get install -y libcairo2-dev libgirepository1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio gcc-9 g++-9 python-gi-dev
 
 Please refer to: `GStreamer offical installation guide <https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c#install-gstreamer-on-ubuntu-or-debian>`_ for more details
 
@@ -165,6 +166,14 @@ On Raspberry Pi, run:
     ./install.sh --skip-hailort --target-platform rpi
 
 And then, `Get back to Raspberry Pi section <./raspberry-pi-install.rst>`_
+
+On Rockchip, run: 
+
+.. code-block:: sh
+
+    ./install.sh --skip-hailort --target-platform rockchip
+
+And then, `Go back to Rockchip section <./rockchip.rst>`_
 
 
 Upgrade TAPPAS

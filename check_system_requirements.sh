@@ -26,6 +26,7 @@ apt_reqs[12]='libgstreamer1.0-dev'
 apt_reqs[13]='cmake'
 apt_reqs[14]='libgstreamer-plugins-base1.0-dev'
 apt_reqs[15]='libzmq3-dev'
+apt_reqs[16]='rsync'
 
 declare -a pkg_config_reqs
 

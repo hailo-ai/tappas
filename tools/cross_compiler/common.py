@@ -11,10 +11,18 @@ class Arch(Enum):
     AARCH64 = 'aarch64'
     ARMV7L = 'armv7l'
     ARMV7LHF = 'armv7lhf'
+    ARMV8A = 'armv8a'
 
     def __str__(self):
         return self.value
 
+class Target(Enum):
+    IMX6 = 'imx6'
+    IMX8 = 'imx8'
+    HAILO15 = 'hailo15'
+
+    def __str__(self):
+        return self.value
 
 @contextlib.contextmanager
 def working_directory(target_directory):
@@ -95,7 +103,7 @@ class ShellRunner:
     def __init__(self, logger=None):
         self._logger = logger or logging.getLogger('shell_runner')
 
-    def run(self, shell_cmd, env=None, ignore_errors=False, timeout=None, shell=False, cwd=None):
+    def run(self, shell_cmd, env=None, ignore_errors=False, timeout=None, shell=False, cwd=None, print_output=False):
         """
         Run a command in a subprocess
         :param shell: should run in shell mode? PAY ATTENTION: if shell=True pass the command as string and not
@@ -106,23 +114,28 @@ class ShellRunner:
          exception would be raised
         :param timeout: Amount of seconds before the subprocess will be timed out and raise TimeoutExpired exception
         :param cwd: directory to run from
+        :param print_output: print output at runtime
         :return: stdout, stderr, return_code
         """
         if type(shell_cmd) is list:
             shell_cmd = self._convert_pathlib_instance_to_str(shell_cmd)
 
-        p = subprocess.run(shell_cmd, cwd=cwd, shell=shell, stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE, stdin=subprocess.PIPE,
-                           env=env, timeout=timeout)
+        if not print_output:
+            p = subprocess.run(shell_cmd, cwd=cwd, shell=shell, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, stdin=subprocess.PIPE,
+                            env=env, timeout=timeout)
 
-        p.stdout = p.stdout.decode()
-        p.stderr = p.stderr.decode()
+            p.stdout = p.stdout.decode()
+            p.stderr = p.stderr.decode()
 
-        self._log_subprocess(p)
-        if not ignore_errors:
-            p.check_returncode()
-
-        return p
+            self._log_subprocess(p)
+            if not ignore_errors:
+                p.check_returncode()
+            return p
+        else:
+            # p = subprocess.Popen(shell_cmd, cwd=cwd, shell=shell, env=env)
+            p = subprocess.run(shell_cmd, cwd=cwd, env=env, timeout=timeout)
+            return p
 
     def _convert_pathlib_instance_to_str(self, arr):
         """
@@ -157,6 +170,8 @@ def install_compilers_apt_packages(arch):
         apt_packages = ["g++-arm-linux-gnueabi", "gcc-arm-linux-gnueabi"]
     elif arch == Arch.ARMV7LHF:
         apt_packages = ["g++-arm-linux-gnueabihf", "gcc-arm-linux-gnueabihf"]
+    elif arch == Arch.ARMV8A:
+        apt_packages = ["g++-aarch64-linux-gnu", "gcc-aarch64-linux-gnu"]
     else:
         apt_packages = [f'g++-{arch.value}-linux-gnu', f'gcc-{arch.value}-linux-gnu']
 

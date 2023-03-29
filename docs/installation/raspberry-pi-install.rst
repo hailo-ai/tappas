@@ -123,7 +123,7 @@ To support Tappas apps, enable camera features that support v4l by doing the fol
 
 Run Tappas Applications
 -----------------------
-To read furture and get more more details about each application enter `This section <../../apps/gstreamer/raspberrypi/README.rst>`_
+To read furture and get more more details about each application enter `This section <../../apps/h8/gstreamer/raspberrypi/README.rst>`_
 
 Troubleshooting
 ---------------

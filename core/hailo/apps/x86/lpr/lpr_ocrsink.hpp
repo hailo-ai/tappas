@@ -7,5 +7,5 @@
 #include "hailo_objects.hpp"
 
 G_BEGIN_DECLS
-void filter(HailoROIPtr roi, GstVideoFrame *frame, gchar *current_stream_id);
+void filter(HailoROIPtr roi, GstVideoFrame *frame);
 G_END_DECLS

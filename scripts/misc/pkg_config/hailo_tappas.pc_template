@@ -1,0 +1,43 @@
+prefix=/opt/hailo/tappas
+arch=
+libdir=${prefix}/lib/${arch}-linux-gnu
+tappas_installation_dir=/opt/hailo/tappas
+tappas_libdir=${tappas_installation_dir}/lib/${arch}-linux-gnu
+tappas_workspace=
+tappas_sources=${tappas_workspace}/sources
+
+includedir=${prefix}/include
+tappas_includedir=${tappas_installation_dir}/include
+tappas_hailometa_includedir=${tappas_includedir}/gsthailometa
+tappas_postproc_includedir=${tappas_workspace}/core/hailo/libs/postprocesses
+tappas_general_includedir=${tappas_workspace}/core/hailo/general
+
+
+cxxopts_includedir=${tappas_sources}/cxxopts/include
+pybind11_includedir=${tappas_sources}/pybind11/include
+rapidjson_includedir=${tappas_sources}/rapidjson/include
+xtensor_blas_includedir=${tappas_sources}/xtensor-blas/include
+xtensor_includedir=${tappas_sources}/xtensor/include
+xtl_includedir=${tappas_sources}/xtl/include
+
+tappas_cpp_args=-fvisibility=default -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -Wpessimizing-move -Wredundant-move -fconcepts -fPIC
+
+Requires: opencv4 gstreamer-1.0
+Name: hailo_tappas
+Version:
+Description: Hailo Tappas
+Libs: -L${tappas_libdir} -lgsthailometa
+Cflags: -I${includedir} \
+        -I${tappas_includedir} \
+        -I${tappas_hailometa_includedir} \
+        -I${tappas_postproc_includedir} \
+        -I${tappas_general_includedir} \
+        -I${cxxopts_includedir} \
+        -I${pybind11_includedir} \
+        -I${rapidjson_includedir} \
+        -I${xtensor_blas_includedir} \
+        -I${xtensor_includedir} \
+        -I${xtl_includedir} \
+        -I/usr/include/hailo/ \
+        -I/usr/include/gstreamer-1.0/gst/hailo/ \
+        ${tappas_cpp_args}

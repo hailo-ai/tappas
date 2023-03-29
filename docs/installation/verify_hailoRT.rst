@@ -2,6 +2,9 @@
 Verify HailoRT Installation
 ---------------------------
 
+.. note::
+    This section does not apply to Hailo SW Suite users since HailoRT is already installed.
+
 Make sure that hailo is identified correctly by running this command: ``hailortcli fw-control identify``\ , The expected output should look similar to the one below:
 
 .. code-block:: sh

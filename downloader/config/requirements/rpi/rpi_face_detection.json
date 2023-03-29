@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/raspberrypi/face_detection/resources",
+  "path": "apps/h8/gstreamer/raspberrypi/face_detection/resources",
   "requirements": [
     {
       "bucket": "model_zoo",

@@ -528,7 +528,7 @@ ctf_process_env_var (void)
   GstCTFParser *parser;
   time_t now = time (NULL);
 
-  env_loc_value = g_getenv ("GST_SHARK_LOCATION");
+  env_loc_value = g_getenv ("HAILO_PROFILE_LOCATION");
 
   if (NULL != env_loc_value) {
 

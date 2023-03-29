@@ -32,7 +32,7 @@ A standard Toolchain consists of the following:
 What should I add to my image?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For this example we would add the recipes to a NXP-IMX based image
+For this example we will add the recipes to an NXP-IMX based image
 
 Must add
 ~~~~~~~~
@@ -61,7 +61,6 @@ Nice to add
    # GStreamer plugins
    IMAGE_INSTALL_append += "                    \
        gstreamer1.0-python                      \
-       gst-shark                                \
        gst-instruments                          \
    "
 
@@ -95,71 +94,11 @@ Copy the ``toolchain.tar.gz`` to the container using ``docker cp``
 Components
 ----------
 
-GstHailo
-^^^^^^^^
-
-Compiling the ``gst-hailo`` component.
-This script, firstly unpack and installs the toolchain (If not installed already), and only after that, cross-compiles.
-
-Flags
-~~~~~
-
-.. code-block:: sh
-
-   $ ./cross_compile_gsthailo.py  --help
-   usage: cross_compile_gsthailo.py [-h]
-                                    {aarch64,armv7l} {debug,release}
-                                    toolchain_tar_path
-
-   Cross-compile gst-hailo.
-
-   positional arguments:
-     {aarch64,armv7l}    Arch to compile to
-     {debug,release}     Build and compilation type
-     toolchain_tar_path  Toolchain TAR path
-
-   optional arguments:
-     -h, --help          show this help message and exit
-
-Example
-~~~~~~~
-
-An example for executing the script:
-
-
-
-.. note::
-    In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain.tar.gz
-
-
-.. code-block:: sh
-
-   $ ./cross_compile_gsthailo.py aarch64 debug toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain.tar.gz 
-   INFO:cross_compile_gsthailo.py:Compiling gstreamer
-   INFO:cross_compile_gsthailo.py:extracting toolchain
-   INFO:cross_compile_gsthailo.py:installing toolchain
-   INFO:cross_compile_gsthailo.py:installing /$TAPPAS_WORKSPACE/tools/cross-compiler/toolchain-raw/fsl-imx-xwayland-glibc-x86_64-fsl-image-gui-aarch64-imx8mq-var-dart-toolchain-5.4-zeus.sh
-   INFO:cross_compile_gsthailo.py:toolchain ready to use (/local/workspace/tappas/tools/cross-compiler/toolchain)
-   INFO:cross_compile_gsthailo.py:using environment setup found in /$TAPPAS_WORKSPACE/tools/cross-compiler/toolchain/environment-setup-aarch64-poky-linux
-   INFO:cross_compile_gsthailo.py:Starting compilation...
-   INFO:cross_compile_gsthailo.py:Compilation done
-
-A good practice is to check the output using ``file`` command
-
-.. code-block:: sh
-
-   $ ls aarch64-gsthailo-build/
-   CMakeCache.txt  CMakeFiles  Makefile  cmake_install.cmake  libgsthailo.so
-   $ file aarch64-gsthailo-build/libgsthailo.so 
-   aarch64-gsthailo-build/libgsthailo.so: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, BuildID[sha1]=e55c1655c113e99bb649dbb03c15b844142503ee, with debug_info, not stripped
-
-As you can see, the file is compatible to ``aarch64`` like we wanted to
-
-GstHailoTools
+Tappas
 ^^^^^^^^^^^^^
 
-This script cross-compiles ``gst-hailo-tools``.
-This script, firstly unpack and installs the toolchain (If not installed already), and only after that, cross-compiles.
+This script cross-compiles ``Tappas`` components.
+This script first unpack and installs the toolchain (if not already installed), and then cross-compiles Tappas core/.
 
 Flags
 ~~~~~
@@ -169,20 +108,23 @@ Flags
    $ ./cross_compile_gsthailotools.py --help
    usage: cross_compile_gsthailotools.py [-h]
                                          [--yocto-distribution YOCTO_DISTRIBUTION]
-                                         {aarch64,armv7l} {debug,release}
+                                         [--remove-cache]
+                                         {aarch64,armv7l} {imx6,imx8,hailo15} {debug,release}
                                          toolchain_tar_path
 
    Cross-compile gst-hailo.
 
    positional arguments:
      {aarch64,armv7l}      Arch to compile to
+     {imx6,imx8,hailo15}   Target platform to compile to
      {debug,release}       Build and compilation type
      toolchain_tar_path    Toolchain TAR path
 
    optional arguments:
      -h, --help            show this help message and exit
      --yocto-distribution YOCTO_DISTRIBUTION
-                           The name of the Yocto distribution to use
+                           The name of the Yocto distribution to use (default poky)
+     --remove-cache        Delete previous build cache (default false)
 
 Example
 ~~~~~~~
@@ -197,7 +139,7 @@ Run the compilation script
 
 .. code-block:: sh
 
-   $ ./cross_compile_gsthailotools.py aarch64 debug toolchain
+   $ ./cross_compile_gsthailotools.py aarch64 imx8 debug toolchain
    INFO:./cross_compile_gsthailotools.py:Building hailofilter plugin and post processes
    INFO:./cross_compile_gsthailotools.py:Running Meson build.
    INFO:./cross_compile_gsthailotools.py:Running Ninja command.

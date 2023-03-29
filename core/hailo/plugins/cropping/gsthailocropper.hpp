@@ -8,6 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include <dlfcn.h>
 #include "cropping/gsthailobasecropper.hpp"
+#include "hailomat.hpp"
 
 G_BEGIN_DECLS
 
@@ -31,7 +32,7 @@ struct _GstHailoCropper
     gboolean use_letterbox;
     cv::InterpolationFlags method;
     void *loaded_lib;
-    std::vector<HailoROIPtr> (*handler)(cv::Mat, HailoROIPtr);
+    std::vector<HailoROIPtr> (*handler)(std::shared_ptr<HailoMat>, HailoROIPtr);
 };
 
 struct _GstHailoCropperClass

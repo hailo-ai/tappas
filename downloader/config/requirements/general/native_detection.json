@@ -1,5 +1,5 @@
 {
-  "path": "apps/native/detection/",
+  "path": "apps/h8/native/detection/",
   "requirements": [
     {
       "bucket": "model_zoo",

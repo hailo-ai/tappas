@@ -1,6 +1,23 @@
 Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
 ================================================================
 
+.. |gstreamer| image:: https://img.shields.io/badge/gstreamer-1.16%20%7C%201.18%20%7C%201.20-blue
+   :target: https://gstreamer.freedesktop.org/
+   :alt: Gstreamer 1.16 | 1.18 | 1.20
+   :width: 150
+   :height: 20
+
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.13.0-green
+   :target: https://github.com/hailo-ai/hailort
+   :alt: HailoRT
+   :height: 20
+
+
+.. |license| image:: https://img.shields.io/badge/License-LGPLv2.1-green
+   :target: https://github.com/hailo-ai/tappas/blob/master/LICENSE
+   :alt: License: LGPL v2.1
+   :height: 20
+
 .. |check_mark| image:: ./resources/check_mark.png
   :width: 20
   :align: middle
@@ -14,31 +31,25 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
 .. raw:: html
 
    <div align="center">
-      <img src="./apps/gstreamer/general/cascading_networks/readme_resources/cascading_app.gif"/>
+      <img src="./apps/h8/gstreamer/general/cascading_networks/readme_resources/cascading_app.gif"/>
    </div>
 
+|gstreamer| |hailort| |license|
 
 ----
 
 Overview
 --------
 
-TAPPAS is a framework for using video analytics to build optimized processing pipelines in systems
-with the Hailo-8 accelerator. Hailo-8 accelerates NN inference. TAPPAS optimizes the rest of the
-pipeline to take full advantage of Hailo's dataflow architecture.
+TAPPAS is Hailo's set of full application examples, implementing pipeline elements and
+pre-trained AI tasks.
 
-The core of TAPPAS is a library of non-neural video-processing elements.
-These elements include:
+Demonstrating Hailo's system integration scenario of specific use cases on predefined systems
+(software and Hardware platforms). It can be used for evaluations, reference code and demos:
 
-
-* Hailo abstraction - elements to send/receive data from the Hailo accelerator.
-* Glue-logic (e.g. format conversion YUV->RGB )
-* Decision logic (e.g.rule-based filtering; branching; conditional invocation etc.)
-* Data flow regulation elements (e.g. buffering; throttling; muxing/de-muxing)
-* Functional elements (e.g. NMS, Tracking, Tiling, etc. )
-
-TAPPAS comes packaged with a rich set of video analytics examples built on top of TAPPAS. These examples demonstrate common use-cases and showcase performance.
-
+* Accelerating time to market by reducing development time and deployment effort
+* Simplifying integration with Hailo’s runtime SW stack
+* Providing a starting point for customers to fine-tune their applications
 
 .. image:: ./resources/HAILO_TAPPAS_SW_STACK.jpg
 
@@ -58,7 +69,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.12.1.
+    This version is compatible with HailoRT v4.13.
 
 
 Installation
@@ -135,17 +146,19 @@ The following table details the currently available examples.
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12
+   :widths: 40 12 12 12 12 12 12
    :align: center
 
    * - 
-     - `General <apps/gstreamer/general/README.rst>`_
-     - `i.MX8 <apps/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/gstreamer/imx6/README.rst>`_
-     - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
-     - `x86 Hardware Accelerated <apps/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `General <apps/h8/gstreamer/general/README.rst>`_
+     - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
+     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
+     - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
+     - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
    * - Classification 
      - |check_mark|
+     -  
      -  
      -  
      -  
@@ -156,11 +169,13 @@ The following table details the currently available examples.
      - |check_mark|
      - |check_mark|
      - 
+     - |check_mark|
    * - Pose Estimation
      - |check_mark|
      - |check_mark|
      - 
      - |check_mark|
+     - 
      - 
    * - Semantic Segmentation
      - |check_mark|
@@ -168,11 +183,13 @@ The following table details the currently available examples.
      - 
      - |check_mark|
      - 
+     - 
    * - Depth Estimation
      - |check_mark|
      - |check_mark|
      - |check_mark|
      - |check_mark|
+     - 
      - 
    * - Face Detection
      - |check_mark|
@@ -180,14 +197,17 @@ The following table details the currently available examples.
      - 
      - |check_mark|
      - 
+     - 
    * - Facial landmark
      - |check_mark|
      - |check_mark|
      - 
      - 
      - 
+     - 
    * - Instance segmentation
      - |check_mark|
+     - 
      - 
      - 
      - 
@@ -198,12 +218,14 @@ The following table details the currently available examples.
      - 
      - 
      - 
+     - 
    * - Object Detection Multiple Devices (Century)
      - |check_mark|
      - 
      - 
      - 
      - |check_mark|
+     - 
 
 
 Two Network Pipelines
@@ -224,23 +246,26 @@ The cascaded (serial) flow shows two networks running in series. This example pi
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12
+   :widths: 40 12 12 12 12 12 12
    :align: center
 
    * - 
-     - `General <apps/gstreamer/general/README.rst>`_
-     - `i.MX8 <apps/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/gstreamer/imx6/README.rst>`_
-     - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
-     - `x86 Hardware Accelerated <apps/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `General <apps/h8/gstreamer/general/README.rst>`_
+     - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
+     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
+     - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
+     - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
    * - Parallel - Object Det + Depth Estimation
      - |check_mark|
      - 
      - 
      - |check_mark|
      - 
+     - 
    * - Parallel - Object Det + Pose Estimation
      - |check_mark|
+     - 
      - 
      - 
      - 
@@ -251,14 +276,17 @@ The cascaded (serial) flow shows two networks running in series. This example pi
      - 
      - |check_mark|
      - 
+     - 
    * - Cascaded - Person Det & Single Person Pose Estimation
      - |check_mark|
      - 
      - 
      - 
      - 
+     - 
    * - Cascaded - Face Detection & Recognition
      - |check_mark|
+     - 
      - 
      - 
      - 
@@ -274,20 +302,22 @@ Multi-Stream Pipelines
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12
+   :widths: 40 12 12 12 12 12 12
    :align: center
 
    * - 
-     - `General <apps/gstreamer/general/README.rst>`_
-     - `i.MX8 <apps/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/gstreamer/imx6/README.rst>`_
-     - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
-     - `x86 Hardware Accelerated <apps/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `General <apps/h8/gstreamer/general/README.rst>`_
+     - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
+     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
+     - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
+     - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
    * - Multi-stream Object Detection
      - |check_mark|
      - 
      - 
      - 
+     - |check_mark|
      - |check_mark|
    * - Multi-stream Multi-Device Object Detection
      - |check_mark|
@@ -295,6 +325,8 @@ Multi-Stream Pipelines
      - 
      - 
      - 
+     - 
+     
 
 
 Pipelines for High-Resolution Processing Via Tiling
@@ -306,21 +338,23 @@ Pipelines for High-Resolution Processing Via Tiling
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12
+   :widths: 40 12 12 12 12 12 12
    :align: center
 
    * - 
-     - `General <apps/gstreamer/general/README.rst>`_
-     - `i.MX8 <apps/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/gstreamer/imx6/README.rst>`_
-     - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
-     - `x86 Hardware Accelerated <apps/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `General <apps/h8/gstreamer/general/README.rst>`_
+     - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
+     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
+     - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
+     - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
    * - HD Object Detection
      - |check_mark|
      - 
      - 
      - 
      - 
+     - |check_mark|
 
 
 Example Use Case Pipelines
@@ -347,26 +381,29 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12
+   :widths: 40 12 12 12 12 12 12
    :align: center
 
    * - 
-     - `General <apps/gstreamer/general/README.rst>`_
-     - `i.MX8 <apps/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/gstreamer/imx6/README.rst>`_
-     - `Raspberry Pi 4 <apps/gstreamer/raspberrypi/README.rst>`_
-     - `x86 Hardware Accelerated <apps/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `General <apps/h8/gstreamer/general/README.rst>`_
+     - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
+     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
+     - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
+     - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
+     - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
    * - LPR
      - |check_mark|
      - |check_mark|
      - 
      - 
      - 
+     - |check_mark|
    * - RE-ID
      - |check_mark|
      - 
      - 
      -
+     - 
      - 
    * - VMS
      - 
@@ -374,6 +411,7 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
      - 
      -
      - |check_mark|
+     - 
 
 
 ----
@@ -381,6 +419,23 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 
 Changelog
 ----------
+
+**v3.24.0 (March 2023)**
+
+* Added support for `Rockchip RK3588 <apps/h8/gstreamer/rockchip/README.rst>`_ (validated on Firefly ITX-3588J platform)
+* `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ now supports multi-device (Ubuntu 22.04 only)
+* `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ (single device) now works on Ubuntu 20.04
+* Added a new model to `Instance Segmentation Pipeline <apps/h8/gstreamer/general/instance_segmentation/README.rst>`_ -- `yolov5seg`, which has improved
+  performance compared to `yolact`
+* New applications for `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_:
+
+  * Object Detection and Pose Estimation (cascaded)
+  * Multi-Stream Detection
+
+* Added a TAPPAS Graphic User Interface to easily run selected general example applications (preview) on the TAPPAS Docker - to activate it, run `tappas-gui`
+* Added back `yolox_l_leaky` to the `Century general application <apps/h8/gstreamer/general/century/README.rst>`_
+* Reduced docker size
+
 
 **v3.23.1 (February 2023)**
 
@@ -392,40 +447,40 @@ Changelog
 
 * New Apps:
 
-  * Added `x86_hw_accelerated <apps/gstreamer/x86_hw_accelerated/README.rst>`_ example pipelines
+  * Added `x86_hw_accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_ example pipelines
     that use Video Acceleration API (VA-API) over Intel processors that support
     `Quick Sync <https://en.wikipedia.org/wiki/Intel_Quick_Sync_Video>`_:
 
-    * `Video Management System <apps/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ -
+    * `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ -
       a pipeline that demonstrates a VMS application which runs several streams and different tasks - Face Recognition,
       Face Attributes and Person Attributes. Currently this example pipeline is supported on Ubuntu 22.04 only
-    * `Multi-stream detection <apps/gstreamer/x86_hw_accelerated/multistream_detection/README.rst>`_
-    * `Century <apps/gstreamer/x86_hw_accelerated/century/README.rst>`_
+    * `Multi-stream detection <apps/h8/gstreamer/x86_hw_accelerated/multistream_detection/README.rst>`_
+    * `Century <apps/h8/gstreamer/x86_hw_accelerated/century/README.rst>`_
 
-  * Pose Estimation pipeline with two cascading networks - `Person detection and single person pose estimation <apps/gstreamer/general/cascading_networks/README.rst>`_
-  * `Face recognition <apps/gstreamer/general/face_recognition/README.rst>`_
-  * Updated `i.MX6 Object Detection App <apps/gstreamer/imx6/detection/README.rst>`_ - New network, updated the pipeline to include i.MX6 hardware acceleration
+  * Pose Estimation pipeline with two cascading networks - `Person detection and single person pose estimation <apps/h8/gstreamer/general/cascading_networks/README.rst>`_
+  * `Face recognition <apps/h8/gstreamer/general/face_recognition/README.rst>`_
+  * Updated `i.MX6 Object Detection App <apps/h8/gstreamer/imx6/detection/README.rst>`_ - New network, updated the pipeline to include i.MX6 hardware acceleration
 
-* Added new models to `Instance Segmentation Pipeline <apps/gstreamer/general/instance_segmentation/README.rst>`_:
+* Added new models to `Instance Segmentation Pipeline <apps/h8/gstreamer/general/instance_segmentation/README.rst>`_:
 
   * yolact_regnetx_1.6gf
   * yolact_regnetx_800mf (80 classes) 
 
-* `Century app <apps/gstreamer/general/century/README.rst>`_ now uses a new network (yolov5m)
-* `Multi-Camera Multi-Person Tracking (RE-ID) <apps/gstreamer/general/multi_person_multi_camera_tracking/README.rst>`_  -  Improved pipeline performance and accuracy
+* `Century app <apps/h8/gstreamer/general/century/README.rst>`_ now uses a new network (yolov5m)
+* `Multi-Camera Multi-Person Tracking (RE-ID) <apps/h8/gstreamer/general/multi_person_multi_camera_tracking/README.rst>`_  -  Improved pipeline performance and accuracy
 * Added support for Ubuntu 22.04 (release-grade)
 
 **v3.22.0 (November 2022)**
 
 * New element `hailoimportzmq` - provides an entry point for importing metadata exported by `hailoexportzmq` (HailoObjects) into the pipeline
-* Added Depth Estimation, Object Detection and Classification pipelines for `i.MX6 Pipelines <apps/gstreamer/imx6/README.rst>`_ 
+* Added Depth Estimation, Object Detection and Classification pipelines for `i.MX6 Pipelines <apps/h8/gstreamer/imx6/README.rst>`_ 
 * Changed the debugging tracers to use an internal tracing mechanism  
 
 **v3.21.0 (October 2022)**
 
 * New Apps:
   
-  * `Multi-stream detection that uses HailoRT Stream Multiplexer <apps/gstreamer/general/multistream_detection/README.rst>`_ - Demonstrates the usage of HailoRT stream multiplexer (preview)
+  * `Multi-stream detection that uses HailoRT Stream Multiplexer <apps/h8/gstreamer/general/multistream_detection/README.rst>`_ - Demonstrates the usage of HailoRT stream multiplexer (preview)
 
 * New elements - `hailoexportfile` and `hailoexportmq` which provide an access point in the pipeline to export metadata (HailoObjects)
 * Improved pipeline profiling by adding new tracers and replacing the GUI of `gst-shark <docs/write_your_own_application/debugging.rst>`_
@@ -436,7 +491,7 @@ Changelog
 
 * New Apps:
   
-  * `Detection every X frames pipeline <apps/gstreamer/general/detection/README.rst>`_ - Demonstrates the ability of skipping frames using a tracker
+  * `Detection every X frames pipeline <apps/h8/gstreamer/general/detection/README.rst>`_ - Demonstrates the ability of skipping frames using a tracker
 
 * Improvements to Multi-Camera Multi-Person Tracking (RE-ID) pipeline (released)
 
@@ -444,17 +499,17 @@ Changelog
 
 * New Apps:
   
-  * Multi-Camera Multi-Person Tracking (RE-ID) pipeline `multi_person_multi_camera_tracking.sh <apps/gstreamer/general/multi_person_multi_camera_tracking/README.rst>`_ (preview)
+  * Multi-Camera Multi-Person Tracking (RE-ID) pipeline `multi_person_multi_camera_tracking.sh <apps/h8/gstreamer/general/multi_person_multi_camera_tracking/README.rst>`_ (preview)
 
 **v3.19.0 (June 2022)**
 
 * New Apps:
 
-  * Added Cascading networks, Depth Estimation, Pose Estimation and Semantic Segmentation pipelines for `i.MX Pipelines <apps/gstreamer/imx8/README.rst>`_
+  * Added Cascading networks, Depth Estimation, Pose Estimation and Semantic Segmentation pipelines for `i.MX Pipelines <apps/h8/gstreamer/imx8/README.rst>`_
 
 * Added an option to control post-process parameters via a JSON configuration for the detection application
 * Added support for Raspberry Pi Raspbian OS
-* `Native Application <apps/native/detection/README.rst>`_ now uses TAPPAS post-process
+* `Native Application <apps/h8/native/detection/README.rst>`_ now uses TAPPAS post-process
 * LPR (License Plate Recognition) pipeline is simplified to bash only
 * New detection post-process - Nanodet
 
@@ -468,7 +523,7 @@ Changelog
 
 * New Apps:
 
-  * LPR (License Plate Recognition) pipeline and facial landmark pipeline for `i.MX Pipelines <apps/gstreamer/imx8/README.rst>`_
+  * LPR (License Plate Recognition) pipeline and facial landmark pipeline for `i.MX Pipelines <apps/h8/gstreamer/imx8/README.rst>`_
 
 * Added the ability of compiling a specific TAPPAS target (post-processes, elements)
 * Improved the performance of Raspberry Pi example applications
@@ -478,7 +533,7 @@ Changelog
 
 * New Apps:
 
-  * LPR (License Plate Recognition) pipeline for `General Pipelines <apps/gstreamer/general/README.rst>`_ (preview)
+  * LPR (License Plate Recognition) pipeline for `General Pipelines <apps/h8/gstreamer/general/README.rst>`_ (preview)
   * Detection & pose estimation app
   * Detection (MobilenetSSD) - Multi scale tiling app
 

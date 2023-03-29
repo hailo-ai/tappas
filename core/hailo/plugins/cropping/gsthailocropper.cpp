@@ -112,6 +112,7 @@ gst_hailocropper_init(GstHailoCropper *hailocropper)
 {
     GST_DEBUG_OBJECT(hailocropper, "init");
     hailocropper->method = cv::INTER_LINEAR;
+    hailocropper->use_letterbox = false;
 }
 
 static void
@@ -175,23 +176,12 @@ void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat
     GstHailoCropper *hailocropper = GST_HAILO_CROPPER(basecropper);
     if (hailocropper->use_letterbox)
     {
-        switch (image_format)
-        {
-        case GST_VIDEO_FORMAT_RGB:
-        {
-            resize_letterbox(hailocropper->method, cropped_image, resized_image, roi);
-            break;
-        }
-        default:
-            std::cerr << "Letterbox resizing is supported only for RGB at this moment." << std::endl;
-            break;
-        }
+        resize_letterbox(hailocropper->method, cropped_image, resized_image, roi, image_format);
     }
     else
     {
         resize_normal(hailocropper->method, cropped_image, resized_image, image_format);
     }
-
 }
 
 /**
@@ -212,11 +202,11 @@ static std::vector<HailoROIPtr> gst_hailocropper_prepare_crops(GstHailoBaseCropp
     GstMapInfo map;
     gst_buffer_map(buf, &map, GST_MAP_READ);
     gst_video_info_from_caps(info, caps);
-    cv::Mat image = get_mat(info, &map);
+
+    std::shared_ptr<HailoMat> image = get_mat_by_format(buf, info, &map);
     gst_video_info_free(info);
 
     std::vector<HailoROIPtr> crop_rois = hailocropper->handler(image, hailo_roi);
-    image.release();
     gst_caps_unref(caps);
     gst_buffer_unmap(buf, &map);
     return crop_rois;
@@ -235,7 +225,7 @@ gst_hailocropper_load_symbol(GstHailoCropper *hailocropper)
     // reset errors
     dlerror();
 
-    hailocropper->handler = (std::vector<HailoROIPtr>(*)(cv::Mat, HailoROIPtr))dlsym(hailocropper->loaded_lib, hailocropper->function_name);
+    hailocropper->handler = (std::vector<HailoROIPtr>(*)(std::shared_ptr<HailoMat>, HailoROIPtr))dlsym(hailocropper->loaded_lib, hailocropper->function_name);
     // If there was an error loading one of the symbols, close the dl and break.
     const char *dlsym_error = dlerror();
     if (dlsym_error || !hailocropper->handler)

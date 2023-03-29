@@ -53,7 +53,7 @@ Then, we insert them into the full pipeline:
        agg. ! queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
        hailooverlay ! \
        queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! videoconvert ! \
-       fpsdisplaysink video-sink=xvimagesink name=hailo_display sync=false text-overlay=false ${additonal_parameters}
+       fpsdisplaysink video-sink=xvimagesink name=hailo_display sync=false text-overlay=false ${additional_parameters}
 
 Let's explain this pipeline section by section:
 

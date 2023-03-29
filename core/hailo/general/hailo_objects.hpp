@@ -37,6 +37,43 @@ typedef enum
     HAILO_USER_META
 } hailo_object_t;
 
+static std::map<std::string, hailo_object_t> hailo_object_map = {
+    {"hailo_roi", HAILO_ROI},
+    {"hailo_classification", HAILO_CLASSIFICATION},
+    {"hailo_detection", HAILO_DETECTION},
+    {"hailo_landmarks", HAILO_LANDMARKS},
+    {"hailo_tile", HAILO_TILE},
+    {"hailo_unique_id", HAILO_UNIQUE_ID},
+    {"hailo_matrix", HAILO_MATRIX},
+    {"hailo_depth_mask", HAILO_DEPTH_MASK},
+    {"hailo_class_mask", HAILO_CLASS_MASK},
+    {"hailo_conf_class_mask", HAILO_CONF_CLASS_MASK},
+    {"hailo_user_meta", HAILO_USER_META},
+};
+
+inline hailo_object_t hailo_object_type_from_string(const std::string &lower_case_str)
+{
+    if (hailo_object_map.find(lower_case_str) != hailo_object_map.end())
+    {
+        return hailo_object_map[lower_case_str];
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid hailo object type: " + lower_case_str + ".");
+    }
+}
+
+inline std::string hailo_object_type_to_string(const hailo_object_t obj)
+{
+    for (auto it = hailo_object_map.begin(); it != hailo_object_map.end(); ++it)
+    {
+        if (it->second == obj)
+        {
+            return it->first;
+        }
+    }
+    throw std::invalid_argument("Invalid hailo object type.");
+}
 typedef enum
 {
     SINGLE_SCALE,
@@ -338,11 +375,12 @@ class HailoROI : public HailoMainObject
 protected:
     HailoBBox m_bbox;         // A bounding box - the normalized position of this region of interest.
     HailoBBox m_scaling_bbox; // A bounding box to scale by - x offset, y offset, width factor, height factor
+    std::string m_stream_id;  // A string representing the stream ID that is related to this ROI.
 public:
-    HailoROI(HailoBBox bbox) : m_bbox(bbox), m_scaling_bbox(HailoBBox(0.0, 0.0, 1.0, 1.0)){};
+    HailoROI(HailoBBox bbox, std::string stream_id = "") : m_bbox(bbox), m_scaling_bbox(HailoBBox(0.0, 0.0, 1.0, 1.0)), m_stream_id(stream_id){};
     virtual ~HailoROI() = default;
-    HailoROI(HailoROI &&other) noexcept : HailoMainObject(other), m_bbox(std::move(other.m_bbox)), m_scaling_bbox(std::move(other.m_scaling_bbox)){};
-    HailoROI(const HailoROI &other) : HailoMainObject(other), m_bbox(other.m_bbox), m_scaling_bbox(std::move(other.m_scaling_bbox)){};
+    HailoROI(HailoROI &&other) noexcept : HailoMainObject(other), m_bbox(std::move(other.m_bbox)), m_scaling_bbox(std::move(other.m_scaling_bbox)), m_stream_id(std::move(other.m_stream_id)){};
+    HailoROI(const HailoROI &other) : HailoMainObject(other), m_bbox(other.m_bbox), m_scaling_bbox(std::move(other.m_scaling_bbox)), m_stream_id(std::move(other.m_stream_id)){};
     HailoROI &operator=(const HailoROI &other) = default;
     HailoROI &operator=(HailoROI &&other) noexcept = default;
     std::shared_ptr<HailoROI> shared_from_this()
@@ -363,7 +401,10 @@ public:
     {
         std::shared_ptr<HailoROI> possible_roi = std::dynamic_pointer_cast<HailoROI>(obj);
         if (nullptr != possible_roi)
+        {
             possible_roi->set_scaling_bbox(this->get_bbox());
+            possible_roi->set_stream_id(this->get_stream_id());
+        }
         HailoMainObject::add_object(obj);
     };
 
@@ -435,6 +476,28 @@ public:
     {
         std::lock_guard<std::mutex> lock(*mutex);
         m_scaling_bbox = HailoBBox(0.0, 0.0, 1.0, 1.0);
+    }
+
+    /**
+     * @brief Get the stream ID of this ROI
+     *
+     * @return std::string
+     */
+    std::string get_stream_id()
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        return m_stream_id;
+    }
+
+    /**
+     * @brief Set the stream ID of this ROI
+     *
+     * @param stream_id
+     */
+    void set_stream_id(std::string stream_id)
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        m_stream_id = std::move(stream_id);
     }
 };
 using HailoROIPtr = std::shared_ptr<HailoROI>;
@@ -613,6 +676,11 @@ public:
     {
         std::lock_guard<std::mutex> lock(*mutex);
         return m_label;
+    }
+    void set_label(std::string label)
+    {
+        std::lock_guard<std::mutex> lock(*mutex);
+        m_label = label;
     }
     int get_class_id()
     {

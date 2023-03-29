@@ -9,6 +9,13 @@
 
 #include "mspn.hpp"
 #include "common/tensors.hpp"
+#include "common/json_config.hpp"
+
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/error/en.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/schema.h"
 
 // Open source includes
 #include <opencv2/opencv.hpp>
@@ -24,6 +31,14 @@
 #define SCORE_THRESHOLD 0.2
 #define KERNEL_SIZE 5
 #define EPS 1e-12
+
+#if __GNUC__ > 8
+#include <filesystem>
+namespace fs = std::filesystem;
+#else
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#endif
 
 const std::vector<std::pair<int, int>> centerpose_joint_pairs =
     {
@@ -76,20 +91,20 @@ void gaussian_blur(xt::xarray<float> &heatmaps, int num_joints, int width, int h
  */
 xt::xarray<float> get_max_predictions(xt::xarray<float> &heatmaps, int num_joints, int width, int height)
 {
-    xt::xarray<float> heatmaps_reshape = xt::reshape_view(heatmaps, {num_joints, 3072});
-    xt::xarray<int> max_indices = xt::argmax(heatmaps_reshape, 1);
-    xt::xarray<int> max_indices_reshape = xt::reshape_view(max_indices, {num_joints, 1});
+    auto heatmaps_reshape = xt::reshape_view(heatmaps, {num_joints, 3072});
+    auto max_indices = xt::argmax(heatmaps_reshape, 1);
+    auto max_indices_reshape = xt::reshape_view(max_indices, {num_joints, 1});
     xt::xarray<float> max_vals = xt::amax(heatmaps_reshape, 1);
     max_vals = xt::where(max_vals > 1.0, 1.0, max_vals); // tappas doesn't allow confidence to be greater than 1
-    xt::xarray<float> max_vals_reshape = xt::reshape_view(max_vals, {num_joints, 1});
-    xt::xarray<int> preds_ = xt::tile(max_indices_reshape, {1, 2});
-    xt::xarray<int> preds_first = xt::view(preds_, xt::all(), 0) % width;
+    auto max_vals_reshape = xt::reshape_view(max_vals, {num_joints, 1});
+    auto preds_ = xt::tile(max_indices_reshape, {1, 2});
+    auto preds_first = xt::view(preds_, xt::all(), 0) % width;
     xt::view(preds_, xt::all(), 0) = preds_first;
-    xt::xarray<int> preds_second_ = xt::view(preds_, xt::all(), 1);
-    xt::xarray<int> preds_second = floor(preds_second_ / width);
+    auto preds_second_ = xt::view(preds_, xt::all(), 1);
+    auto preds_second = floor(preds_second_ / width);
     xt::view(preds_, xt::all(), 1) = preds_second;
-    xt::xarray<float> preds = xt::where(xt::tile(max_vals_reshape, {1, 2}) > 0.0, preds_, -1);
-    xt::xarray<float> preds_with_confidence = xt::hstack(xt::xtuple(preds, max_vals_reshape / 255 + 0.5));
+    auto preds = xt::where(xt::tile(max_vals_reshape, {1, 2}) > 0.0, preds_, -1);
+    auto preds_with_confidence = xt::hstack(xt::xtuple(preds, max_vals_reshape / 255 + 0.5));
 
     return preds_with_confidence;
 }
@@ -130,21 +145,24 @@ void calculate_joints_and_resize(xt::xarray<float> &heatmaps, xt::xarray<float> 
  * @brief mspn post process
  *
  * @param roi region of interest
- * @param score_threshold threshold for score filterig
+ * @param score_threshold threshold for score filtering
+ * @param perform_gaussian_blur whether to perform gaussian blur
  * @return std::vector<HailoDetection> the detected objects
  */
-void mspn_postprocess(HailoROIPtr roi,
-                      const float score_threshold)
+void mspn_postprocess(HailoROIPtr roi, const float score_threshold, bool perform_gaussian_blur)
 {
     std::vector<HailoDetection> objects; // The detection meta we will eventually return
     HailoTensorPtr tensor = roi->get_tensors()[0];
-    xt::xarray<float> tensor_xarray = common::get_xtensor_float(tensor);
+    auto tensor_xarray = common::get_xtensor_float(tensor);
     xt::xarray<float> heatmaps = xt::transpose(tensor_xarray, {2, 0, 1});
     int num_joints = heatmaps.shape()[0];
     int height = heatmaps.shape()[1];
     int width = heatmaps.shape()[2];
 
-    gaussian_blur(heatmaps, num_joints, width, height);
+    if (perform_gaussian_blur)
+    {
+        gaussian_blur(heatmaps, num_joints, width, height);
+    }
 
     xt::xarray<float> preds = get_max_predictions(heatmaps, num_joints, width, height);
 
@@ -163,16 +181,71 @@ void mspn_postprocess(HailoROIPtr roi,
  * @brief Perform post process and add the detected objects to the roi object
  *
  * @param roi region of interest
+ * @param params_void_ptr pointer to the parameters
  */
-void mspn(HailoROIPtr roi)
+void mspn(HailoROIPtr roi, void *params_void_ptr)
 {
     if (roi->has_tensors())
     {
-        mspn_postprocess(roi, SCORE_THRESHOLD);
+        MSPNParams *params = reinterpret_cast<MSPNParams *>(params_void_ptr);
+        bool perform_gaussian_blur = params->gaussian_blur;
+        mspn_postprocess(roi, SCORE_THRESHOLD, perform_gaussian_blur);
     }
 }
 
-void filter(HailoROIPtr roi)
+void filter(HailoROIPtr roi, void *params_void_ptr)
 {
-    mspn(roi);
+    MSPNParams *params = reinterpret_cast<MSPNParams *>(params_void_ptr);
+    mspn(roi, params);
+}
+
+void free_resources(void *params_void_ptr)
+{
+    MSPNParams *params = reinterpret_cast<MSPNParams *>(params_void_ptr);
+    delete params;
+}
+
+MSPNParams *init(const std::string config_path)
+{
+    MSPNParams *params;
+    if (!fs::exists(config_path))
+    {
+        std::cerr << "Config file doesn't exist, using default parameters" << std::endl;
+        params = new MSPNParams;
+        return params;
+    }
+    else
+    {
+        params = new MSPNParams;
+        char config_buffer[4096];
+        const char *json_schema = R""""({
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "object",
+            "properties": {
+                "gaussian_blur": {
+                "type": "boolean"
+                }
+            },
+            "required": [
+                "gaussian_blur"
+            ]
+
+        })"""";
+
+        std::FILE *fp = fopen(config_path.c_str(), "r");
+        if (fp == nullptr)
+        {
+            throw std::runtime_error("JSON config file is not valid");
+        }
+        rapidjson::FileReadStream stream(fp, config_buffer, sizeof(config_buffer));
+        bool valid = common::validate_json_with_schema(stream, json_schema);
+        if (valid)
+        {
+            rapidjson::Document doc_config_json;
+            doc_config_json.ParseStream(stream);
+            params->gaussian_blur = doc_config_json["gaussian_blur"].GetBool();
+        }
+        fclose(fp);
+    }
+    return params;
 }

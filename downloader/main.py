@@ -19,8 +19,8 @@ class DownloadException(Exception):
 
 class S3Downloader(Downloader):
 
-    def __init__(self, root_path=None, platform=Platform.X86, dump_requirements=False):
-        super().__init__(root_path=root_path, platform=platform, dump_requirements=dump_requirements)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._s3_client = boto3.client('s3', aws_access_key_id='', aws_secret_access_key='')
         self._s3_client._request_signer.sign = (lambda *args, **kwargs: None)
 
@@ -64,7 +64,8 @@ def main():
     args = parse_downloader_args()
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
     S3Downloader(root_path=args.root_path, platform=args.platform,
-                 dump_requirements=args.dump_requirements).run()
+                 dump_requirements=args.dump_requirements,
+                 apps_list=args.apps_list).run()
 
 
 if __name__ == '__main__':

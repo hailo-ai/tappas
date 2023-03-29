@@ -17,7 +17,9 @@ class Platform(Enum):
     ARM = 'arm'
     IMX8 = 'imx8'
     IMX6 = 'imx6'
+    Rockchip = 'rockchip'
     RaspberryPI = 'rpi'
+    
     ANY = 'any'
 
     def __str__(self):
@@ -26,18 +28,19 @@ class Platform(Enum):
 
 class Downloader(ABC):
     COMMON_SUFFIX = ['.hef', '.mp4']
-    COMMON_RESOURCES_PATH = Path(__file__).parent.parent.resolve() / Path("apps/gstreamer/resources")
+    COMMON_RESOURCES_PATH = Path(__file__).parent.parent.resolve() / Path("apps/h8/gstreamer/resources")
     TAPPAS_BUCKET = 'tappas'
     MODEL_ZOO_BUCKET = 'model_zoo'
     DEFAULT_APP_REQUIREMENT_FILE = "download_requirements.txt"
 
-    def __init__(self, root_path=None, platform=Platform.X86, dump_requirements=False):
+    def __init__(self, root_path=None, platform=Platform.X86, dump_requirements=False, apps_list=None):
         self._md5_cache_dict = dict()
         self._logger = logging.getLogger(__file__)
         self._root_path = root_path or config.ROOT_PATH
         self.dump_requirements = dump_requirements
         self.requirements_dump_file = Path(self.DEFAULT_APP_REQUIREMENT_FILE)
         self.platform = platform
+        self.apps_list = apps_list or []
 
         self._logger.info(f'Initialized with platform - {platform}')
 
@@ -58,7 +61,7 @@ class Downloader(ABC):
 
         for requirements_file in config.REQUIREMENTS_FILES:
             req_path = config.REQUIREMENTS_PATH / requirements_file
-            is_general_req = str(requirements_file).startswith(f'general/') and platform not in [Platform.IMX8, Platform.IMX6]
+            is_general_req = str(requirements_file).startswith(f'general/') and platform not in [Platform.IMX8, Platform.IMX6, Platform.Rockchip]
             is_platform_req = str(requirements_file).startswith(f'{str(platform)}/')
             if platform == Platform.ANY or is_platform_req or is_general_req:
                 requirements_file_content = req_path.read_text()
@@ -88,8 +91,33 @@ class Downloader(ABC):
     def _requirements_manipulation(self, requirements):
         pass
 
+    @staticmethod
+    def get_apps_requirements(apps_files):
+        apps_requirements = []
+        for requirements_file in apps_files:
+            req_path = config.REQUIREMENTS_PATH / requirements_file
+            if requirements_file in config.REQUIREMENTS_FILES:
+                requirements_file_content = req_path.read_text()
+                apps_requirements.append(FolderRequirements.parse_raw(requirements_file_content))
+        return apps_requirements
+
+    def _translate_apps_to_files(self, apps_list):
+        apps_files = []
+        for app in apps_list:
+            arch, app_name = app.split('/')
+            if arch.startswith('general'):
+                app_file = f'{arch}/{app_name}.json'
+            else:
+                app_file = f'{arch}/{arch}_{app_name}.json'
+            apps_files.append(app_file)
+        return apps_files
+
     def run(self, init_common_dir=True):
-        requirements = self.get_folders_requirements(self.platform)
+        if self.apps_list:
+            requirements = self.get_apps_requirements(self._translate_apps_to_files(self.apps_list))
+        else:
+            requirements = self.get_folders_requirements(self.platform)
+
         self._requirements_manipulation(requirements)
 
         if self.dump_requirements:
@@ -201,4 +229,6 @@ def parse_downloader_args():
     parser.add_argument('--dump-requirements', action='store_true', default=False,
                         help='Dump mode only - dump apps requirements into text file into download_requirements.txt'
                              ' (includes hef files and media)')
+    parser.add_argument('--apps-list', nargs='+', type=str,
+                        help='Specific APPs to set up')
     return parser.parse_args()

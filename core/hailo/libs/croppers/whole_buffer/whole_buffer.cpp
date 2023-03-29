@@ -13,7 +13,7 @@
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
-std::vector<HailoROIPtr> create_crops(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> create_crops(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     std::vector<HailoROIPtr> crop_rois;
     crop_rois.emplace_back(roi);

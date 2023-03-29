@@ -1,0 +1,75 @@
+# Decoding Display Pipeline
+
+## Possible Flags
+
+```bash
+$ ./decoding_display_pipeline.sh --help
+Decoding Display Pipeline - pipeline usage:
+
+Options:
+  --help                              Show this help
+ 
+  --video-prefix-path PATH            Video prefix path
+ 
+  --min-num-of-sources NUM            Setting number of sources to given input (Default is 1)
+  --max-num-of-sources NUM            Setting number of sources to given input (Default is 4)
+  --num-of-buffers NUM                Number of buffers for each stream (Default is 500)
+ 
+  --use-vaapi                         Whther to use vaapi decodeing or not (Default is no vaapi)
+  --use-vaapi-scale                   Whether to use vaapi scaling or not (Defautl is CPU scale)
+  --use-display                       Whther to use display or not (Default is no display)
+ 
+  --format FORMAT                     Required format
+  --display-resolution RESOLUTION     Scale width and height of each stream in WxH mode (e.g. 640x480)
+
+```
+
+## Creating soft links
+
+We would begin by creating soft-links for files in three common resolution:
+
+```sh
+# 640x640 Video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/h8/gstreamer/resources/mp4/detection.mp4 --output-prefix 640x640_video
+
+# 1280x720 Video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/h8/gstreamer/resources/mp4/instance_segmentation.mp4 --output-prefix 1280x720_video
+
+# 1920x1080 Video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/h8/gstreamer/resources/mp4/lpr_ayalon.mp4 --output-prefix 1920x1080_video
+```
+
+## Running the benchmarks
+
+```sh
+$ ./decoding_display_pipeline.sh --use-vaapi --use-vaapi-scale --video-prefix-path 640x640_video --format RGBA --max-num-of-sources 8                                                                                                                                                                                  
+Num of sources: 1, Average FPS: -nan                                                                                                                                                   
+Num of sources: 2, Average FPS: -nan                                                                                                                                                   
+Num of sources: 3, Average FPS: 2268.17                                                                                                                                                
+Num of sources: 4, Average FPS: 2151.19                                                                                                                                                
+Num of sources: 5, Average FPS: 2180.49                                                                                                                                                
+Num of sources: 6, Average FPS: 2032.81                                                                                                                                                
+Num of sources: 7, Average FPS: 1960.4                                                                                                                                                 
+Num of sources: 8, Average FPS: 2020.77                                                                                                                                                
+
+$ ./decoding_display_pipeline.sh --use-vaapi --use-vaapi-scale --video-prefix-path 1280x720_video --format RGBA --max-num-of-sources 8                                                                                      
+Num of sources: 1, Average FPS: 211.077
+Num of sources: 2, Average FPS: 332.512
+Num of sources: 3, Average FPS: 364.933
+Num of sources: 4, Average FPS: 363.073
+Num of sources: 5, Average FPS: 363.204
+Num of sources: 6, Average FPS: 367.545
+Num of sources: 7, Average FPS: 364.404
+Num of sources: 8, Average FPS: 355.913
+
+$ ./decoding_display_pipeline.sh --use-vaapi --use-vaapi-scale --video-prefix-path 1920x1080_video --format RGBA --max-num-of-sources 8
+Num of sources: 1, Average FPS: 96.7667
+Num of sources: 2, Average FPS: 161.755
+Num of sources: 3, Average FPS: 173.417
+Num of sources: 4, Average FPS: 170.314
+Num of sources: 5, Average FPS: 164.752
+Num of sources: 6, Average FPS: 162.227
+Num of sources: 7, Average FPS: 159.741
+Num of sources: 8, Average FPS: 162.831
+
+```

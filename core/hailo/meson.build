@@ -1,7 +1,7 @@
 # Project Declaration
 
 project('gst-hailo-tools', 'c', 'cpp',
-        version : '3.23.1',
+        version : '3.24.0',
         default_options : [ 'warning_level=1',
                             'buildtype=debugoptimized',
                             'c_std=c11', 'cpp_std=c++17']
@@ -19,6 +19,7 @@ endif
 
 # Include Directories
 hailo_general_inc = [include_directories('./general')]
+hailo_mat_inc = [include_directories('./plugins/common/')]
 
 # Xtensor Include Directories
 xtensor_base_inc = include_directories(get_option('libxtensor'), is_system: true)
@@ -98,7 +99,7 @@ tappas_workspace =  meson.current_source_dir() + '/../../'
 post_proc_install_dir = get_option('post_processes_install_dir')
 if post_proc_install_dir == ''
   # By default install for x86 workspace
-  post_proc_install_dir = tappas_workspace + '/apps/gstreamer/libs/post_processes/'
+  post_proc_install_dir = tappas_workspace + '/apps/h8/gstreamer/libs/post_processes/'
 endif
 
 target = get_option('target')
@@ -137,6 +138,7 @@ elif target == 'plugins'
   subdir('tracking')
   subdir(target)
 elif target == 'libs'
+  subdir('tracking')
   subdir(target)
 elif target == 'tracers'
   subdir('metadata')

@@ -32,7 +32,7 @@ class Task:
 
 
 TAPPAS_PATH = Path(__file__).resolve().parent.parent.parent
-APPS_PATH = TAPPAS_PATH / "apps" / "gstreamer" / "general"
+APPS_PATH = TAPPAS_PATH / "apps" / "h8" / "gstreamer" / "general"
 
 
 def get_tasks() -> Dict[str, Task]:

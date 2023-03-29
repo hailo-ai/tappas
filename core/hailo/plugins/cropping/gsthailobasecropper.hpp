@@ -20,7 +20,7 @@ G_BEGIN_DECLS
 #define GST_HAILO_BASE_CROPPER_GET_CLASS(obj) \
         (G_TYPE_INSTANCE_GET_CLASS ((obj),GST_TYPE_HAILO_BASE_CROPPER,GstHailoBaseCropperClass))
 
-#define GST_HAILO_CROPPER_MAX_FILTER_STREAMS 10
+#define GST_HAILO_CROPPER_MAX_FILTER_STREAMS 40
 #define HAILO_BASE_CROPPER_SUPPORTED_FORMATS "{ RGB, RGBA, YUY2, NV12 }"
 #define HAILO_BASE_CROPPER_VIDEO_CAPS \
     GST_VIDEO_CAPS_MAKE(HAILO_BASE_CROPPER_SUPPORTED_FORMATS)
@@ -51,6 +51,6 @@ struct _GstHailoBaseCropperClass
 
 G_GNUC_INTERNAL GType gst_hailo_basecropper_get_type(void);
 void resize_normal(cv::InterpolationFlags method, cv::Mat &cropped_image, cv::Mat &resized_image, GstVideoFormat image_format);
-void resize_letterbox(cv::InterpolationFlags method, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi);
+void resize_letterbox(cv::InterpolationFlags method, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
 
 G_END_DECLS

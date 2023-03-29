@@ -91,7 +91,7 @@ bool track_update(HailoDetectionPtr detection, bool use_track_update)
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
-std::vector<HailoROIPtr> person_crop(cv::Mat image, HailoROIPtr roi, bool use_track_update=false)
+std::vector<HailoROIPtr> person_crop(std::shared_ptr<HailoMat> image, HailoROIPtr roi, bool use_track_update=false)
 {
     std::vector<HailoROIPtr> crop_rois;
     // Get all detections.
@@ -116,16 +116,16 @@ std::vector<HailoROIPtr> person_crop(cv::Mat image, HailoROIPtr roi, bool use_tr
  * @return HailoBBox Adjusted HailoBBox to crop.
  * @note Original algorithm at https://github.com/cleardusk/3DDFA_V2/blob/9fdbea1eb97f762221f71f5c76f08f52296c6704/utils/functions.py#L85
  */
-HailoBBox algorithm_face_crop(cv::Mat &image, const HailoBBox &roi, float size_scale = 1.0, float height_offset = 0.0)
+HailoBBox algorithm_face_crop(uint width, uint height, const HailoBBox &roi, float size_scale = 1.0, float height_offset = 0.0)
 {
     // Algorithm
-    float old_size = (roi.width() * image.cols + roi.height() * image.rows) / 2;
+    float old_size = (roi.width() * width + roi.height() * height) / 2;
     float center_x = (2 * roi.xmin() + roi.width()) / 2;
-    float center_y = (2 * roi.ymin() + roi.height()) / 2 - (old_size / image.rows) * height_offset;
+    float center_y = (2 * roi.ymin() + roi.height()) / 2 - (old_size / height) * height_offset;
     float size = old_size * size_scale;
     // Determine the new width and height, height should be a little bigger.
-    float h_size = size / image.rows;
-    float w_size = size / image.cols;
+    float h_size = size / height;
+    float w_size = size / width;
     // Determine the top left corner of the crop.
     float xmin = CLAMP((center_x - w_size / 2), 0, 1);
     float ymin = CLAMP((center_y - h_size / 2), 0, 1);
@@ -190,7 +190,7 @@ HailoDetectionPtr clone_detection_object(HailoDetectionPtr detection)
  * @param track_update update track every X frames.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
-std::vector<HailoROIPtr> face_crop(cv::Mat image, HailoROIPtr roi, bool use_track_update=false)
+std::vector<HailoROIPtr> face_crop(std::shared_ptr<HailoMat> image, HailoROIPtr roi, bool use_track_update=false)
 {
     std::vector<HailoROIPtr> crop_rois;
     // Get all detections.
@@ -203,7 +203,7 @@ std::vector<HailoROIPtr> face_crop(cv::Mat image, HailoROIPtr roi, bool use_trac
             if (track_update(detection, use_track_update))
             {
                 // Modifies a rectengle according to a cropping algorithm only on faces
-                auto new_bbox = algorithm_face_crop(image, detection->get_bbox(), FACE_ATTRIBUTES_CROP_SCALE_FACTOR, FACE_ATTRIBUTES_CROP_HIGHT_OFFSET_FACTOR);
+                auto new_bbox = algorithm_face_crop(image->native_width(), image->native_height(), detection->get_bbox(), FACE_ATTRIBUTES_CROP_SCALE_FACTOR, FACE_ATTRIBUTES_CROP_HIGHT_OFFSET_FACTOR);
 
                 HailoDetectionPtr new_roi = clone_detection_object(detection);
                 hailo_common::fixate_landmarks_with_bbox(new_roi, new_bbox);
@@ -216,17 +216,17 @@ std::vector<HailoROIPtr> face_crop(cv::Mat image, HailoROIPtr roi, bool use_trac
     return crop_rois;
 }
 
-std::vector<HailoROIPtr> face_recognition(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> face_recognition(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     return face_crop(image, roi, false);
 }
 
-std::vector<HailoROIPtr> face_attributes(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> face_attributes(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     return face_crop(image, roi, true);
 }
 
-std::vector<HailoROIPtr> person_attributes(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> person_attributes(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     return person_crop(image, roi, true);
 }

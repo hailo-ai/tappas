@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/general/facial_landmarks/resources",
+  "path": "apps/h8/gstreamer/general/facial_landmarks/resources",
   "requirements": [
     {
       "bucket": "model_zoo",

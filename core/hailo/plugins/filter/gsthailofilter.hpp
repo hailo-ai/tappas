@@ -31,11 +31,12 @@ struct _GstHailofilter
     void *loaded_lib;
     void * params;
     gboolean use_config;
+    gboolean remove_tensors;
 
     void (*handler)(HailoROIPtr, void *);
     void (*handler_no_config)(HailoROIPtr);
-    void (*handler_gst)(HailoROIPtr, GstVideoFrame *, gchar *, void *);
-    void (*handler_gst_no_config)(HailoROIPtr, GstVideoFrame *, gchar *);
+    void (*handler_gst)(HailoROIPtr, GstVideoFrame *, void *);
+    void (*handler_gst_no_config)(HailoROIPtr, GstVideoFrame *);
     gboolean use_gst_buffer;
 };
 

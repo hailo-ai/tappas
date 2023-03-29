@@ -4,6 +4,18 @@ core_conf.set('PACKAGE', '"@0@"'.format(meson.project_name()))
 core_conf.set('VERSION', '"@0@"'.format(meson.project_version()))
 configure_file(output : 'config.h', configuration : core_conf)
 common_args = ['-DHAVE_CONFIG_H']
+sysroot_arg = []
+if meson.is_cross_build()
+    meson_version = meson.version()
+    if meson_version.version_compare('>=0.54.0')
+        sysroot = meson.get_external_property('sys_root', '')
+    else
+        sysroot = meson.get_cross_property('sys_root', '')
+    endif
+    if sysroot != ''
+        sysroot_arg += '--sysroot=' + sysroot
+    endif
+endif
 
 plugin_sources = [
     'gsthailotools.cpp',
@@ -24,7 +36,7 @@ plugin_sources = [
     'gallery/gsthailogallery.cpp',
     'export/export_file/gsthailoexportfile.cpp',
     'export/export_zmq/gsthailoexportzmq.cpp',
-    'import/import_zmq/gsthailoimportzmq.cpp'
+    'import/import_zmq/gsthailoimportzmq.cpp',
 ]
 
 # equivalent to - dl_dep = dependency('dl')
@@ -40,14 +52,19 @@ gsthailotools_deps = plugin_deps + [meta_dep, dl_dep, opencv_dep, tracker_dep, z
 ################################################
 shared_library('gsthailotools',
     plugin_sources,
-    cpp_args : hailo_lib_args + common_args,
-    include_directories: [hailo_general_inc, xtensor_inc, rapidjson_inc],
+    cpp_args : hailo_lib_args + common_args + sysroot_arg,
+    include_directories: [hailo_general_inc, xtensor_inc, rapidjson_inc, hailo_mat_inc],
     dependencies : gsthailotools_deps,
     gnu_symbol_visibility : 'default',
     version: meson.project_version(),
     install: true,
     install_dir: get_option('libdir') + '/gstreamer-1.0/',
 )
+
+if get_option('target_platform') == 'hailo15'
+    subdir('encoder')
+endif
+
 
 if not get_option('include_python')
     subdir_done()

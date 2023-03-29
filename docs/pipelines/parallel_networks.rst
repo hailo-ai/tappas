@@ -56,6 +56,6 @@ Example pipeline two displays
        hailofilter so-path=$network_two_so function-name=mobilenet_ssd_merged qos=false ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        hailooverlay ! videoconvert ! \
-       fpsdisplaysink video-sink=$video_sink_element name=hailo_display2 sync=false text-overlay=false ${additonal_parameters}
+       fpsdisplaysink video-sink=$video_sink_element name=hailo_display2 sync=false text-overlay=false ${additional_parameters}
 
 This pipeline is based on-top of our `single network pipeline <single_network.rst>`_\ , the modification amounts to using the GStreamer built in tee element.

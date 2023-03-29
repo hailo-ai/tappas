@@ -235,7 +235,6 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     GstCaps *caps;
     cv::Mat mat;
     HailoROIPtr hailo_roi;
-
     GST_DEBUG_OBJECT(hailooverlay, "transform_ip");
 
     caps = gst_pad_get_current_caps(trans->sinkpad);
@@ -244,19 +243,18 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     GstMapInfo map;
     gst_buffer_map(buffer, &map, GST_MAP_READWRITE);
     gst_video_info_from_caps(info, caps);
-    std::shared_ptr<HailoMat> hmat = get_mat_by_format(info, &map, hailooverlay->line_thickness, hailooverlay->font_thickness);
-    mat = get_mat(info, &map);
+    std::shared_ptr<HailoMat> hmat = get_mat_by_format(buffer, info, &map, hailooverlay->line_thickness, hailooverlay->font_thickness);
     gst_video_info_free(info);
 
     hailo_roi = get_hailo_main_roi(buffer, true);
 
-    // Blur faces if face-blur is activated.
-    if (hailooverlay->face_blur)
-    {
-        face_blur(mat, hailo_roi);
-    }
     if (hmat)
     {
+        // Blur faces if face-blur is activated.
+        if (hailooverlay->face_blur)
+        {
+            face_blur(*hmat.get(), hailo_roi);
+        }
         // Draw all results of the given roi on mat.
         ret = draw_all(*hmat.get(), hailo_roi, hailooverlay->landmark_point_radius, hailooverlay->show_confidence, hailooverlay->local_gallery, hailooverlay->mask_overlay_n_threads);
     }
@@ -267,7 +265,6 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     }
     status = GST_FLOW_OK;
 cleanup:
-    mat.release();
     gst_buffer_unmap(buffer, &map);
     gst_caps_unref(caps);
     return status;

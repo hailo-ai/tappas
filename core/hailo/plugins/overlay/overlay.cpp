@@ -72,17 +72,17 @@ std::string confidence_to_string(float confidence)
     return std::to_string(confidence_percentage) + "%";
 }
 
-static overlay_status_t draw_classification(HailoMat &mat, HailoROIPtr roi, std::string text, uint number_of_classifications)
+static overlay_status_t draw_classification(HailoMat &mat, HailoROIPtr roi, std::string text, uint number_of_classifications, size_t color_id = NULL_COLOR_ID)
 {
     auto bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
-    int roi_xmin = bbox.xmin() * mat.width();
-    int roi_ymin = bbox.ymin() * mat.height();
-    int roi_width = mat.width() * bbox.width();
-    int roi_height = mat.height() * bbox.height();
+    int roi_xmin = bbox.xmin() * mat.native_width();
+    int roi_ymin = bbox.ymin() * mat.native_height();
+    int roi_width = mat.native_width() * bbox.width();
+    int roi_height = mat.native_height() * bbox.height();
     auto text_position = cv::Point(roi_xmin, roi_ymin + (TEXT_DEFAULT_HEIGHT * number_of_classifications * roi_height) + log(roi_height));
-    double font_scale =  TEXT_CLS_FONT_SCALE_FACTOR * roi_width;
+    double font_scale = TEXT_CLS_FONT_SCALE_FACTOR * roi_width;
     font_scale = (font_scale < MINIMUM_TEXT_CLS_FONT_SCALE) ? MINIMUM_TEXT_CLS_FONT_SCALE : font_scale;
-    mat.draw_text(text, text_position, font_scale, get_color(NULL_COLOR_ID));
+    mat.draw_text(text, text_position, font_scale, get_color(color_id));
     return OVERLAY_STATUS_OK;
 }
 
@@ -92,14 +92,13 @@ static std::string get_classification_text(HailoClassificationPtr result, bool s
     std::string label = result->get_label();
     std::string confidence;
     if (show_confidence)
-        confidence = confidence_to_string(result->get_confidence());
-    text = label + SPACE + confidence;
+        confidence = SPACE + confidence_to_string(result->get_confidence());
+    text = label + confidence;
     return text;
 }
 
 static overlay_status_t draw_landmarks(HailoMat &hmat, HailoLandmarksPtr landmarks, HailoROIPtr roi, float landmark_point_radius)
 {
-    cv::Mat &image_planes = hmat.get_mat();
     HailoBBox bbox = roi->get_bbox();
     int thickness;
     std::vector<std::pair<int, int>> pairs = landmarks->get_pairs();
@@ -107,18 +106,18 @@ static overlay_status_t draw_landmarks(HailoMat &hmat, HailoLandmarksPtr landmar
     std::vector<HailoPoint> points = landmarks->get_points();
     if (landmarks->get_landmarks_type() == "centerpose")
     {
-        R = roi->get_bbox().height() * image_planes.rows / 60;
+        R = roi->get_bbox().height() * hmat.native_height() / 60;
     }
 
     for (auto &pair : pairs)
     {
         if ((points.at(pair.first).confidence() > 0) && (points.at(pair.second).confidence() > 0))
         {
-            uint x1 = ((points.at(pair.first).x() * bbox.width()) + bbox.xmin()) * image_planes.cols;
-            uint y1 = ((points.at(pair.first).y() * bbox.height()) + bbox.ymin()) * image_planes.rows;
+            uint x1 = ((points.at(pair.first).x() * bbox.width()) + bbox.xmin()) * hmat.native_width();
+            uint y1 = ((points.at(pair.first).y() * bbox.height()) + bbox.ymin()) * hmat.native_height();
 
-            uint x2 = ((points.at(pair.second).x() * bbox.width()) + bbox.xmin()) * image_planes.cols;
-            uint y2 = ((points.at(pair.second).y() * bbox.height()) + bbox.ymin()) * image_planes.rows;
+            uint x2 = ((points.at(pair.second).x() * bbox.width()) + bbox.xmin()) * hmat.native_width();
+            uint y2 = ((points.at(pair.second).y() * bbox.height()) + bbox.ymin()) * hmat.native_height();
 
             cv::Point joint1 = cv::Point(x1, y1);
             cv::Point joint2 = cv::Point(x2, y2);
@@ -131,8 +130,8 @@ static overlay_status_t draw_landmarks(HailoMat &hmat, HailoLandmarksPtr landmar
     {
         if (point.confidence() >= landmarks->get_threshold())
         {
-            uint x = ((point.x() * bbox.width()) + bbox.xmin()) * image_planes.cols;
-            uint y = ((point.y() * bbox.height()) + bbox.ymin()) * image_planes.rows;
+            uint x = ((point.x() * bbox.width()) + bbox.xmin()) * hmat.native_width();
+            uint y = ((point.y() * bbox.height()) + bbox.ymin()) * hmat.native_height();
             // Draw the keypoint (multiply x,y values by the sizes of the frame)
             auto center = cv::Point(x, y);
             hmat.draw_ellipse(center, {R, R}, 0, 0, 360, get_color(7), landmark_point_radius);
@@ -146,10 +145,10 @@ static cv::Rect get_rect(HailoMat &mat, HailoDetectionPtr detection, HailoROIPtr
     HailoBBox roi_bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
     auto detection_bbox = detection->get_bbox();
 
-    auto bbox_min = cv::Point(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * mat.width(),
-                              ((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * mat.height());
-    auto bbox_max = cv::Point(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * mat.width(),
-                              ((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * mat.height());
+    auto bbox_min = cv::Point(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * mat.native_width(),
+                              ((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * mat.native_height());
+    auto bbox_max = cv::Point(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * mat.native_width(),
+                              ((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * mat.native_height());
     return cv::Rect(bbox_min, bbox_max);
 }
 
@@ -195,8 +194,8 @@ static overlay_status_t draw_id(HailoMat &mat, HailoUniqueIDPtr &hailo_id, Hailo
     std::string id_text = std::to_string(hailo_id->get_id());
 
     auto bbox = roi->get_bbox();
-    auto bbox_min = cv::Point(bbox.xmin() * mat.width(), bbox.ymin() * mat.height());
-    auto bbox_max = cv::Point(bbox.xmax() * mat.width(), bbox.ymax() * mat.height());
+    auto bbox_min = cv::Point(bbox.xmin() * mat.native_width(), bbox.ymin() * mat.native_height());
+    auto bbox_max = cv::Point(bbox.xmax() * mat.native_width(), bbox.ymax() * mat.native_height());
     auto bbox_width = bbox_max.x - bbox_min.x;
     auto color = get_color(NULL_CLASS_ID);
 
@@ -378,8 +377,21 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
         {
             number_of_classifications++;
             HailoClassificationPtr classification = std::dynamic_pointer_cast<HailoClassification>(obj);
-            std::string text = get_classification_text(classification, show_confidence);
-            ret = draw_classification(hmat, roi, text, number_of_classifications);
+            if (classification->get_classification_type() == "tracking")
+            {
+                std::string text = get_classification_text(classification, false);
+                if (text == "lost")
+                    ret = draw_classification(hmat, roi, text, number_of_classifications, 0);
+                else if (text == "new")
+                    ret = draw_classification(hmat, roi, text, number_of_classifications, 1);
+                else if (text == "tracked")
+                    ret = draw_classification(hmat, roi, text, number_of_classifications, 2);
+            }
+            else
+            {
+                std::string text = get_classification_text(classification, show_confidence);
+                ret = draw_classification(hmat, roi, text, number_of_classifications);
+            }
             break;
         }
         case HAILO_LANDMARKS:
@@ -429,29 +441,27 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
     return ret;
 }
 
-void face_blur(cv::Mat &mat, HailoROIPtr roi)
+void face_blur(HailoMat &hmat, HailoROIPtr roi)
 {
-
     for (auto detection : hailo_common::get_hailo_detections(roi))
     {
         if (detection->get_label() == "face")
         {
             HailoBBox roi_bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
             auto detection_bbox = detection->get_bbox();
-            auto xmin = std::clamp<int>(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * mat.cols, 0, mat.cols);
-            auto ymin = std::clamp<int>(((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * mat.rows, 0, mat.rows);
-            auto xmax = std::clamp<int>(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * mat.cols, 0, mat.cols);
-            auto ymax = std::clamp<int>(((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * mat.rows, 0, mat.rows);
+            auto xmin = std::clamp<int>(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * hmat.native_width(), 0, hmat.native_width());
+            auto ymin = std::clamp<int>(((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * hmat.native_height(), 0, hmat.native_height());
+            auto xmax = std::clamp<int>(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * hmat.native_width(), 0, hmat.native_width());
+            auto ymax = std::clamp<int>(((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * hmat.native_height(), 0, hmat.native_height());
             auto rect = cv::Rect(cv::Point(xmin, ymin), cv::Point(xmax, ymax));
-            cv::Mat face = mat(rect);
-            cv::blur(face, face, cv::Size(13, 13));
+            hmat.blur(rect, cv::Size(13, 13));
 
             // Remove landmarks from the ROI before overlaying the blurred face
             roi->remove_objects_typed(HAILO_LANDMARKS);
         }
         else
         {
-            face_blur(mat, detection);
+            face_blur(hmat, detection);
         }
     }
 }

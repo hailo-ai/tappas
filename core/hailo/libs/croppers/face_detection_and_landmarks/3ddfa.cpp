@@ -36,7 +36,7 @@ HailoBBox algorithm_3ddfa(cv::Mat &image, const HailoBBox &roi)
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
-std::vector<HailoROIPtr> create_crops(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> create_crops(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     std::vector<HailoROIPtr> crop_rois;
     // Get all detections.
@@ -47,7 +47,7 @@ std::vector<HailoROIPtr> create_crops(cv::Mat image, HailoROIPtr roi)
         if (std::string(FACE_LABEL) == detection->get_label())
         {
             // Modifies a rectengle according to 3ddfa cropping algorithm only on faces
-            auto new_bbox = algorithm_3ddfa(image, detection->get_bbox());
+            auto new_bbox = algorithm_3ddfa(image->get_mat(), detection->get_bbox());
             detection->set_bbox(new_bbox);
             crop_rois.emplace_back(detection);
         }

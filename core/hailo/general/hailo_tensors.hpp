@@ -74,6 +74,18 @@ public:
     }
 
     /**
+     * @brief Gets a dequantized number and returns its quantized value (template).
+     *
+     * @param num number to quantize.
+     * @return T quantized number.
+     */
+    template <typename T>  
+    T quantize(T num)
+    {
+        return T((float(num) / m_vstream_info.quant_info.qp_scale)  + m_vstream_info.quant_info.qp_zp);
+    }
+
+    /**
      * @brief Gets a specific cell of this tensor.
      *
      * @param row The row of the cell

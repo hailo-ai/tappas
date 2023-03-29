@@ -14,6 +14,7 @@
 
 // Tappas includes
 #include "hailo_objects.hpp"
+#include "hailo_common.hpp"
 #include "kalman_filter.hpp"
 #include "strack.hpp"
 #include "tracker_macros.hpp"
@@ -27,14 +28,14 @@
  * @return std::vector<STrack>
  *         The translated Stracks.
  */
-inline std::vector<STrack> JDETracker::hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs, int frame_id = 0)
+inline std::vector<STrack> JDETracker::hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs, int frame_id, std::vector<hailo_object_t> hailo_objects_blacklist)
 {
     std::vector<STrack> detections(inputs.size());
     for (uint i = 0; i < inputs.size(); i++)
     {
         HailoBBox bbox = inputs[i]->get_bbox();
         std::vector<float> detection_box = {bbox.xmin(), bbox.ymin(), bbox.width(), bbox.height()};
-        STrack strack(detection_box, inputs[i]->get_confidence(), {}, inputs[i], frame_id);
+        STrack strack(detection_box, inputs[i]->get_confidence(), {}, inputs[i], frame_id, hailo_objects_blacklist);
         detections[i] = strack;
     }
 
@@ -51,7 +52,7 @@ inline std::vector<STrack> JDETracker::hailo_detections_to_stracks(std::vector<H
  *         The translated HailoDetectionPtr.
  *
  */
-inline std::vector<HailoDetectionPtr> JDETracker::stracks_to_hailo_detections(std::vector<STrack> &stracks)
+inline std::vector<HailoDetectionPtr> JDETracker::stracks_to_hailo_detections(std::vector<STrack> &stracks, bool debug = false)
 {
     std::vector<HailoDetectionPtr> objects;
     objects.reserve(stracks.size());
@@ -60,6 +61,26 @@ inline std::vector<HailoDetectionPtr> JDETracker::stracks_to_hailo_detections(st
         HailoDetectionPtr detection_ptr = stracks[i].get_hailo_detection();
         if (nullptr != detection_ptr)
         {
+            if (debug)
+            {
+                // remove stale classifications
+                hailo_common::remove_classifications(detection_ptr, "tracking");
+                // add "tracking" classification
+                switch (static_cast<TrackState>(stracks[i].get_state()))
+                {
+                case TrackState::New:
+                    hailo_common::add_classification(detection_ptr, "tracking", "new", 0.0);
+                    break;
+                case TrackState::Lost:
+                    hailo_common::add_classification(detection_ptr, "tracking", "lost", 0.0);
+                    break;
+                case TrackState::Tracked:
+                    hailo_common::add_classification(detection_ptr, "tracking", "tracked", 0.0);
+                    break;
+                default:
+                    break;
+                }
+            }
             objects.emplace_back(detection_ptr);
         }
         else

@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/imx8/depth_estimation/resources",
+  "path": "apps/h8/gstreamer/imx8/depth_estimation/resources",
   "requirements": [
     {
       "bucket": "model_zoo",

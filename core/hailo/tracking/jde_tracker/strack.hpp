@@ -47,7 +47,6 @@ There are some objects that cannot be consistently scaled to match the new locat
 For example, if a face is rotated 90 degrees, the landmarks will not be in the correct location.
 These metadata types will never be kept, even if keep_past_metadata is set to true.
 */
-const hailo_object_t no_keep_track_objects[] = {HAILO_LANDMARKS, HAILO_MATRIX, HAILO_DEPTH_MASK, HAILO_CLASS_MASK};
 
 class STrack
 {
@@ -74,19 +73,21 @@ public:
 
 private:
     int m_times_seen;
-    int m_state;                            // Current state: can be New, Tracked, or Lost
-    KalmanFilter m_kalman_filter;           // A Kalman Filter instance to make predictions
-    HailoDetectionPtr m_hailo_detection; // A shared pointer to the detection object in the pipeline
-
+    int m_state;                                           // Current state: can be New, Tracked, or Lost
+    KalmanFilter *m_kalman_filter;                         // A Kalman Filter instance to make predictions
+    HailoDetectionPtr m_hailo_detection;                   // A shared pointer to the detection object in the pipeline
+    std::vector<hailo_object_t> m_hailo_objects_blacklist; // Objects that will never be kept
+    bool m_debug;                                          // Debug flag
     //******************************************************************
     // CLASS RESOURCE MANAGEMENT
     //******************************************************************
 public:
     // Constructors
     STrack(std::vector<float> tlwh_ = {0., 0., 0., 0.}, float score_ = 0.0, std::vector<float> temp_feat = {0.0},
-           HailoDetectionPtr detection_ptr = nullptr, int frame_id = 0) : m_is_activated(false), m_track_id(0), m_frame_id(frame_id), m_tracklet_len(0), m_confidence(score_),
-                                                           m_start_frame(0), m_alpha(0.9), tmp_location_tlwh(tlwh_), m_state(TrackState::New),
-                                                           m_hailo_detection(detection_ptr)
+           HailoDetectionPtr detection_ptr = nullptr, int frame_id = 0,
+           std::vector<hailo_object_t> hailo_objects_blacklist = {HAILO_LANDMARKS, HAILO_DEPTH_MASK, HAILO_CLASS_MASK}, bool debug = false) : m_is_activated(false), m_track_id(0), m_frame_id(frame_id), m_tracklet_len(0), m_confidence(score_),
+                                                                                                                                              m_start_frame(0), m_alpha(0.9), tmp_location_tlwh(tlwh_), m_state(TrackState::New),
+                                                                                                                                              m_hailo_detection(detection_ptr), m_debug(debug)
     {
         m_times_seen = 0;
         // Initialize mean/covariance to zero
@@ -97,6 +98,7 @@ public:
         update_tlwh();
         // Update the features
         update_features(temp_feat);
+        m_hailo_objects_blacklist = std::move(hailo_objects_blacklist);
     }
 
     //******************************************************************
@@ -126,13 +128,14 @@ public:
         for (auto object : this->m_hailo_detection->get_objects())
         {
             hailo_object_t object_type = object->get_type();
-            if (object_type == HAILO_UNIQUE_ID) {
+            if (object_type == HAILO_UNIQUE_ID)
+            {
                 new_detection->add_object(object);
             }
-            else if(keep_past_metadata)
+            else if (keep_past_metadata)
             {
-                // Add the sub object only if its type is not under no_keep_track_objects
-                if (std::find(std::begin(no_keep_track_objects), std::end(no_keep_track_objects), object_type) == std::end(no_keep_track_objects))
+                // Add the sub object only if its type is not under hailo_objects_blacklist
+                if (std::find(m_hailo_objects_blacklist.begin(), m_hailo_objects_blacklist.end(), object_type) == m_hailo_objects_blacklist.end())
                 {
                     new_detection->add_unscaled_object(object);
                 }
@@ -260,6 +263,9 @@ public:
     // Get the state
     int get_state() { return m_state; }
 
+    // Get debug
+    bool get_debug() { return m_debug; }
+
     // Get the hailo detection object
     HailoDetectionPtr get_hailo_detection() { return this->m_hailo_detection; }
 
@@ -321,7 +327,7 @@ public:
      * @param frame_id  -  int
      *        The current frame it, this becomes the "starting" frame id.
      */
-    void activate(KalmanFilter &kalman_filter, int frame_id)
+    void activate(KalmanFilter *kalman_filter, int frame_id)
     {
         this->m_kalman_filter = kalman_filter;
         this->m_track_id = this->next_id();
@@ -331,7 +337,7 @@ public:
 
         TrackerTypes::DETECTBOX xyah_box = STrack::get_detectbox_from_tlwh(this->tmp_location_tlwh);
 
-        auto mc = this->m_kalman_filter.initiate(xyah_box);
+        auto mc = this->m_kalman_filter->initiate(xyah_box);
         this->m_mean = mc.first;
         this->m_covariance = mc.second;
 
@@ -363,7 +369,7 @@ public:
     {
         TrackerTypes::DETECTBOX xyah_box = STrack::get_detectbox_from_tlwh(new_track.m_tlwh);
 
-        auto mc = this->m_kalman_filter.update(this->m_mean, this->m_covariance, xyah_box);
+        auto mc = this->m_kalman_filter->update(this->m_mean, this->m_covariance, xyah_box);
         this->m_mean = mc.first;
         this->m_covariance = mc.second;
 
@@ -403,7 +409,7 @@ public:
 
         TrackerTypes::DETECTBOX xyah_box = STrack::get_detectbox_from_tlwh(new_track.m_tlwh);
 
-        auto mc = this->m_kalman_filter.update(this->m_mean, this->m_covariance, xyah_box);
+        auto mc = this->m_kalman_filter->update(this->m_mean, this->m_covariance, xyah_box);
         this->m_mean = mc.first;
         this->m_covariance = mc.second;
 

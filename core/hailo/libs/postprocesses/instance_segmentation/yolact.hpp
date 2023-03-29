@@ -5,7 +5,7 @@
 #pragma once
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
-#include "common/tensors.hpp"
+#include "xtensor/xarray.hpp"
 
 __BEGIN_DECLS
 class YolactParams

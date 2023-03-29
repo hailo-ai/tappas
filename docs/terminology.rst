@@ -55,3 +55,8 @@ Real Time Streaming Protocol (RTSP)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Is a network control protocol designed for use in entertainment and communications systems to control streaming media servers. This protocol is used for establishing and controlling media sessions between endpoints.
+
+Rockchip Media Process Platform (MPP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The MPP is a library for Rockchip SoC's which provides high performance on multimedia (video and image) processing.

@@ -28,7 +28,7 @@ typedef enum
 
 __BEGIN_DECLS
 overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_radius, bool show_confidence = true, bool local_gallery = false, uint mask_overlay_n_threads = 0);
-void face_blur(cv::Mat &mat, HailoROIPtr roi);
+void face_blur(HailoMat &mat, HailoROIPtr roi);
 
 cv::Scalar indexToColor(size_t index);
 

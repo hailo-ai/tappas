@@ -6,77 +6,87 @@
 set -e
 
 #############################################
-readonly GSTREAMER_DIR=core/hailo
-readonly SHARK_DIR=sources/gst-shark/plugins
-readonly PIP_REQUIREMENTS=core/requirements/requirements.txt
-VENV_NAME=hailo_tappas_venv
+readonly INSTALLATION_DIR=/opt/hailo/tappas
+readonly HAILO_USER_DIR=${HOME}/.hailo/tappas
+readonly TAPPAS_BASH_ENV=${HAILO_USER_DIR}/tappas_env
+readonly VENV_NAME=hailo_tappas_venv
+readonly GSTREAMER_CACHE=${HOME}/.cache/gstreamer-1.0
+
+# indication that older version of Tappas (pre-3.24) exists on the host
+readonly LIB_DIR=/usr/lib/$(uname -m)-linux-gnu
+readonly OLD_TAPPAS_INSTALLATION=${LIB_DIR}/gstreamer-1.0/libgsthailotools.so
+readonly OLD_TAPPAS_LIBS=(
+    "libgsthailometa.so"
+    "libhailo_tracker.so"
+    "libhailo_cv_singleton.so"
+    "libhailo_gst_image.so"
+    "libgsthailotools.so"
+    "libgsthailopython.so"
+    "libgstsharktracers.so"
+)
+readonly OLD_TAPPAS_FILES=(
+    "${LIB_DIR}/pkgconfig/gsthailometa.pc"
+    "/usr/include/gsthailometa"
+    "/usr/bin/parse_hef"
+)
 #############################################
 
-function not_installed_msg(){
-    echo "Hailo Tappas does not appear to be installed..."
+function removed_msg(){
+    echo "Hailo Tappas was removed successfully."
+    echo "To unset Tappas environment variables, please relogin or reboot the PC."
+    exit 0
+}
+
+function not_removed_msg(){
+    echo "Hailo Tappas was not removed."
+    exit 1
 }
 
 function check_tappas_installed(){
-    rm -rf ~/.cache/gstreamer-1.0/registry.x86_64.bin && gst-inspect-1.0 hailotools &> /dev/null
+    rm -rf ${GSTREAMER_CACHE} && gst-inspect-1.0 hailotools &> /dev/null
 }
 
-function uninstall_gst(){
-    pushd $GSTREAMER_DIR
-    sudo env "PATH=$PATH" ninja uninstall -C build.release
-    popd
+function remove_so(){
+    sudo rm -rf ${INSTALLATION_DIR}
 }
 
-function uninstall_shark(){
-    if [[ -d $SHARK_DIR ]]; then
-        pushd $SHARK_DIR
-        sudo env "PATH=$PATH" ninja uninstall -C build
-        popd
-    fi
+function clean_tappas_user_env(){
+    rm -rf ${TAPPAS_BASH_ENV}
 }
 
-function create_venv(){
-    if [[ ! -d $VENV_NAME ]]; then
-        VENV_NAME=tmp_venv
-        python3 -m virtualenv $VENV_NAME
-    fi
+function remove_tappas_venv(){
+    pushd $(dirname $0) > /dev/null
+    rm -rf ${VENV_NAME}
 }
 
-function activate_venv(){
-    source "$VENV_NAME/bin/activate"
-}
+function remove_old_tappas_files(){
+    # removing tappas file from system paths
+    # relevant for Tappas pre-v3.24
+    for file in ${OLD_TAPPAS_FILES[@]}
+    do
+        sudo rm -rf $file
+    done
 
-function remove_venv(){
-    rm -rf $VENV_NAME
-}
-
-function install_env_requirements(){
-    pip install -r $PIP_REQUIREMENTS
-}
-
-function uninstall_so(){
-    create_venv
-    activate_venv
-    install_env_requirements
-    uninstall_gst
-    uninstall_shark
-    deactivate
-    remove_venv
-}
-
-function remove_bash_autocompletion(){
-    if [[ ! -z $HOME && -f $HOME/.bashrc ]]; then
-        local tappas_bash_comp_line=$(grep -n tappas $HOME/.bashrc | grep bash_completion | cut -d':' -f1)
-        sed -i "${tappas_bash_comp_line}d" $HOME/.bashrc
-    fi
+    for lib in ${OLD_TAPPAS_LIBS[@]}
+    do
+        sudo find ${LIB_DIR} -name "${lib}*" -delete
+    done
 }
 
 function main(){
+    if [ -f ${OLD_TAPPAS_INSTALLATION} ]; then
+        echo "Warning: Older version of Hailo Tappas found - removing..."
+        remove_old_tappas_files
+    fi
+
+    remove_so
+    remove_tappas_venv
+    clean_tappas_user_env
     check_tappas_installed && return_code=$?
     if [[ $return_code == 0 ]]; then
-        uninstall_so
-        remove_bash_autocompletion
+        not_removed_msg
     else
-        not_installed_msg
+        removed_msg
     fi
 }
 

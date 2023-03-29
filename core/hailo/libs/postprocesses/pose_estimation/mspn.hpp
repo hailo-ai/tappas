@@ -7,6 +7,17 @@
 #include "hailo_common.hpp"
 
 __BEGIN_DECLS
-void filter(HailoROIPtr roi);
+
+class MSPNParams
+{
+public:
+    bool gaussian_blur;
+    MSPNParams() : gaussian_blur(true) {}
+};
+
+
 void mspn(HailoROIPtr roi);
+void filter(HailoROIPtr roi, void *params_void_ptr);
+void free_resources(void *params_void_ptr);
+MSPNParams *init(const std::string config_path);
 __END_DECLS

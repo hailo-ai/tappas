@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/raspberrypi/detection/resources",
+  "path": "apps/h8/gstreamer/raspberrypi/detection/resources",
   "requirements": [
     {
       "bucket": "model_zoo",

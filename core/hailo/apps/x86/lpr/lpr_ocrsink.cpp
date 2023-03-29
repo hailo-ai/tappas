@@ -68,8 +68,9 @@ void catalog_rgb_mat(std::string text, cv::Mat &mat)
     CVMatSingleton::GetInstance().set_mat_at_key(singleton_map_key % MAP_LIMIT, padded_image);
 }
 
-void catalog_license_plate(std::string label, float confidence, HailoBBox license_plate_box, cv::Mat &mat)
+void catalog_license_plate(std::string label, float confidence, HailoBBox license_plate_box, std::shared_ptr<HailoMat> hmat)
 {
+    cv::Mat &mat = hmat->get_mat();
     // Prepare the cropped license plate and text
     std::string text = label + " " + std::to_string((int)(confidence * 100)) + "%";
     cv::Rect rect;
@@ -81,19 +82,26 @@ void catalog_license_plate(std::string label, float confidence, HailoBBox licens
         return;
     cv::Mat cropped_image = mat(rect);
 
-    if (cropped_image.type() == CV_8UC4)
+    switch (hmat->get_type())
+    {
+    case HAILO_MAT_YUY2:
     {
         catalog_yuy2_mat(text, cropped_image);
+        break;
     }
-    else
+    case HAILO_MAT_RGB:
     {
         catalog_rgb_mat(text, cropped_image);
+        break;
+    }
+    default:
+        break;
     }
 
     singleton_map_key++;
 }
 
-void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
+void ocr_sink(HailoROIPtr roi, std::shared_ptr<HailoMat> hmat)
 {
     if (nullptr == roi)
         return;
@@ -104,7 +112,7 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
     std::vector<HailoClassificationPtr> classifications; // The classifications of those license plate detections
     float confidence;                                    // The confidence of those classifications
     std::string license_plate_ocr_label;                 // The labels of those classifications
-    std::string jde_tracker_name = tracker_name + "_" + stream_id;
+    std::string jde_tracker_name = tracker_name + "_" + roi->get_stream_id();
 
     // For each roi, check the detections
     vehicle_detections = hailo_common::get_hailo_detections(roi);
@@ -142,7 +150,7 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
                                                                 unique_ids[0]->get_id(),
                                                                 classification);
 
-                catalog_license_plate(license_plate_ocr_label, confidence, license_plate_box, mat);
+                catalog_license_plate(license_plate_ocr_label, confidence, license_plate_box, hmat);
             }
         }
     }
@@ -150,10 +158,8 @@ void ocr_sink(HailoROIPtr roi, cv::Mat &mat, std::string stream_id)
     return;
 }
 
-void filter(HailoROIPtr roi, GstVideoFrame *frame, gchar *current_stream_id)
+void filter(HailoROIPtr roi, GstVideoFrame *frame)
 {
-    auto image_planes = get_mat_from_gst_frame(frame);
-    ocr_sink(roi, image_planes, std::string(current_stream_id));
-
-    image_planes.release();
+    std::shared_ptr<HailoMat> hmat = get_mat_by_format(*(&frame->buffer), &frame->info, frame->map, 1, 1);
+    ocr_sink(roi, hmat);
 }

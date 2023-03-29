@@ -42,10 +42,10 @@
 #define IOU_THRESHOLD 0.45
 
 // Output layer names for CenterposeRegnetx_16gf network
-const char *CENTER_HEATMAP_OUTPUT_LAYER = "center_nms/ew_add1";
+const char *CENTER_HEATMAP_OUTPUT_LAYER = "center_nms/ew_add2";
 const char *CENTER_WIDTH_HEIGHT_OUTPUT_LAYER = "centerpose_regnetx_1_6gf_fpn/conv76";
 const char *CENTER_OFFSET_OUTPUT_LAYER = "centerpose_regnetx_1_6gf_fpn/conv78";
-const char *JOINT_HEATMAP_OUTPUT_LAYER = "joint_nms/ew_add1";
+const char *JOINT_HEATMAP_OUTPUT_LAYER = "joint_nms/ew_add2";
 const char *JOINT_OFFSET_OUTPUT_LAYER = "centerpose_regnetx_1_6gf_fpn/conv80";
 const char *JOINT_CENTER_OFFSET_OUTPUT_LAYER = "centerpose_regnetx_1_6gf_fpn/conv77";
 

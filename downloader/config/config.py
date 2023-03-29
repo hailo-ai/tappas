@@ -1,8 +1,8 @@
 import platform
 from pathlib import Path
 
-VERSION = "v3.23"
-MODEL_ZOO_VERSION = "v2.4"
+VERSION = "v3.24"
+MODEL_ZOO_VERSION = "v2.7"
 
 CONFIG_PATH = Path(__file__).parent
 DOWNLOADER_PATH = CONFIG_PATH.parent
@@ -34,6 +34,10 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
                       "x86/x86_vms.json",
                       "x86/x86_multistream_detection.json",
                       "x86/x86_century.json",
+                      "rockchip/detection.json",
+                      "rockchip/license_plate_recognition.json",
+                      "rockchip/multistream_detection.json",
+                      "rockchip/tiling.json",
                       "rpi/rpi_cascading_networks.json",
                       "rpi/rpi_classification.json",
                       "rpi/rpi_depth_estimation.json",
@@ -50,6 +54,7 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
                       "imx8/imx8_facial_landmarks.json",
                       "imx8/imx8_license_plate_recognition.json",
                       "imx8/imx8_pose_estimation.json",
+                      "imx8/imx8_multistream_detection.json",
                       "imx8/imx8_segmentation.json"]
 
 # Used during the download to decide what the source / destination is dynamically

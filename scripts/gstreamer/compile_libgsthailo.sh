@@ -3,6 +3,7 @@
 set -e
 
 BUILD_TYPE=Release
+INSTALLATION_DIR=/opt/hailo/tappas
 
 
 function print_usage() {
@@ -43,6 +44,6 @@ rm -rf build
 cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 cmake --build build
 
-sudo cp -a $TAPPAS_WORKSPACE/hailort/sources/hailort/libhailort/bindings/gstreamer/build/libgsthailo.so /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0
+sudo cp -a $TAPPAS_WORKSPACE/hailort/sources/hailort/libhailort/bindings/gstreamer/build/libgsthailo.so ${INSTALLATION_DIR}/lib/$(uname -m)-linux-gnu/gstreamer-1.0
 rm -rf $TAPPAS_WORKSPACE/hailort/sources/hailort/libhailort/bindings/gstreamer/build/libgsthailo.so*
 popd

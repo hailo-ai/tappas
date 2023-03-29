@@ -123,9 +123,17 @@ float Yolov4OL::get_class_conf(uint prob_max)
 
 std::pair<float, float> Yolov4OL::get_center(uint row, uint col, uint anchor)
 {
+    float x;
+    float y;
     uint channel = (_center->features() / NUM_ANCHORS) * anchor;
-    float x = (_center->get_full_percision(row, col, channel, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
-    float y = (_center->get_full_percision(row, col, channel + 1, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
+    if (_perform_sigmoid) {
+        x = (sigmoid(_center->get_full_percision(row, col, channel, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
+        y = (sigmoid(_center->get_full_percision(row, col, channel + 1, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
+    }
+    else {
+        x = (_center->get_full_percision(row, col, channel, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
+        y = (_center->get_full_percision(row, col, channel + 1, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
+    }
     return std::pair<float, float>(x, y);
 }
 

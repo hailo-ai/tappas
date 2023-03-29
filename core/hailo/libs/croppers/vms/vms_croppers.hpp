@@ -7,10 +7,11 @@
 #include <opencv2/opencv.hpp>
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
+#include "hailomat.hpp"
 
 __BEGIN_DECLS
-std::vector<HailoROIPtr> person_attributes(cv::Mat mat, HailoROIPtr roi);
-std::vector<HailoROIPtr> face_attributes(cv::Mat image, HailoROIPtr roi);
-std::vector<HailoROIPtr> face_recognition(cv::Mat image, HailoROIPtr roi);
+std::vector<HailoROIPtr> person_attributes(std::shared_ptr<HailoMat> mat, HailoROIPtr roi);
+std::vector<HailoROIPtr> face_attributes(std::shared_ptr<HailoMat> image, HailoROIPtr roi);
+std::vector<HailoROIPtr> face_recognition(std::shared_ptr<HailoMat> image, HailoROIPtr roi);
 
 __END_DECLS

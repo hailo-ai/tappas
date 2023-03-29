@@ -35,6 +35,23 @@ shared_library('face_detection_post',
 )
 
 ################################################
+# SCRFD DETECTION SOURCES
+################################################
+scrfd_post_sources = [
+    'detection/scrfd.cpp',
+]
+
+shared_library('scrfd_post',
+    scrfd_post_sources,
+    cpp_args : hailo_lib_args,
+    include_directories: [hailo_general_inc, include_directories('./'), rapidjson_inc] + xtensor_inc,
+    dependencies : post_deps,
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
+)
+
+################################################
 # NANO DETECTION SOURCES
 ################################################
 nanodet_post_sources = [
@@ -113,7 +130,7 @@ mspn_post_sources = [
 shared_library('mspn_post',
     mspn_post_sources,
     cpp_args : hailo_lib_args,
-    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc,
+    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc + rapidjson_inc,
     dependencies : post_deps + [opencv_dep],
     gnu_symbol_visibility : 'default',
     install: true,
@@ -156,10 +173,27 @@ shared_library('yolact_post',
 )
 
 ################################################
+# YOLOV5SEG SOURCES
+################################################
+yolov5seg_post_sources = [
+    'instance_segmentation/yolov5seg.cpp',
+]
+
+shared_library('yolov5seg_post',
+    yolov5seg_post_sources,
+    cpp_args : hailo_lib_args + ['-pthread'],
+    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc + rapidjson_inc,
+    dependencies : post_deps + [dependency('threads')],
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
+)
+
+################################################
 # CLASSIFICATION SOURCES
 ################################################
 classification_sources = [
-    'classification/resnet.cpp',
+    'classification/classification.cpp',
 ]
 
 shared_library('classification',
@@ -223,6 +257,60 @@ shared_library('re_id',
     install: true,
     install_dir: post_proc_install_dir,
 )
+
+################################################
+# FACE ATTRIBUTES SOURCES
+################################################
+face_attributes_sources = [
+    'classification/face_attributes.cpp',
+]
+
+shared_library('face_attributes_post',
+    face_attributes_sources,
+    cpp_args : hailo_lib_args,
+    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc,
+    dependencies : post_deps + [tracker_dep],
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
+)
+
+################################################
+# PERSON ATTRIBUTES SOURCES
+################################################
+person_attributes_sources = [
+    'classification/person_attributes.cpp',
+]
+
+shared_library('person_attributes_post',
+    person_attributes_sources,
+    cpp_args : hailo_lib_args,
+    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc,
+    dependencies : post_deps + [tracker_dep],
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
+)
+
+
+################################################
+# FACE RECOGNITION SOURCES
+################################################
+face_recognition_sources = [
+    'recognition/arcface.cpp',
+]
+
+shared_library('face_recognition_post',
+    face_recognition_sources,
+    cpp_args : hailo_lib_args,
+    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc,
+    dependencies : post_deps + [tracker_dep],
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
+)
+
+
 
 if get_option('include_python')
     

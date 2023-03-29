@@ -31,7 +31,7 @@ Usage Notes
 
 #. The format should be written according to the gstreamer conventions, e.g. RGBA instead of rgba.
 #. If the min and max number of sources are the same only 1 pipeline will run, otherwise several pipelines will be running consecutively.
-#. If you want to use VA-API make sure you download VA-API via our `VA-API Install Manual <../../apps/gstreamer/x86_hw_accelerated/README.rst>`_
+#. If you want to use VA-API make sure you download VA-API via our `VA-API Install Manual <../../apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
 
 
 Videos For Benchmark Tool
@@ -50,7 +50,7 @@ Benchmark Example
 
 .. code-block:: sh
     TAPPAS_WORKSPACE=/local/workspace/tappas
-    INPUT_PATH="$TAPPAS_WORKSPACE/apps/gstreamer/general/license_plate_detection/resources/lpr_ayalon.mp4"
+    INPUT_PATH="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/license_plate_detection/resources/lpr_ayalon.mp4"
     OUTPUT_PATH="$TAPPAS_WORKSPACE/tap_video"
     ./tools/benchmark/create_soft_links.sh --input $INPUT_VIDEO --num-of-copies 16 --output-prefix $OUTPUT_PATH
     ./tools/benchmark/benchmark.sh --video-prefix-path $OUTPUT_PATH --min-num-of-sources 16 --max-num-of-sources 16 --display-resolution 640x480

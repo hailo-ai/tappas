@@ -1,6 +1,6 @@
 PyGObject==3.42.0
 gobject==0.1.0
 pycairo==1.20.1
-numpy>=1.19.4,<=1.23.3,!=1.19.5
-pandas==1.1.5
+numpy==1.23.3
+pandas==1.5.2
 plotly==5.9.0

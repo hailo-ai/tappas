@@ -26,4 +26,5 @@ void generate_random_detections(HailoROIPtr roi);
 void generate_center_detection(HailoROIPtr roi);
 void generate_bottom_detection(HailoROIPtr roi);
 void print_roi_bboxs(HailoROIPtr roi);
+void dump_tensors_to_npy(HailoROIPtr roi);
 __END_DECLS

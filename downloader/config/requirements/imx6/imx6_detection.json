@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/imx6/detection/resources",
+  "path": "apps/h8/gstreamer/imx6/detection/resources",
   "requirements": [
     {
       "bucket": "tappas",

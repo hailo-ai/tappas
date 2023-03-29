@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+readonly INSTALLATION_DIR=/opt/hailo/tappas
 
 # Extract GStramer version used
 GSTREAMER_VERSION=$(gst-launch-1.0 --gst-version | awk '{print $NF}' | cut -d. -f1,2)
@@ -18,7 +19,7 @@ function install_plugins_good() {
   git apply ${TAPPAS_WORKSPACE}/core/patches/rtsp/rtspsrc_stream_id_path.patch
 
   # Build plugins-good
-  meson build --prefix /usr/
+  meson build --prefix ${INSTALLATION_DIR}
   ninja -j $num_cores_to_use -C build
   sudo env "PATH=$PATH" ninja -j $num_cores_to_use -C build install
   popd
@@ -31,7 +32,7 @@ function install_gst_instruments() {
   pushd ${TAPPAS_WORKSPACE}/sources/
   git clone --depth 1 -b 0.3.1 https://github.com/kirushyk/gst-instruments.git
   pushd gst-instruments
-  meson build -Dui=disabled --prefix /usr/
+  meson build -Dui=disabled --prefix ${INSTALLATION_DIR}
   ninja -j $num_cores_to_use -C build
   sudo env "PATH=$PATH" ninja -j $num_cores_to_use -C build install
   popd

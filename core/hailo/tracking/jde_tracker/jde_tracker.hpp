@@ -28,6 +28,11 @@
 #define DEFAULT_INIT_IOU_THRESHOLD (0.9f)
 #define DEFAULT_KEEP_FRAMES (2)
 #define DEFAULT_KEEP_PAST_METADATA (true)
+#define DEFAULT_STD_WEIGHT_POSITION (0.01)
+#define DEFAULT_STD_WEIGHT_POSITION_BOX (0.00000001)
+#define DEFAULT_STD_WEIGHT_VELOCITY (0.001)
+#define DEFAULT_STD_WEIGHT_VELOCITY_BOX (0.00000001)
+#define DEFAULT_DEBUG (false)
 
 __BEGIN_DECLS
 class JDETracker
@@ -44,11 +49,13 @@ private:
     int m_keep_lost_frames;    // number of frames to keep lost detections w/o detection
     bool m_keep_past_metadata; // keep past metadata for new detections
     int m_frame_id{0};         // the current frame id
+    bool m_debug;              // debug flag to ebable output new and lost tracks
 
-    std::vector<STrack> m_tracked_stracks; // Currently tracked STracks
-    std::vector<STrack> m_lost_stracks;    // Currently lost STracks
-    std::vector<STrack> m_new_stracks;     // Currently new STracks
-    KalmanFilter m_kalman_filter;          // Kalman Filter
+    std::vector<STrack> m_tracked_stracks;                 // Currently tracked STracks
+    std::vector<STrack> m_lost_stracks;                    // Currently lost STracks
+    std::vector<STrack> m_new_stracks;                     // Currently new STracks
+    KalmanFilter m_kalman_filter;                          // Kalman Filter
+    std::vector<hailo_object_t> m_hailo_objects_blacklist; // Objects that will never be kept track of
 
     //******************************************************************
     // CLASS RESOURCE MANAGEMENT
@@ -57,11 +64,15 @@ public:
     // Default Constructor
     JDETracker(float kalman_dist = DEFAULT_KALMAN_DISTANCE, float iou_thr = DEFAULT_IOU_THRESHOLD,
                float init_iou_thr = DEFAULT_INIT_IOU_THRESHOLD, int keep_tracked = DEFAULT_KEEP_FRAMES,
-               int keep_new = DEFAULT_KEEP_FRAMES, int keep_lost = DEFAULT_KEEP_FRAMES, bool keep_past_metadata = DEFAULT_KEEP_PAST_METADATA, 
-               float std_weight_position = 0.01, float std_weight_pos_box = 0.01, float std_weight_velocity = 0.001, float std_weight_vel_box = 0.001) : m_kalman_dist_thr(kalman_dist), m_iou_thr(iou_thr), m_init_iou_thr(init_iou_thr),
-                                                                                                                                                         m_keep_tracked_frames(keep_tracked), m_keep_new_frames(keep_new), m_keep_lost_frames(keep_lost), m_keep_past_metadata(keep_past_metadata)
+               int keep_new = DEFAULT_KEEP_FRAMES, int keep_lost = DEFAULT_KEEP_FRAMES,
+               bool keep_past_metadata = DEFAULT_KEEP_PAST_METADATA, float std_weight_position = DEFAULT_STD_WEIGHT_POSITION,
+               float std_weight_position_box = DEFAULT_STD_WEIGHT_POSITION_BOX, float std_weight_velocity = DEFAULT_STD_WEIGHT_VELOCITY,
+               float std_weight_velocity_box = DEFAULT_STD_WEIGHT_VELOCITY_BOX, bool debug = DEFAULT_DEBUG,
+               std::vector<hailo_object_t> hailo_objects_blacklist_vec = {HAILO_LANDMARKS, HAILO_DEPTH_MASK, HAILO_CLASS_MASK}) : m_kalman_dist_thr(kalman_dist), m_iou_thr(iou_thr), m_init_iou_thr(init_iou_thr),
+                                                                                                                                  m_keep_tracked_frames(keep_tracked), m_keep_new_frames(keep_new), m_keep_lost_frames(keep_lost),
+                                                                                                                                  m_keep_past_metadata(keep_past_metadata), m_debug(debug), m_hailo_objects_blacklist(hailo_objects_blacklist_vec)
     {
-        m_kalman_filter = KalmanFilter(std_weight_position, std_weight_pos_box, std_weight_velocity, std_weight_vel_box);
+        m_kalman_filter = KalmanFilter(std_weight_position, std_weight_position_box, std_weight_velocity, std_weight_velocity_box);
     }
 
     // Destructor
@@ -80,6 +91,13 @@ public:
     void set_keep_lost_frames(int new_keep_lost) { m_keep_lost_frames = new_keep_lost; }
     void set_keep_past_metadata(bool new_keep_past_metadata) { m_keep_past_metadata = new_keep_past_metadata; }
 
+    void set_std_weight_position(float std_weight_position) { m_kalman_filter.set_std_weight_position(std_weight_position); }
+    void set_std_weight_position_box(float std_weight_position_box) { m_kalman_filter.set_std_weight_position_box(std_weight_position_box); }
+    void set_std_weight_velocity(float std_weight_velocity) { m_kalman_filter.set_std_weight_velocity(std_weight_velocity); }
+    void set_std_weight_velocity_box(float std_weight_velocity_box) { m_kalman_filter.set_std_weight_velocity_box(std_weight_velocity_box); }
+    void set_debug(bool debug) { m_debug = debug; }
+    void set_hailo_objects_blacklist(std::vector<hailo_object_t> hailo_objects_blacklist) { m_hailo_objects_blacklist = hailo_objects_blacklist; }
+
     // Getters for members accessible at element-property level
     float get_kalman_distance() { return m_kalman_dist_thr; }
     float get_iou_threshold() { return m_iou_thr; }
@@ -88,17 +106,23 @@ public:
     int get_keep_new_frames() { return m_keep_new_frames; }
     int get_keep_lost_frames() { return m_keep_lost_frames; }
     bool get_keep_past_metadata() { return m_keep_past_metadata; }
+    float get_std_weight_position() { return m_kalman_filter.get_std_weight_position(); }
+    float get_std_weight_position_box() { return m_kalman_filter.get_std_weight_position_box(); }
+    float get_std_weight_velocity() { return m_kalman_filter.get_std_weight_velocity(); }
+    float get_std_weight_velocity_box() { return m_kalman_filter.get_std_weight_velocity_box(); }
+    bool get_debug() { return m_debug; }
+    std::vector<hailo_object_t> get_hailo_objects_blacklist() { return m_hailo_objects_blacklist; }
 
     //******************************************************************
     // TRACKING FUNCTIONS
     //******************************************************************
     /******************** PUBLIC FUNCTIONS ****************************/
 public:
-    static std::vector<STrack> hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs, int frame_id);
-    static std::vector<HailoDetectionPtr> stracks_to_hailo_detections(std::vector<STrack> &stracks);
+    static std::vector<STrack> hailo_detections_to_stracks(std::vector<HailoDetectionPtr> &inputs, int frame_id, std::vector<hailo_object_t> hailo_objects_blacklist);
+    static std::vector<HailoDetectionPtr> stracks_to_hailo_detections(std::vector<STrack> &stracks, bool debug);
     STrack *get_detection_with_id(int track_id);
     std::vector<STrack> get_tracked_stracks();
-    std::vector<STrack> update(std::vector<HailoDetectionPtr> &inputs, bool report_unconfirmed);
+    std::vector<STrack> update(std::vector<HailoDetectionPtr> &inputs, bool report_unconfirmed, bool report_lost);
 
     /******************** PRIVATE FUNCTIONS ****************************/
 private:

@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/general/pose_estimation/resources",
+  "path": "apps/h8/gstreamer/general/pose_estimation/resources",
   "requirements": [
     {
       "bucket": "model_zoo",
@@ -7,7 +7,7 @@
       "destination": "centerpose_regnetx_1.6gf_fpn.hef"
     },
     {
-      "bucket": "model_zoo",
+      "bucket": "tappas",
       "source": "general/hefs/centerpose_repvgg_a0.hef",
       "destination": "centerpose_repvgg_a0.hef"
     }

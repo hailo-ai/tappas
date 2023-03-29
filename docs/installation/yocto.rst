@@ -136,7 +136,7 @@ tappas-tracers
 ^^^^^^^^^^^^^^
 Hailo's TAPPAS gstreamer tracers. Depends on ``libgsthailo`` and GStreamer.
 The source files located in the TAPPAS release under ``core/hailo/tracers``.
-The recipe compiles with meson and copies the ``libgstsharktracers.so`` file to ``/usr/lib/gstreamer-1.0`` 
+The recipe compiles with meson and copies the ``libgsthailotracers.so`` file to ``/usr/lib/gstreamer-1.0`` 
 on the target device's root file system.
 
 For instructions on how to use the tracers on a yocto built machine, see `debugging <../write_your_own_application/debugging.rst>`_\ 

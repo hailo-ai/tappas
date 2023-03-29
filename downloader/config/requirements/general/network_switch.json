@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/general/network_switch/resources",
+  "path": "apps/h8/gstreamer/general/network_switch/resources",
   "requirements": [
     {
       "bucket": "tappas",

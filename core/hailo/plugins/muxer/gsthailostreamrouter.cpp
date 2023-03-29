@@ -9,6 +9,7 @@
 #include "gsthailostreamrouter.hpp"
 #include "gst_hailo_meta.hpp"
 #include "gst_hailo_stream_meta.hpp"
+#include <iostream>
 #include <gst/gst.h>
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_stream_router_debug);
@@ -31,7 +32,7 @@ GType gst_hailo_stream_router_pad_get_type(void);
 #define GST_HAILO_STREAM_ROUTER_PAD_CAST(obj) \
     ((GstHailoStreamRouterPad *)(obj))
 
-#define GST_HAILO_STREAM_ROUTER_MAX_INPUT_PADS 10
+#define GST_HAILO_STREAM_ROUTER_MAX_INPUT_PADS 40
 
 typedef struct _GstHailoStreamRouterPad GstHailoStreamRouterPad;
 typedef struct _GstHailoStreamRouterPadClass GstHailoStreamRouterPadClass;
@@ -328,7 +329,7 @@ set_input_streams(GstHailoStreamRouterPad *current_pad, const GValue *value)
 
     guint i;
     guint len = gst_value_array_get_size(value);
-    if (len > 0)
+    if (len > 0 && len < GST_HAILO_STREAM_ROUTER_MAX_INPUT_PADS)
     {
         for (i = 0; i < len; i++)
         {
@@ -336,6 +337,10 @@ set_input_streams(GstHailoStreamRouterPad *current_pad, const GValue *value)
             current_pad->input_streams[i] = g_strdup(g_value_get_string(val));
         }
         current_pad->num_input_streams = len;
+    }
+    else
+    {
+        std::cerr << "initialization of element property input_streams: value is " << len << " and must be between 0 to " << GST_HAILO_STREAM_ROUTER_MAX_INPUT_PADS << std::endl;
     }
     return;
 }

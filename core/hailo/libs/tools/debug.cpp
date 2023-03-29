@@ -12,6 +12,10 @@
 #include <random>
 #include "debug.hpp"
 
+#include "xtensor/xadapt.hpp"
+#include "xtensor/xarray.hpp"
+#include <xtensor/xnpy.hpp>
+
 // Frame counter A
 int frame_count_a = 0;
 void frame_counter_a(HailoROIPtr roi)
@@ -193,6 +197,19 @@ void print_roi_bboxs(HailoROIPtr roi)
         std::cout << "X: " << bbox.xmin() << " Y:" << bbox.ymin() <<  " Width:" << bbox.width() <<  " Height: " << bbox.height() << std::endl;
         std::cout << "-------" << std::endl;
     }
+}
+
+void dump_tensors_to_npy(HailoROIPtr roi)
+{
+    for (auto const& [name, tensor] : roi->get_tensors_by_name())
+    {
+	std::string output_name = name;
+	std::replace( output_name.begin(), output_name.end(), '/', '_');
+
+        xt::xarray<uint8_t> xtensor = xt::adapt(tensor->data(), tensor->size(), xt::no_ownership(), tensor->shape());    
+        xt::dump_npy(output_name + ".npy", xtensor);
+    }
+
 }
 
 // Do Nothing

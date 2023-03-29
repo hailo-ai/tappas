@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/raspberrypi/multinetworks_parallel/resources",
+  "path": "apps/h8/gstreamer/raspberrypi/multinetworks_parallel/resources",
   "requirements": [
     {
       "bucket": "tappas",

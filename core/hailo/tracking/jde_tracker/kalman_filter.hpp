@@ -76,9 +76,9 @@ class KalmanFilter
     //******************************************************************
     public:
     //Constructor
-    KalmanFilter(float std_weight_position = 0.01, float std_weight_pos_box = 0.01, float std_weight_velocity = 0.001, float std_weight_vel_box = 0.001) :
-    m_std_weight_position(std_weight_position), m_std_weight_position_box(std_weight_pos_box),
-    m_std_weight_velocity(std_weight_velocity), m_std_weight_velocity_box(std_weight_vel_box)
+    KalmanFilter(float std_weight_position = 0.01, float std_weight_position_box = 0.01, float std_weight_velocity = 0.001, float std_weight_velocity_box = 0.001) :
+    m_std_weight_position(std_weight_position), m_std_weight_position_box(std_weight_position_box),
+    m_std_weight_velocity(std_weight_velocity), m_std_weight_velocity_box(std_weight_velocity_box)
     {
         int ndim = 4;
         float dt = 1.;
@@ -90,6 +90,18 @@ class KalmanFilter
         }
         m_update_matrix = xt::eye<float>({4, 8}, 0); // Identity matrix of shape 4 x 8
     }
+
+    // Params setters
+    void set_std_weight_position(float std_weight_position) { m_std_weight_position = std_weight_position; }
+    void set_std_weight_position_box(float std_weight_position_box) { m_std_weight_position_box = std_weight_position_box; }
+    void set_std_weight_velocity(float std_weight_velocity) { m_std_weight_velocity = std_weight_velocity; }
+    void set_std_weight_velocity_box(float std_weight_velocity_box) { m_std_weight_velocity_box = std_weight_velocity_box; }
+    
+    // Params getters
+    float get_std_weight_position() { return m_std_weight_position; }
+    float get_std_weight_position_box() { return m_std_weight_position_box; }
+    float get_std_weight_velocity() { return m_std_weight_velocity; }
+    float get_std_weight_velocity_box() { return m_std_weight_velocity_box; }
 
     //******************************************************************
     // LINEAR ALGEBRA HELPER FUNCTIONS

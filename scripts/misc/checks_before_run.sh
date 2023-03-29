@@ -9,6 +9,10 @@ export_only=false
 check_vaapi=false
 no_hailo=false
 
+INSTALLATION_DIR=/opt/hailo/tappas
+TAPPAS_LIB_PATH=${INSTALLATION_DIR}/lib/$(uname -m)-linux-gnu
+TAPPAS_GST_PLUGIN_PATH=${TAPPAS_LIB_PATH}/gstreamer-1.0
+
 function check__print_usage() {
     echo "Checks before app run:"
     echo ""
@@ -52,7 +56,7 @@ function log_warning() {
 function export_workspaces() {
     if [[ -z "$TAPPAS_WORKSPACE" ]]; then
         SCRIPT_DIR=$(dirname $(realpath $0))
-        export TAPPAS_WORKSPACE=$(readlink -f $SCRIPT_DIR/../../../../)
+        export TAPPAS_WORKSPACE=$(readlink -f $SCRIPT_DIR/../../../../../)
     fi
 }
 
@@ -110,7 +114,7 @@ function validate_hailort_version() {
         return 0
     fi 
 
-    hailort_version=$(hailortcli fw-control identify | grep -a "Firmware Version" | tail -n 1 | grep -aoP "(\d+.\d+.\d+)")
+    hailort_version=$(hailortcli fw-control identify | grep -a "Firmware Version" | tail -n 1 | grep -aoP "(\d+.\d+)")
     hailort_expected_version=$(cat $TAPPAS_WORKSPACE/.config | awk -F'=' '{print $2}')
 
     if [ "$hailort_version" != "$hailort_expected_version" ]; then
@@ -141,8 +145,25 @@ function check_vaapi_driver() {
     fi
 }
 
+function _export_ld_library_path(){
+    ! [[ -n $LD_LIBRARY_PATH && $LD_LIBRARY_PATH =~ ${TAPPAS_LIB_PATH} ]] && \
+        export LD_LIBRARY_PATH="${TAPPAS_LIB_PATH}:${LD_LIBRARY_PATH}"
+    return 0
+}
+
+function _export_gst_plugin_path(){
+    ! [[ -n $GST_PLUGIN_PATH && $GST_PLUGIN_PATH =~ ${TAPPAS_GST_PLUGIN_PATH} ]] && \
+        export GST_PLUGIN_PATH="${TAPPAS_GST_PLUGIN_PATH}:${GST_PLUGIN_PATH}"
+    return 0
+}
+
+function export_env_path_vars(){
+    _export_ld_library_path
+    _export_gst_plugin_path
+}
+
 function main() {
-    functions_to_run=( export_workspaces export_xv_image_is_supported )
+    functions_to_run=( export_workspaces export_xv_image_is_supported export_env_path_vars)
 
     if [ "$no_hailo" = false ]; then
         functions_to_run+=( validate_hailo_device_connected validate_hailort_version )

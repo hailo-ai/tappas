@@ -1,5 +1,5 @@
 {
-    "path": "apps/gstreamer/imx6/classification/resources",
+    "path": "apps/h8/gstreamer/imx6/classification/resources",
     "requirements": [
       {
         "bucket": "model_zoo",

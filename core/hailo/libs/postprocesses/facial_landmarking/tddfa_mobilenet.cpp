@@ -58,7 +58,7 @@ std::string get_post_proc_data_dir()
     if (tappas_path == "")
         throw std::invalid_argument("TAPPAS_WORKSPACE environment variable is not set, cannot find post_processes_data directory");
 
-    return tappas_path + "/apps/gstreamer/libs/post_processes/post_processes_data";
+    return tappas_path + "/apps/h8/gstreamer/libs/post_processes/post_processes_data";
 }
 
 std::string post_proc_data_dir = get_post_proc_data_dir();

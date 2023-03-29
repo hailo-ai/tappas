@@ -1,0 +1,30 @@
+{
+  "path": "apps/h8/gstreamer/rockchip/detection/resources",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/yolov5m_wo_spp_60p.hef",
+      "destination": "yolov5m_wo_spp_60p.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolov4_leaky.hef",
+      "destination": "yolov4_leaky.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/hefs/yolov3.hef",
+      "destination": "yolov3.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/nanodet_repvgg.hef",
+      "destination": "nanodet_repvgg.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/detection.mp4",
+      "destination": "detection.mp4"
+    }
+  ]
+}

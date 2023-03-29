@@ -28,7 +28,7 @@ gst_tracer_sources = [
 glib_dep = dependency('glib-2.0')
 gio_dep = dependency('gio-2.0')
 
-shared_library('gstsharktracers',
+shared_library('gsthailotracers',
     gst_tracer_sources,
     cpp_args : hailo_lib_args+['-DGST_USE_UNSTABLE_API'],
     include_directories: [hailo_general_inc, include_directories('./')],

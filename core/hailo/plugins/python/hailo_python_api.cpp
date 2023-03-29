@@ -404,6 +404,8 @@ PYBIND11_MODULE(hailo, m)
             .def("set_bbox", &HailoROI::set_bbox, "Set BBOX", "bbox"_a)
             .def("get_scaling_bbox", &HailoROI::get_scaling_bbox, "Get Scaling BBOX")
             .def("set_scaling_bbox", &HailoROI::set_scaling_bbox, "Set Scaling BBOX", "bbox"_a)
+            .def("get_stream_id", &HailoROI::get_stream_id, "Get Stream ID")
+            .def("set_stream_id", &HailoROI::set_stream_id, "Set Stream ID", "stream_id"_a)
             .def("__repr__", [](const HailoROI &obj)
                  { return "<hailo.HailoROI"s + "(" + std::to_string(reinterpret_cast<unsigned long>(&obj)) +
                           ")" + ">"; })

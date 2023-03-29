@@ -94,10 +94,15 @@ function get_versions() {
     if [ $ubuntu_version -eq 22 ]; then
         # ------
         # Ubuntu 22 release settings
-        readonly GMMLIB_VERSION="intel-gmmlib-22.1.2"
-        readonly MEDIA_DRIVER_VERSION="intel-media-22.3.1"
-        readonly LIBVA_VERSION="2.14.0"
+        readonly GMMLIB_VERSION="intel-gmmlib-22.3.3"
+        readonly LIBVA_VERSION="2.17.0"
         readonly LIBVA_UTILS_VERSION="$LIBVA_VERSION"
+        readonly MEDIA_DRIVER_VERSION="master"
+        
+        # We are cloning a specific commit (SW swizzling regression fix for Gen8/9/10) from Intel media-driver repo, until a proper release is out.
+        # This fix is mandatory for the performance of video management system pipeline.
+        # https://github.com/intel/media-driver/commit/4c2547e97347d832458002162897df306b7e99eb
+        readonly MEDIA_DRIVER_COMMIT_HASH="4c2547e97347d832458002162897df306b7e99eb"
         # ------
     elif [ $ubuntu_version -eq 20 ]; then
         # ------
@@ -106,6 +111,7 @@ function get_versions() {
         readonly MEDIA_DRIVER_VERSION="intel-media-20.1.1"
         readonly LIBVA_VERSION="2.7.1"
         readonly LIBVA_UTILS_VERSION="$LIBVA_VERSION"
+        readonly MEDIA_DRIVER_COMMIT_HASH=""
         # ------
     else
         log_error "ubuntu version $ubuntu_version is not supported. Supporting only ubuntu 20 or ubuntu 22"
@@ -117,6 +123,8 @@ function get_repo() {
     trap 'err_report $LINENO' ERR
     repo_name=$1
     repo_version=$2
+    commit_hash=$3
+
     if [ $no_cache = true ]; then
         rm -rf $repo_name
     fi
@@ -124,13 +132,17 @@ function get_repo() {
         git clone https://github.com/intel/$repo_name.git -b $repo_version
     fi
     pushd $repo_name
+    # Checkout specific commit if commit hash is provided
+    if [ ! -z "$commit_hash" ]; then
+        git checkout $commit_hash
+    fi
 }
 
 function install_va_requirements() {
     trap 'err_report $LINENO' ERR
     log_info "Installing Requirements"
     sudo apt-get update
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libxfixes-dev autoconf libtool libdrm-dev xorg xorg-dev openbox libx11-dev libgl1-mesa-glx libgl1-mesa-dev
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libxfixes-dev autoconf libtool libdrm-dev xorg xorg-dev openbox libx11-dev libgl1-mesa-glx libgl1-mesa-dev libxcb-dri3-0 libxcb-dri3-dev
 }
 
 function install_vaapi_prerequisites() {
@@ -175,7 +187,7 @@ function media_driver_install() {
     trap 'err_report $LINENO' ERR
     log_info "Compiling intel media driver"
 
-    get_repo media-driver "$MEDIA_DRIVER_VERSION"
+    get_repo media-driver "$MEDIA_DRIVER_VERSION" "$MEDIA_DRIVER_COMMIT_HASH"
     mkdir -p build && pushd build
 
     cmake -DCMAKE_BUILD_TYPE=Release CMAKE_C_COMPILER=/usr/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 ../

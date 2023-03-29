@@ -49,7 +49,7 @@ As part of our creation of the Docker image, we copy some convinet shortcuts to 
 
    # set gstreamer debug
    gst_set_debug() {
-     export GST_SHARK_LOCATION=/tmp/profile
+     export HAILO_PROFILE_LOCATION=/tmp/profile
      export GST_DEBUG="GST_TRACER:7"
      export GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log
      export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;graphic"
@@ -60,7 +60,7 @@ As part of our creation of the Docker image, we copy some convinet shortcuts to 
 
    # set trace to collect graphic data of gstreamer pipeline
    gst_set_graphic() {
-     export GST_SHARK_LOCATION=/tmp/profile
+     export HAILO_PROFILE_LOCATION=/tmp/profile
      export GST_DEBUG_DUMP_DOT_DIR=/tmp/
      export GST_DEBUG="GST_TRACER:7"
      export GST_TRACERS="graphic"
@@ -72,22 +72,22 @@ As part of our creation of the Docker image, we copy some convinet shortcuts to 
      unset GST_TRACERS
      unset GST_DEBUG
      unset GST_DEBUG_DUMP_DOT_DIR
-     unset GST_SHARK_LOCATION
+     unset HAILO_PROFILE_LOCATION
      unset GST_DEBUG_FILE
      unset GST_DEBUG_NO_COLOR
    }
 
    # plot the gst-shark dump files
    gst_plot_debug() {
-     export GST_SHARK_LOCATION=/tmp/profile
+     export HAILO_PROFILE_LOCATION=/tmp/profile
      split_traces_dir=$TAPPAS_WORKSPACE/tappas_traces_$(date +%d.%m.%Y_%H:%M:%S)
      $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/split_traces.sh $split_traces_dir
      python3 $TAPPAS_WORKSPACE/sources/gst-shark/scripts/graphics/plot_all_to_html.py -p $split_traces_dir
      echo 'In order to plot the graphic pipeline graph, run:'
-     echo "dot $GST_SHARK_LOCATION/graphic/pipeline_<timestamp>.dot -T x11"
+     echo "dot $HAILO_PROFILE_LOCATION/graphic/pipeline_<timestamp>.dot -T x11"
    }
 
-Note that we added 4 functions: two sets, an unset, and a plot function. The set functions enable gst-shark by setting environment variables, the chief of which is GST_TRACERS. This enables the different trace hooks in the pipeline. The available tracers are listed in the echo command at the end of each set. You can enable any combination of the available tracers, just chain them together with a ';' (notice that the difference between gst_set_debug and gst_set_graphic is that gst_set_debug enables all tracers whereas gst_set_graphic only enables the graphic tracer that draws the pipeline graph). GST_SHARK_LOCATION and GST_DEBUG_DUMP_DOT_DIR set locations where the dump files are stored, the first sets where the tracer dumps are (used for gst-plot), and the latter where the dot file is saved (the graphic pipeline graph). Unset disables all tracers, and gst_plot_debug runs plot script.
+Note that we added 4 functions: two sets, an unset, and a plot function. The set functions enable gst-shark by setting environment variables, the chief of which is GST_TRACERS. This enables the different trace hooks in the pipeline. The available tracers are listed in the echo command at the end of each set. You can enable any combination of the available tracers, just chain them together with a ';' (notice that the difference between gst_set_debug and gst_set_graphic is that gst_set_debug enables all tracers whereas gst_set_graphic only enables the graphic tracer that draws the pipeline graph). HAILO_PROFILE_LOCATION and GST_DEBUG_DUMP_DOT_DIR set locations where the dump files are stored, the first sets where the tracer dumps are (used for gst-plot), and the latter where the dot file is saved (the graphic pipeline graph). Unset disables all tracers, and gst_plot_debug runs plot script.
 
 .. _Using GstShark in yocto-compiled images:
 
@@ -100,7 +100,7 @@ Enable TAPPAS tracers:
 
   .. code-block:: sh
 
-     export GST_SHARK_LOCATION=/tmp/profile
+     export HAILO_PROFILE_LOCATION=/tmp/profile
      export GST_DEBUG="GST_TRACER:7"
      export GST_DEBUG_NO_COLOR=1
 
@@ -186,6 +186,8 @@ Each graph inspects a different metric of the pipeline, it is recommended to rea
 * Graphic (graphics) - Records a graphical representation of the current pipeline.
 
 
+.. note::
+    When using the Thread Monitor tracer, give meaningful names to the queues because the names of the threads in the graph will be based on the names of the queues. This can help you easily identify the threads and understand their purpose when analyzing the trace. In addition, due to the way this tracer works, it is important to keep the names of the queues shorter than 16 characters. If the names are longer than this, the thread names in the graph will be truncated.
 
 Modify Buffering Mode and Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -24,7 +24,7 @@
  * @return float
  *         The variance of edges in the image.
  */
-float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float crop_ratio = 0.1)
+float quality_estimation(std::shared_ptr<HailoMat> hailo_mat, const HailoBBox &roi, const float crop_ratio = 0.1)
 {
     // Crop the center of the roi from the image, avoid cropping out of bounds
     float roi_width = roi.width();
@@ -33,33 +33,43 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     float roi_ymin = roi.ymin();
     float roi_xmax = roi.xmax();
     float roi_ymax = roi.ymax();
-    int x_offset = (image.cols * roi_width) * crop_ratio;
-    int y_offset = (image.rows * roi_height) * crop_ratio;
-    int cropped_xmin = CLAMP((image.cols * roi_xmin) + x_offset, 0, image.cols);
-    int cropped_ymin = CLAMP((image.rows * roi_ymin) + y_offset, 0, image.rows);
-    int cropped_xmax = CLAMP((image.cols * roi_xmax) - x_offset, cropped_xmin, image.cols);
-    int cropped_ymax = CLAMP((image.rows * roi_ymax) - y_offset, cropped_ymin, image.rows);
-    int cropped_width = cropped_xmax - cropped_xmin;
-    int cropped_height = cropped_ymax - cropped_ymin;
+    float x_offset = roi_width * crop_ratio;
+    float y_offset = roi_height * crop_ratio;
+    float cropped_xmin = CLAMP(roi_xmin + x_offset, 0, 1);
+    float cropped_ymin = CLAMP(roi_ymin + y_offset, 0, 1);
+    float cropped_xmax = CLAMP(roi_xmax - x_offset, cropped_xmin, 1);
+    float cropped_ymax = CLAMP(roi_ymax - y_offset, cropped_ymin, 1);
+    float cropped_width_n = cropped_xmax - cropped_xmin;
+    float cropped_height_n = cropped_ymax - cropped_ymin;
+    int cropped_width = int(cropped_width_n * hailo_mat->native_width());
+    int cropped_height = int(cropped_height_n * hailo_mat->native_height());
 
     // If the cropepd image is too small then quality is zero
     if (cropped_width <= CROP_WIDTH_LIMIT || cropped_height <= CROP_HEIGHT_LIMIT)
         return -1.0;
 
     // If it is not too small then we can make the crop
-    cv::Rect center_crop(cropped_xmin, cropped_ymin, cropped_width, cropped_height);
-    cv::Mat cropped_image = image(center_crop);
+    HailoROIPtr crop_roi = std::make_shared<HailoROI>(HailoBBox(cropped_xmin, cropped_ymin, cropped_width_n, cropped_height_n));
+    cv::Mat cropped_image = hailo_mat->crop(crop_roi);
 
-    // If the image is in yuy2 format, then adjust to BGR
+    // Convert image to BGR
     cv::Mat bgr_image;
-    if (image.type() == CV_8UC4)
+    switch (hailo_mat->get_type())
+    {
+    case HAILO_MAT_YUY2:
     {
         cv::Mat yuy2_image = cv::Mat(cropped_image.rows, cropped_image.cols * 2, CV_8UC2, (char *)cropped_image.data, cropped_image.step);
         cv::cvtColor(yuy2_image, bgr_image, cv::COLOR_YUV2BGR_YUY2);
+        break;
     }
-    else
+    case HAILO_MAT_NV12:
     {
+        cv::cvtColor(cropped_image, bgr_image, cv::COLOR_YUV2BGR_NV12);
+        break;
+    }
+    default:
         bgr_image = cropped_image;
+        break;
     }
 
     // Resize the frame
@@ -73,14 +83,8 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     // Convert to grayscale
     cv::Mat gray_image;
     cv::Mat gray_image_normalized;
-    double minVal;
-    double maxVal;
-    cv::Point minLoc;
-    cv::Point maxLoc;
     cv::cvtColor(gaussian_image, gray_image, cv::COLOR_BGR2GRAY);
-    cv::minMaxLoc(gray_image, &minVal, &maxVal, &minLoc, &maxLoc);
-    gray_image_normalized = ((gray_image / maxVal) * 255);
-    gray_image_normalized.convertTo(gray_image_normalized, CV_8U);
+    cv::normalize(gray_image, gray_image_normalized, 255, 0, cv::NORM_INF);
 
     // Compute the Laplacian of the gray image
     cv::Mat laplacian_image;
@@ -90,15 +94,6 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
     cv::Scalar mean, stddev;
     cv::meanStdDev(laplacian_image, mean, stddev, cv::Mat());
     float variance = stddev.val[0] * stddev.val[0];
-
-    // Release resources
-    bgr_image.release();
-    gray_image_normalized.release();
-    gaussian_image.release();
-    resized_image.release();
-    cropped_image.release();
-    gray_image.release();
-    laplacian_image.release();
 
     return variance;
 }
@@ -117,7 +112,7 @@ float quality_estimation(const cv::Mat &image, const HailoBBox &roi, const float
  * @return std::vector<HailoROIPtr>
  *         vector of ROI's to crop and resize.
  */
-std::vector<HailoROIPtr> license_plate_quality_estimation(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> license_plate_quality_estimation(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     std::vector<HailoROIPtr> crop_rois;
     float variance;
@@ -168,7 +163,7 @@ std::vector<HailoROIPtr> license_plate_quality_estimation(cv::Mat image, HailoRO
  * @return std::vector<HailoROIPtr>
  *         vector of ROI's to crop and resize.
  */
-std::vector<HailoROIPtr> vehicles_without_ocr(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> vehicles_without_ocr(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     std::vector<HailoROIPtr> crop_rois;
     bool has_ocr = false;
@@ -184,8 +179,8 @@ std::vector<HailoROIPtr> vehicles_without_ocr(cv::Mat image, HailoROIPtr roi)
             (vehicle_bbox.ymax() > 1.0))
             continue;
 
-        int vehicle_width = vehicle_bbox.width() * image.cols;
-        int vehicle_height = vehicle_bbox.height() * image.rows;
+        int vehicle_width = vehicle_bbox.width() * image->width();
+        int vehicle_height = vehicle_bbox.height() * image->height();
         if ((vehicle_width * vehicle_height) < 40000)
             continue;
 

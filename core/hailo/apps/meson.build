@@ -3,7 +3,7 @@ target_platform = get_option('target_platform')
 install_lpr = get_option('install_lpr')
 if apps_install_dir == ''
   # By default install for x86 workspace
-  apps_install_dir = tappas_workspace + '/apps/gstreamer/libs/apps/'
+  apps_install_dir = tappas_workspace + '/apps/h8/gstreamer/libs/apps/'
 endif
 
 thread_deps = [dependency('threads')]
@@ -49,8 +49,10 @@ image_dep = declare_dependency(
   link_with : image_lib)
 
 # App Subdirectories
-if target_platform == 'x86' or target_platform == 'rpi'
+if target_platform == 'x86' or target_platform == 'rpi' or target_platform == 'rockchip'
     subdir('x86')
 elif target_platform == 'imx8' or target_platform == 'imx6'
     subdir('imx')
+elif target_platform == 'hailo15'
+    subdir('hailo15')
 endif

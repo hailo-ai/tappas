@@ -258,11 +258,11 @@ public:
             format = _roi->get_tensor("yolox_l_leaky/conv130")->vstream_info().format.type;
             _layers.push_back(std::make_shared<YoloXOL>(_roi->get_tensor("yolox_l_leaky/conv130"), _roi->get_tensor("yolox_l_leaky/conv131"),
                                                         _roi->get_tensor("yolox_l_leaky/conv129"), params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
-            
+
             format = _roi->get_tensor("yolox_l_leaky/conv113")->vstream_info().format.type;
             _layers.push_back(std::make_shared<YoloXOL>(_roi->get_tensor("yolox_l_leaky/conv113"), _roi->get_tensor("yolox_l_leaky/conv114"),
                                                         _roi->get_tensor("yolox_l_leaky/conv112"), params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
-            
+
             format = _roi->get_tensor("yolox_l_leaky/conv95")->vstream_info().format.type;
             _layers.push_back(std::make_shared<YoloXOL>(_roi->get_tensor("yolox_l_leaky/conv95"), _roi->get_tensor("yolox_l_leaky/conv96"),
                                                         _roi->get_tensor("yolox_l_leaky/conv94"), params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
@@ -304,15 +304,51 @@ void yolov5_no_faces(HailoROIPtr roi, void *params_void_ptr)
     }
 }
 
+void yolov5_no_faces_letterbox(HailoROIPtr roi, void *params_void_ptr)
+{
+    YoloParams *params = reinterpret_cast<YoloParams *>(params_void_ptr);
+    HailoBBox roi_bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
+
+    auto post = Yolov5(roi, params);
+    auto detections = post.decode();
+    for (auto &detection : detections)
+    {
+        if (detection.get_label() == "person")
+        {
+            auto detection_bbox = detection.get_bbox();
+            auto xmin = (detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin();
+            auto ymin = (detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin();
+            auto xmax = (detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin();
+            auto ymax = (detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin();
+
+            HailoBBox new_bbox(xmin, ymin, xmax - xmin, ymax - ymin);
+            detection.set_bbox(new_bbox);
+        }
+        else
+        {
+            detections.erase(std::remove_if(detections.begin(), detections.end(),
+                                            [](HailoDetection obj)
+                                            { return obj.get_label() == "face"; }),
+                             detections.end());
+        }
+    }
+
+    // Clear the scaling bbox of main roi because all detections are fixed.
+    roi->clear_scaling_bbox();
+
+    // Add detections to main roi.
+    hailo_common::add_detections(roi, detections);
+}
+
 void yolov5_personface_letterbox(HailoROIPtr roi, void *params_void_ptr)
 {
     YoloParams *params = reinterpret_cast<YoloParams *>(params_void_ptr);
     HailoBBox roi_bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
-    
+
     // Yolov5 Postprocess for faces
     auto post = Yolov5(roi, params);
     auto detections = post.decode();
-    for ( auto &detection : detections )
+    for (auto &detection : detections)
     {
         auto detection_bbox = detection.get_bbox();
         auto xmin = (detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin();

@@ -24,6 +24,7 @@ libgirepository1.0-dev
 libgstreamer-plugins-base1.0-dev 
 libgraphviz-dev 
 octave 
+xdot
 epstool 
 babeltrace 
 gtk-doc-tools 

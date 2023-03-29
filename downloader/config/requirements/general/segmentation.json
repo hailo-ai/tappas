@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/general/segmentation/resources",
+  "path": "apps/h8/gstreamer/general/segmentation/resources",
   "requirements": [
     {
       "bucket": "model_zoo",

@@ -1,0 +1,1 @@
+../../../../scripts/vaapi/install_vaapi.sh

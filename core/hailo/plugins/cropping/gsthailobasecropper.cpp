@@ -82,14 +82,14 @@ gst_hailo_basecropper_class_init(GstHailoBaseCropperClass *klass)
                                                       "Period of of how often to crop buffers. Can be thought of as 'cropping every x buffers'. Default 1 (every buffer)",
                                                       1, G_MAXINT, 1,
                                                       (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
-     g_object_class_install_property(gobject_class, PROP_FILTER_STREAMS,
+    g_object_class_install_property(gobject_class, PROP_FILTER_STREAMS,
                                     gst_param_spec_array("filter-streams", "Filter Streams",
                                                          "Filter specific streams to crop. Streams are filtered by GstHailoStreamMeta (see hailoroundrobin element). Default behavior crops all streams. \nExample usage: filter-streams=\'<sink_1, sink_3>\'",
                                                          g_param_spec_string("filter-stream-name", "Filter stream name",
                                                                              "Filter stream", "",
                                                                              (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)),
                                                          (GParamFlags)(G_PARAM_READWRITE | GST_PARAM_CONTROLLABLE | G_PARAM_STATIC_STRINGS)));
-    
+
     gst_element_class_add_pad_template(gstelement_class,
                                        gst_static_pad_template_get(&src_factory));
     gst_element_class_add_pad_template(gstelement_class,
@@ -138,7 +138,7 @@ set_filter_streams(GstHailoBaseCropper *hailo_basecropper, const GValue *value)
         return;
     }
     guint len = gst_value_array_get_size(value);
-    if (len > 0)
+    if (len > 0 && len < GST_HAILO_CROPPER_MAX_FILTER_STREAMS)
     {
         for (uint i = 0; i < len; i++)
         {
@@ -146,6 +146,10 @@ set_filter_streams(GstHailoBaseCropper *hailo_basecropper, const GValue *value)
             hailo_basecropper->filter_streams[i] = g_strdup(g_value_get_string(val));
         }
         hailo_basecropper->num_streams_to_filter = len;
+    }
+    else
+    {
+        std::cerr << "initialization of element property filter_streams: value is " << len << " and must be between 0 to " << GST_HAILO_CROPPER_MAX_FILTER_STREAMS << std::endl;
     }
     return;
 }
@@ -172,7 +176,6 @@ get_filter_streams(GstHailoBaseCropper *hailo_basecropper, GValue *value)
         gst_value_array_append_and_take_value(value, &val);
     }
 }
-
 
 static void
 gst_hailo_basecropper_set_property(GObject *object, guint prop_id,
@@ -322,6 +325,7 @@ gst_hailo_basecropper_sink_event(GstPad *pad, GstObject *parent,
         GstCaps *caps;
 
         gst_event_parse_caps(event, &caps);
+
         ret = gst_pad_set_caps(hailo_basecropper->srcpad_main, caps);
         if (!ret)
         {
@@ -372,34 +376,51 @@ static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuf
 {
     GstHailoBaseCropperClass *hailo_basecropperclass = GST_HAILO_BASE_CROPPER_GET_CLASS(hailo_basecropper);
 
-    // GstBuffer *buffer;
     GstCaps *incaps, *outcaps;
     GstBuffer *cropped_buf = NULL;
 
-    // Allocate new GstBuffer
     incaps = gst_pad_get_current_caps(hailo_basecropper->sinkpad);
     outcaps = gst_pad_get_current_caps(hailo_basecropper->srcpad_crop);
+    // Allocate new GstBuffer
     if (!incaps || !outcaps)
     {
+        gst_caps_unref(incaps);
+        gst_caps_unref(outcaps);
         return cropped_buf;
     }
+    GstVideoInfo *full_image_info = gst_video_info_new();
+    gst_video_info_from_caps(full_image_info, incaps);
+
+    GstVideoInfo *resized_image_info = gst_video_info_new();
+    gst_video_info_from_caps(resized_image_info, outcaps);
+
+    HailoBBox roi_bbox = crop_roi->get_bbox();
+    bool crop_roi_is_whole_buffer = (roi_bbox.width() == 1.0f && roi_bbox.height() == 1.0f && roi_bbox.xmin() == 0.0f && roi_bbox.ymin() == 0.0f);
+    bool input_res_equals_output_res = (full_image_info->width == resized_image_info->width && full_image_info->height == resized_image_info->height);
+    if (crop_roi_is_whole_buffer && input_res_equals_output_res)
+    {
+        GstBuffer *buffer_copy = gst_buffer_copy(buf);
+        gst_buffer_add_hailo_meta(buffer_copy, crop_roi);
+        gst_video_info_free(full_image_info);
+        gst_video_info_free(resized_image_info);
+        gst_caps_unref(incaps);
+        gst_caps_unref(outcaps);
+        return buffer_copy;
+    }
+
     cropped_buf = gst_buffer_new_allocate(NULL, get_size(outcaps), NULL);
 
     // get cv matrix of full image from buffer
-    GstVideoInfo *full_image_info = gst_video_info_new();
     GstMapInfo full_image_map;
     gst_buffer_map(buf, &full_image_map, GST_MAP_READ);
-    gst_video_info_from_caps(full_image_info, incaps);
-    std::shared_ptr<HailoMat> full_image = get_mat_by_format(full_image_info, &full_image_map);
-    GstVideoFormat image_format = GST_VIDEO_INFO_FORMAT(full_image_info) ;
+    std::shared_ptr<HailoMat> full_image = get_mat_by_format(buf, full_image_info, &full_image_map);
+    GstVideoFormat image_format = GST_VIDEO_INFO_FORMAT(full_image_info);
     gst_video_info_free(full_image_info);
 
     // get cv matrix of cropped image from buffer
-    GstVideoInfo *resized_image_info = gst_video_info_new();
     GstMapInfo resized_image_map;
     gst_buffer_map(cropped_buf, &resized_image_map, GST_MAP_READWRITE);
-    gst_video_info_from_caps(resized_image_info, outcaps);
-    std::shared_ptr<HailoMat> resized_image = get_mat_by_format(resized_image_info, &resized_image_map);
+    std::shared_ptr<HailoMat> resized_image = get_mat_by_format(cropped_buf, resized_image_info, &resized_image_map);
     gst_video_info_free(resized_image_info);
 
     // Crop and resize the the frame
@@ -447,7 +468,8 @@ static gboolean handle_crops(GstHailoBaseCropper *hailo_basecropper, GstBuffer *
 
 uint filter_streams_have_name(GstHailoBaseCropper *hailo_basecropper, const gchar *name)
 {
-    for (uint i = 0; i < hailo_basecropper->num_streams_to_filter; ++i) {
+    for (uint i = 0; i < hailo_basecropper->num_streams_to_filter; ++i)
+    {
         if (strcmp(name, hailo_basecropper->filter_streams[i]) == 0)
             return 1;
     }
@@ -579,33 +601,36 @@ void resize_normal(cv::InterpolationFlags method,
  *
  * @param roi - HailoROIPtr
  *        ROI to resize in, used to update scaling bbox
+ *
+ * @param image_format - GstVideoFormat
+ *        The format of the matrices.
  */
-void resize_letterbox(cv::InterpolationFlags method, 
-                      cv::Mat &cropped_image, cv::Mat &resized_image, 
-                      HailoROIPtr roi)
+void resize_letterbox(cv::InterpolationFlags method,
+                      cv::Mat &cropped_image, cv::Mat &resized_image,
+                      HailoROIPtr roi, GstVideoFormat image_format)
 {
-    cv::Mat tmp;
-    static const cv::Scalar color(114, 114, 114);
-    float ratio = std::min(float(resized_image.rows) / cropped_image.rows,
-                            float(resized_image.cols) / cropped_image.cols);
-    int new_width = std::round(cropped_image.cols * ratio);
-    int new_height = std::round(cropped_image.rows * ratio);
-    float middle_point_width = (resized_image.cols - new_width) / 2;
-    float middle_point_height = (resized_image.rows - new_height) / 2;
-    // Calculate the number of pixels we should colorize
-    int top = std::round(middle_point_height - 0.1);
-    int bottom = std::round(middle_point_height + 0.1);
-    int left = std::round(middle_point_width - 0.1);
-    int right = std::round(middle_point_width + 0.1);
-    // Apply the letterboxing to the roi scale factor
-    HailoBBox letterboxed_scale = HailoBBox(-(left / float(new_width)),                      // x-offset
-                                            -(top / float(new_height)),                      // y-offset
-                                            1.0 / (new_width / float(resized_image.cols)),   // width factor
-                                            1.0 / (new_height / float(resized_image.rows))); // height factor
-    roi->set_scaling_bbox(letterboxed_scale);
 
-    // Reverse RGB order to BGR is required in the resize & border
-    cv::resize(cropped_image, tmp, cv::Size(new_width, new_height), 0, 0, method);
-    cv::copyMakeBorder(tmp, resized_image, top, bottom, left, right, cv::BORDER_CONSTANT, color);
-    tmp.release();
+    switch (image_format)
+    {
+    case GST_VIDEO_FORMAT_NV12:
+    {
+        static const cv::Scalar color(130, 130, 130);
+        HailoBBox letterboxed_scale = resize_letterbox_nv12(cropped_image, resized_image, color, method);
+        roi->set_scaling_bbox(letterboxed_scale);
+        break;
+    }
+    case GST_VIDEO_FORMAT_RGBA:
+    case GST_VIDEO_FORMAT_RGB:
+    {
+        static const cv::Scalar color(114, 114, 114);
+        HailoBBox letterboxed_scale = resize_letterbox_rgb(cropped_image, resized_image, color, method);
+        roi->set_scaling_bbox(letterboxed_scale);
+        break;
+    }
+    default:
+    {
+        std::cerr << "Letterbox resizing is supported only for RGB at this moment." << std::endl;
+        break;
+    }
+    }
 }

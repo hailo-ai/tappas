@@ -90,7 +90,7 @@ HailoUniqueIDPtr get_tracking_id(HailoDetectionPtr detection)
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
-std::vector<HailoROIPtr> create_crops(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> create_crops(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     std::vector<HailoROIPtr> crop_rois;
     // Get all detections.
@@ -117,8 +117,8 @@ std::vector<HailoROIPtr> create_crops(cv::Mat image, HailoROIPtr roi)
             else
             {
                 auto bbox = detection->get_bbox();
-                float quality = quality_estimation(image, bbox);
-                float ratio = (bbox.height() * image.rows) / (bbox.width() * image.cols);
+                float quality = quality_estimation(image->get_mat(), bbox);
+                float ratio = (bbox.height() * image->height()) / (bbox.width() * image->width());
                 if (ratio > MIN_RATIO && ratio < MAX_RATIO && 
                     bbox.height() > MIN_HEIGHT && bbox.height() < MAX_HEIGHT &&
                     bbox.xmin() > MIN_X && bbox.xmax() < MAX_X && quality > MIN_QUALITY)

@@ -8,7 +8,7 @@
 
 #define PERSON_LABEL "person"
 
-std::vector<HailoROIPtr> create_crops_only_person(cv::Mat image, HailoROIPtr roi)
+std::vector<HailoROIPtr> create_crops_only_person(std::shared_ptr<HailoMat> image, HailoROIPtr roi)
 {
     std::vector<HailoROIPtr> crop_rois;
     // Get all detections.

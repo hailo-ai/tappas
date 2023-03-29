@@ -17,6 +17,7 @@
 
 #include <gst/video/video.h>
 #include "hailomat.hpp"
+#include "hailo_objects.hpp"
 
 __BEGIN_DECLS
 
@@ -87,6 +88,46 @@ void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolati
  *        (bilinear, nearest neighbors, etc...)
  */
 void resize_nv12(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolation = cv::INTER_LINEAR);
+
+/**
+ * @brief Resize an image using Letterbox strategy
+ *
+ * @param cropped_image - cv::Mat &
+ *        The cropped image to resize
+ *
+ * @param resized_image - cv::Mat &
+ *        The resized image container to fill
+ *        (dims for resizing are assumed from here)
+ *
+ * @param color - cv::Scalar
+ *        The color to fill the letterbox with
+ *
+ * @param interpolation - int
+ *        The interpolation type to resize by.
+ *        Must be a supported opencv type
+ *        (bilinear, nearest neighbors, etc...)
+ */
+HailoBBox resize_letterbox_rgb(cv::Mat &cropped_image, cv::Mat &resized_image, cv::Scalar color, int interpolation = cv::INTER_LINEAR);
+
+/**
+ * @brief Resize an NV12 image using Letterbox strategy
+ *
+ * @param cropped_image - cv::Mat &
+ *        The cropped image to resize
+ *
+ * @param resized_image - cv::Mat &
+ *        The resized image container to fill
+ *        (dims for resizing are assumed from here)
+ *
+ * @param color - cv::Scalar
+ *        The color to fill the letterbox with
+ *
+ * @param interpolation - int
+ *        The interpolation type to resize by.
+ *        Must be a supported opencv type
+ *        (bilinear, nearest neighbors, etc...)
+ */
+HailoBBox resize_letterbox_nv12(cv::Mat &cropped_image, cv::Mat &resized_image, cv::Scalar color, int interpolation = cv::INTER_LINEAR);
 __END_DECLS
 
-std::shared_ptr<HailoMat> get_mat_by_format(GstVideoInfo *info, GstMapInfo *map, int line_thickness=1, int font_thickness=1);
+std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *info, GstMapInfo *map, int line_thickness = 1, int font_thickness = 1);

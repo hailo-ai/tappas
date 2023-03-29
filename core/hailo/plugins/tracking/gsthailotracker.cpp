@@ -45,6 +45,12 @@ enum
     PROP_KEEP_NEW_FRAMES,
     PROP_KEEP_LOST_FRAMES,
     PROP_KEEP_PAST_METADATA,
+    PROP_STD_WEIGHT_POSITION,
+    PROP_STD_WEIGHT_POSITION_BOX,
+    PROP_STD_WEIGHT_VELOCITY,
+    PROP_STD_WEIGHT_VELOCITY_BOX,
+    PROP_DEBUG,
+    PROP_HAILO_OBJECTS_BLACKLIST,
 };
 
 //******************************************************************
@@ -94,6 +100,14 @@ gst_hailo_tracker_class_init(GstHailoTrackerClass *klass)
     g_object_class_install_property(gobject_class, PROP_CLASS_ID,
                                     g_param_spec_int("class-id", "class-id", "The class id of the class to track. Default -1 crosses classes.", G_MININT, G_MAXINT, -1,
                                                      (GParamFlags)(GST_PARAM_MUTABLE_READY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_DEBUG,
+                                    g_param_spec_boolean("debug", "debug",
+                                                         "Enable output of new and lost tracked objects.\n\
+                                                          When set - new and lost tracked objects are outputted. \n\
+                                                          These detections will have a classification type 'tracking' with its state. \n\
+                                                          This is useful for debugging and testing tracker parameters.",
+                                                         DEFAULT_DEBUG,
+                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     g_object_class_install_property(gobject_class, PROP_KALMAN_DIST_THR,
                                     g_param_spec_float("kalman-dist-thr", "Kalman Distance Threshold",
                                                        "Threshold used in Kalman filter to compare Mahalanobis cost matrix. Closer to 1.0 is looser.",
@@ -127,14 +141,54 @@ gst_hailo_tracker_class_init(GstHailoTrackerClass *klass)
     g_object_class_install_property(gobject_class, PROP_KEEP_PAST_METADATA,
                                     g_param_spec_boolean("keep-past-metadata", "Keep past metadata on tracked object",
                                                          "Past metadata are the sub objects on the current tracked object. \n\
-                                                         When set (default) - past metadata is kept on tracked objects. \n\
-                                                         When unset - past metadata is removed from tracked objects. \n\
-                                                         There are some objects that cannot be consistently scaled to match the new location of the tracked object (Like landmarks, mask , matrix). \n\
-                                                         For example, if a face is rotated 90 degrees, the landmarks will not be in the correct location \n\
-                                                         So even when this property is set to True, these metadata types will not be kept.",
+                                    When set (default) - past metadata is kept on tracked objects. \n\
+                                    When unset - past metadata is removed from tracked objects. \n\
+                                    There are some objects that cannot be consistently scaled to match the new location of the tracked object (Like landmarks, mask , matrix). \n\
+                                    For example, if a face is rotated 90 degrees, the landmarks will not be in the correct location \n\
+                                    So even when this property is set to True, these metadata types will not be kept.",
                                                          DEFAULT_KEEP_PAST_METADATA,
                                                          (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
+    g_object_class_install_property(gobject_class, PROP_STD_WEIGHT_POSITION,
+                                    g_param_spec_float("std-weight-position", "std weight position",
+                                                       "Set standard deviation weight for position prediction covariance matrix. \n\
+                                    This value is used to weight the kalman filter prediction step for detection box position i.e. the box x, y. \n\
+                                    Smaller value give more weight to the prediction over the actual measurmet. \n\
+                                    For more snappy tracker set higher value for more stabilized tracker set lower value. \n\
+                                    To see difference you will have to change scale i.e. 0.1, 0.01, 0.001 etc.",
+                                                       0.0, 1.0, DEFAULT_STD_WEIGHT_POSITION,
+                                                       (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_STD_WEIGHT_POSITION_BOX,
+                                    g_param_spec_float("std-weight-position-box", "std weight position box",
+                                                       "Set standard deviation weight for box width and height prediction covariance matrix. \n\
+                                    This value is used to weight the kalman filter prediction step for detection box width and height i.e. the box h, w. \n\
+                                    Smaller value give more weight to the prediction over the actual measurmet. \n\
+                                    For more snappy tracker set higher value for more stabilized tracker set lower value. \n\
+                                    To see difference you will have to change scale i.e. 0.1, 0.01, 0.001 etc.",
+                                                       0.0, 1.0, DEFAULT_STD_WEIGHT_POSITION_BOX,
+                                                       (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_STD_WEIGHT_VELOCITY,
+                                    g_param_spec_float("std-weight-velocity", "std weight velocity",
+                                                       "Set standard deviation weight for velocity prediction covariance matrix. \n\
+                                    This value is used to weight the kalman filter prediction step for detection box velocity i.e. the box vx, vy. \n\
+                                    Smaller value give more weight to the prediction over the actual measurmet. \n\
+                                    For more snappy tracker set higher value for more stabilized tracker set lower value. \n\
+                                    To see difference you will have to change scale i.e. 0.1, 0.01, 0.001 etc.",
+                                                       0.0, 1.0, DEFAULT_STD_WEIGHT_VELOCITY,
+                                                       (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_STD_WEIGHT_VELOCITY_BOX,
+                                    g_param_spec_float("std-weight-velocity-box", "std weight velocity box",
+                                                       "Set standard deviation weight for box width and height change velocity prediction covariance matrix. \n\
+                                    This value is used to weight the kalman filter prediction step for detection box width and height changes i.e. the box vh, vw. \n\
+                                    Smaller value give more weight to the prediction over the actual measurmet. \n\
+                                    For more snappy tracker set higher value for more stabilized tracker set lower value. \n\
+                                    To see difference you will have to change scale i.e. 0.1, 0.01, 0.001 etc.",
+                                                       0.0, 1.0, DEFAULT_STD_WEIGHT_VELOCITY_BOX,
+                                                       (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_HAILO_OBJECTS_BLACKLIST,
+                                    g_param_spec_string("hailo-objects-blacklist", "Hailo objects blacklist",
+                                                        "list of hailo objects types that the tracker should not keep, comma separated", "hailo_landmarks,hailo_depth_mask,hailo_class_mask",
+                                                        (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     // Set virtual functions
     gobject_class->dispose = gst_hailo_tracker_dispose;
     base_transform_class->stop = GST_DEBUG_FUNCPTR(gst_hailo_tracker_stop);
@@ -154,6 +208,12 @@ gst_hailo_tracker_init(GstHailoTracker *hailotracker)
     hailotracker->tracker_params.keep_new_frames = DEFAULT_KEEP_FRAMES;
     hailotracker->tracker_params.keep_lost_frames = DEFAULT_KEEP_FRAMES;
     hailotracker->tracker_params.keep_past_metadata = DEFAULT_KEEP_PAST_METADATA;
+    hailotracker->tracker_params.std_weight_position = DEFAULT_STD_WEIGHT_POSITION;
+    hailotracker->tracker_params.std_weight_position_box = DEFAULT_STD_WEIGHT_POSITION_BOX;
+    hailotracker->tracker_params.std_weight_velocity = DEFAULT_STD_WEIGHT_VELOCITY;
+    hailotracker->tracker_params.std_weight_velocity_box = DEFAULT_STD_WEIGHT_VELOCITY_BOX;
+    hailotracker->tracker_params.debug = DEFAULT_DEBUG;
+    hailotracker->tracker_params.hailo_objects_blacklist = DEFAULT_HAILO_OBJECTS_BLACKLIST;
 }
 
 //******************************************************************
@@ -201,6 +261,30 @@ void update_active_trackers(GstHailoTracker *hailotracker, guint property_id)
             HailoTracker::GetInstance().set_keep_past_metadata(tracker_name,
                                                                hailotracker->tracker_params.keep_past_metadata);
             break;
+        case PROP_STD_WEIGHT_POSITION:
+            HailoTracker::GetInstance().set_std_weight_position(tracker_name,
+                                                                hailotracker->tracker_params.std_weight_position);
+            break;
+        case PROP_STD_WEIGHT_POSITION_BOX:
+            HailoTracker::GetInstance().set_std_weight_position_box(tracker_name,
+                                                                    hailotracker->tracker_params.std_weight_position_box);
+            break;
+        case PROP_STD_WEIGHT_VELOCITY:
+            HailoTracker::GetInstance().set_std_weight_velocity(tracker_name,
+                                                                hailotracker->tracker_params.std_weight_velocity);
+            break;
+        case PROP_STD_WEIGHT_VELOCITY_BOX:
+            HailoTracker::GetInstance().set_std_weight_velocity_box(tracker_name,
+                                                                    hailotracker->tracker_params.std_weight_velocity_box);
+            break;
+        case PROP_HAILO_OBJECTS_BLACKLIST:
+            HailoTracker::GetInstance().set_hailo_objects_blacklist(tracker_name,
+                                                                    hailotracker->tracker_params.hailo_objects_blacklist);
+            break;
+        case PROP_DEBUG:
+            HailoTracker::GetInstance().set_debug(tracker_name,
+                                                  hailotracker->tracker_params.debug);
+            break;
         default:
             break;
         }
@@ -212,7 +296,6 @@ void gst_hailo_tracker_set_property(GObject *object, guint property_id,
                                     const GValue *value, GParamSpec *pspec)
 {
     GstHailoTracker *hailotracker = GST_HAILO_TRACKER(object);
-
     GST_DEBUG_OBJECT(hailotracker, "set_property");
 
     switch (property_id)
@@ -241,6 +324,47 @@ void gst_hailo_tracker_set_property(GObject *object, guint property_id,
     case PROP_KEEP_PAST_METADATA:
         hailotracker->tracker_params.keep_past_metadata = g_value_get_boolean(value);
         break;
+    case PROP_STD_WEIGHT_POSITION:
+        hailotracker->tracker_params.std_weight_position = g_value_get_float(value);
+        break;
+    case PROP_STD_WEIGHT_POSITION_BOX:
+        hailotracker->tracker_params.std_weight_position_box = g_value_get_float(value);
+        break;
+    case PROP_STD_WEIGHT_VELOCITY:
+        hailotracker->tracker_params.std_weight_velocity = g_value_get_float(value);
+        break;
+    case PROP_STD_WEIGHT_VELOCITY_BOX:
+        hailotracker->tracker_params.std_weight_velocity_box = g_value_get_float(value);
+        break;
+    case PROP_DEBUG:
+        hailotracker->tracker_params.debug = g_value_get_boolean(value);
+        break;
+    case PROP_HAILO_OBJECTS_BLACKLIST:
+    {
+        std::string blacklist = g_value_get_string(value);
+        std::vector<hailo_object_t> hailo_objects_blacklist_vec = {};
+        char delimiter = ',';
+        // check if the last char of the string is the delimiter if not add the delimiter
+        if (blacklist[blacklist.size() - 1] != delimiter)
+        {
+            blacklist += delimiter;
+        }
+        // remove spaces if there are any
+        blacklist.erase(std::remove(blacklist.begin(), blacklist.end(), ' '), blacklist.end());
+
+        // fill the vector with the hailo objects types
+        size_t pos = 0;
+        std::string token;
+        while ((pos = blacklist.find(delimiter)) != std::string::npos)
+        {
+            token = blacklist.substr(0, pos);
+            hailo_objects_blacklist_vec.push_back(hailo_object_type_from_string(token));
+            blacklist.erase(0, pos + 1);
+        }
+        hailotracker->tracker_params.hailo_objects_blacklist = std::move(hailo_objects_blacklist_vec);
+        break;
+    }
+
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
@@ -282,6 +406,33 @@ void gst_hailo_tracker_get_property(GObject *object, guint property_id,
     case PROP_KEEP_PAST_METADATA:
         g_value_set_boolean(value, hailotracker->tracker_params.keep_past_metadata);
         break;
+    case PROP_STD_WEIGHT_POSITION:
+        g_value_set_float(value, hailotracker->tracker_params.std_weight_position);
+        break;
+    case PROP_STD_WEIGHT_POSITION_BOX:
+        g_value_set_float(value, hailotracker->tracker_params.std_weight_position_box);
+        break;
+    case PROP_STD_WEIGHT_VELOCITY:
+        g_value_set_float(value, hailotracker->tracker_params.std_weight_velocity);
+        break;
+    case PROP_STD_WEIGHT_VELOCITY_BOX:
+        g_value_set_float(value, hailotracker->tracker_params.std_weight_velocity_box);
+        break;
+    case PROP_DEBUG:
+        g_value_set_boolean(value, hailotracker->tracker_params.debug);
+        break;
+    case PROP_HAILO_OBJECTS_BLACKLIST:
+    {
+        // create string of the blacklist from the vector
+        std::string blacklist = "";
+        for (auto &hailo_object : hailotracker->tracker_params.hailo_objects_blacklist)
+        {
+            blacklist += hailo_object_type_to_string(hailo_object);
+            blacklist += ",";
+        }
+        g_value_set_string(value, blacklist.c_str());
+        break;
+    }
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;

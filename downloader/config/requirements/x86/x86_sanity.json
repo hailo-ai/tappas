@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/x86_hw_accelerated/sanity/resources",
+  "path": "apps/h8/gstreamer/x86_hw_accelerated/sanity/resources",
   "requirements": [
     {
       "bucket": "tappas",

@@ -37,6 +37,7 @@ enum
     PROP_PROCESS_FUNC_NAME,
     PROP_USE_GST_BUFFER,
     PROP_CONFIG_FILE_PATH,
+    PROP_REMOVE_TENSORS,
 };
 
 G_DEFINE_TYPE_WITH_CODE(GstHailofilter, gst_hailofilter, GST_TYPE_BASE_TRANSFORM,
@@ -78,6 +79,9 @@ gst_hailofilter_class_init(GstHailofilterClass *klass)
                                     g_param_spec_string("config-path", "config-path",
                                                         "json config file path", NULL,
                                                         (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
+    g_object_class_install_property(gobject_class, PROP_REMOVE_TENSORS,
+                                    g_param_spec_boolean("remove-tensors", "remove-tensors", "whether hailofilter should delete tensors at the end", true,
+                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
     gobject_class->dispose = gst_hailofilter_dispose;
     gobject_class->finalize = gst_hailofilter_finalize;
@@ -90,6 +94,7 @@ static void
 gst_hailofilter_init(GstHailofilter *hailofilter)
 {
     hailofilter->use_config = true;
+    hailofilter->remove_tensors = true;
     hailofilter->params = nullptr;
     hailofilter->config_path = g_strdup("NULL");
 }
@@ -114,6 +119,9 @@ void gst_hailofilter_set_property(GObject *object, guint property_id,
         break;
     case PROP_CONFIG_FILE_PATH:
         hailofilter->config_path = g_strdup(g_value_get_string(value));
+        break;
+    case PROP_REMOVE_TENSORS:
+        hailofilter->remove_tensors = g_value_get_boolean(value);
         break;
 
     default:
@@ -142,6 +150,9 @@ void gst_hailofilter_get_property(GObject *object, guint property_id,
         break;
     case PROP_CONFIG_FILE_PATH:
         g_value_set_string(value, hailofilter->config_path);
+        break;
+    case PROP_REMOVE_TENSORS:
+        g_value_set_boolean(value, hailofilter->remove_tensors);
         break;
 
     default:
@@ -212,7 +223,7 @@ static gboolean gst_hailofilter_start(GstBaseTransform *trans)
             if use_gst_buffer, the function should have three arguments (HailoROIPtr, GstVideoFrame*, and gchar*),
             and therefore will be able to change the buffer data.
             */
-            hailofilter->handler_gst_no_config = (void (*)(HailoROIPtr, GstVideoFrame *, gchar *))dlsym(hailofilter->loaded_lib, hailofilter->function_name);
+            hailofilter->handler_gst_no_config = (void (*)(HailoROIPtr, GstVideoFrame *))dlsym(hailofilter->loaded_lib, hailofilter->function_name);
         }
         else
         {
@@ -231,7 +242,7 @@ static gboolean gst_hailofilter_start(GstBaseTransform *trans)
             if use_gst_buffer, the function should have four arguments (HailoROIPtr, GstVideoFrame*, and gchar*,void *),
             and therefore will be able to change the buffer data.
             */
-            hailofilter->handler_gst = (void (*)(HailoROIPtr, GstVideoFrame *, gchar *, void *))dlsym(hailofilter->loaded_lib, hailofilter->function_name);
+            hailofilter->handler_gst = (void (*)(HailoROIPtr, GstVideoFrame *, void *))dlsym(hailofilter->loaded_lib, hailofilter->function_name);
         }
         else
         {
@@ -321,13 +332,20 @@ static GstFlowReturn gst_hailofilter_transform_ip(GstBaseTransform *trans,
 
     HailoROIPtr hailo_roi = get_hailo_main_roi(buffer, true);
     get_tensors_from_meta(buffer, hailo_roi);
+    GstPad *srcpad = trans->srcpad;
+    
+    if (hailo_roi->get_stream_id().length() == 0)
+    {
+        gchar * id = gst_pad_get_stream_id(srcpad);
+        std::string stream_id = std::string(reinterpret_cast<char *>(id));
+        g_free(id);
+        hailo_roi->set_stream_id(stream_id);
+    }
+    
     // Call all functions.
-
     if (hailofilter->use_gst_buffer)
     {
-        GstPad *srcpad = trans->srcpad;
         GstCaps *caps = gst_pad_get_current_caps(srcpad);
-        gchar *stream_id = gst_pad_get_stream_id(srcpad);
         GstVideoFrame frame;
         GstVideoInfo info;
         gst_video_info_from_caps(&info, caps);
@@ -339,15 +357,14 @@ static GstFlowReturn gst_hailofilter_transform_ip(GstBaseTransform *trans,
         if (hailofilter->use_config)
         {
             auto handler = hailofilter->handler_gst;
-            handler(hailo_roi, &frame, stream_id, hailofilter->params);
+            handler(hailo_roi, &frame, hailofilter->params);
         }
         else
         {
             auto handler = hailofilter->handler_gst_no_config;
-            handler(hailo_roi, &frame, stream_id);
+            handler(hailo_roi, &frame);
         }
         gst_video_frame_unmap(&frame);
-        g_free(stream_id);
     }
     else
     {
@@ -363,7 +380,11 @@ static GstFlowReturn gst_hailofilter_transform_ip(GstBaseTransform *trans,
         }
     }
 
-    remove_tensors(buffer, hailo_roi);
+    if (hailofilter->remove_tensors)
+    {
+        remove_tensors(buffer, hailo_roi);
+    }
+    
     GST_DEBUG_OBJECT(hailofilter, "transform_ip");
     return GST_FLOW_OK;
 }

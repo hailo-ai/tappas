@@ -111,4 +111,4 @@ Tiling introduces two new elements:
    (given as parameters to the element).
 * ``hailotileaggregator`` which aggregates the cropped tiles and stitches them back to the original resolution.
 
-An example for the pipeline itself could be found on our `Tiling app <../../apps/gstreamer/general/tiling/README.rst>`_.
+An example for the pipeline itself could be found on our `Tiling app <../../apps/h8/gstreamer/general/tiling/README.rst>`_.

@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/imx8/license_plate_recognition",
+  "path": "apps/h8/gstreamer/imx8/license_plate_recognition",
   "requirements": [
     {
       "bucket": "tappas",

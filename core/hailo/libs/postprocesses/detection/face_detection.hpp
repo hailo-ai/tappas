@@ -36,17 +36,12 @@ public:
 };
 
 __BEGIN_DECLS
-void scrfd(HailoROIPtr roi, void *params_void_ptr);
 void retinaface(HailoROIPtr roi, void *params_void_ptr);
 void lightface(HailoROIPtr roi, void *params_void_ptr);
 void filter(HailoROIPtr roi, void *params_void_ptr);
 FaceDetectionParams *init(const std::string config_path, const std::string function_name);
 void free_resources(void *params_void_ptr);
 xt::xarray<float> get_anchors(const std::vector<std::vector<int>> &anchor_min_sizes,
-                              const xt::xarray<int> &anchor_steps,
-                              const int width,
-                              const int height);
-xt::xarray<float> get_anchors_scrfd(const std::vector<std::vector<int>> &anchor_min_sizes,
                               const xt::xarray<int> &anchor_steps,
                               const int width,
                               const int height);

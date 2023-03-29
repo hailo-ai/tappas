@@ -1,6 +1,11 @@
 {
-  "path": "apps/gstreamer/general/instance_segmentation/resources",
+  "path": "apps/h8/gstreamer/general/instance_segmentation/resources",
   "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/yolov5n_seg.hef",
+      "destination": "yolov5n_seg.hef"
+    },
     {
       "bucket": "model_zoo",
       "source": "general/hefs/yolact_regnetx_800mf_20classes.hef",

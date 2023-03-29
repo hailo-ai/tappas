@@ -1,5 +1,5 @@
 {
-  "path": "apps/gstreamer/raspberrypi/depth_estimation/resources",
+  "path": "apps/h8/gstreamer/raspberrypi/depth_estimation/resources",
   "requirements": [
     {
       "bucket": "model_zoo",
