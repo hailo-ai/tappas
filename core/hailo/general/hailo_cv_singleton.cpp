@@ -31,3 +31,13 @@ cv::Mat CVMatSingleton::get_mat_at_key(int key) {
     }
     return _mat_map[key].clone();
 }
+
+void CVMatSingleton::set_mat_type(hailo_mat_t new_type)
+{
+    _mat_type = new_type;
+}
+
+hailo_mat_t CVMatSingleton::get_mat_type()
+{
+    return _mat_type;
+}

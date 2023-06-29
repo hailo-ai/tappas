@@ -7,7 +7,6 @@
  * @title: hailoaggregator
  *
  * Takes packets from various input sinks into one output source.
- * TODO: Add description
  *
  */
 #include "cropping/gsthailoaggregator.hpp"
@@ -62,6 +61,9 @@ static gboolean gst_hailoaggregator_sink_event(GstPad *pad,
 static GstFlowReturn gst_hailoaggregator_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf);
 static GstFlowReturn gst_hailoaggregator_chain_sub(GstPad *pad, GstObject *parent, GstBuffer *buf);
 
+static gboolean gst_hailoaggregator_sink_query(GstPad *pad,
+                                                 GstObject *parent, GstQuery *query);
+
 static void
 gst_hailoaggregator_class_init(GstHailoAggregatorClass *klass)
 {
@@ -97,6 +99,7 @@ gst_hailoaggregator_init(GstHailoAggregator *hailoaggregator)
     hailoaggregator->sinkpad_main = gst_pad_new_from_static_template(&sink_template, "sink_0");
     gst_pad_set_event_function(hailoaggregator->sinkpad_main, GST_DEBUG_FUNCPTR(gst_hailoaggregator_sink_event));
     gst_pad_set_chain_function(hailoaggregator->sinkpad_main, GST_DEBUG_FUNCPTR(gst_hailoaggregator_chain_main));
+    gst_pad_set_query_function(hailoaggregator->sinkpad_main, GST_DEBUG_FUNCPTR(gst_hailoaggregator_sink_query));
     GST_PAD_SET_PROXY_CAPS(hailoaggregator->sinkpad_main);
     gst_element_add_pad(GST_ELEMENT(hailoaggregator), hailoaggregator->sinkpad_main);
 
@@ -171,6 +174,33 @@ forward_events(GstPad *pad, GstEvent **event, gpointer user_data)
         return gst_pad_push_event(srcpad, gst_event_ref(*event));
 
     return TRUE;
+}
+
+static gboolean gst_hailoaggregator_sink_query(GstPad *pad,
+                                                 GstObject *parent, GstQuery *query)
+{
+    GstHailoAggregator *hailoaggregator = GST_HAILO_AGGREGATOR_CAST(parent);
+    gboolean ret = FALSE;
+    switch (GST_QUERY_TYPE(query))
+    {
+    case GST_QUERY_ALLOCATION:
+    {
+        GST_DEBUG_OBJECT(hailoaggregator, "Received allocation query from sinkpad in hailoaggregator");
+        ret = gst_pad_peer_query(hailoaggregator->srcpad, query);
+        if (!ret)
+            GST_DEBUG_OBJECT(hailoaggregator, "Failed to query peer for allocation");
+        ret = true;
+        break;
+    }
+    default:
+    {
+        /* just call the default handler */
+        ret = gst_pad_query_default(pad, parent, query);
+        break;
+    }
+    }
+    GST_DEBUG_OBJECT(hailoaggregator, "Received query from sinkpad in hailo aggregator %s", GST_QUERY_TYPE_NAME(query));
+    return ret;
 }
 
 /**

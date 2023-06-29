@@ -76,9 +76,17 @@ function parse_args() {
     done
 }
 
+function check_invalid_combinations() {
+    if [ "$no_display" = '' ] && [ "$converted_format" = "--format RGBA" ]; then
+        echo "Received invalid configuration. Cannot use display with RGBA format."
+        exit 2
+    fi
+}
+
 function main() {
     init_variables $@
     parse_args $@
+    check_invalid_combinations
 
     for ((n = $min_num_of_src; n <= $max_num_of_src; n++)); do
         avg_fps=$($TAPPAS_WORKSPACE/tools/decoding_display_pipeline/run_decoding_display_pipeline.sh --video-prefix-path \

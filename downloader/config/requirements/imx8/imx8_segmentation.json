@@ -2,8 +2,8 @@
   "path": "apps/h8/gstreamer/imx8/segmentation/resources",
   "requirements": [
     {
-      "bucket": "model_zoo",
-      "source": "general/hefs/fcn8_resnet_v1_18.hef",
+      "bucket": "tappas",
+      "source": "general/hefs/resnet18_fcn8_fhd.hef",
       "destination": "fcn8_resnet_v1_18.hef"
     },
     {

@@ -13,6 +13,7 @@ function init_variables() {
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/instance_segmentation.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5n_seg.hef"
     readonly DEFAULT_NETWORK_NAME="yolov5seg"
+    readonly json_config_path="$RESOURCES_DIR/configs/yolov5seg.json"
 
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
@@ -107,7 +108,7 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! \
+    hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

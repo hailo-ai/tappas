@@ -19,6 +19,8 @@ The layers are stored in `Meta-Hailo Github <https://github.com/hailo-ai/meta-ha
 
 .. warning:: Kirkstone branch does not support i.MX6 devices.
 
+.. warning:: On i.MX8-based devices Kirkstone branch does not support OpenGL, therefore, the Kirkstone applications portfolio is reduced.
+
 .. note:: Zeus will not be supported by TAPPAS in future versions.
 
 Setup

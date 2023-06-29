@@ -12,6 +12,12 @@ auto xtensor_sigmoid(auto &tensor)
     return 1 / (1 + xt::exp(-tensor));
 }
 
+/*
+ * @brief sigmoid on a single float
+ *
+ *  */
+inline float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-1.0 * x)); }
+
 /**
  * @brief  Compute tensor dot product along specified axes for arrays.
             In this case along axis 2 of the first matrix and axis 0 of the second.

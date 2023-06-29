@@ -42,7 +42,9 @@ We would begin by creating soft-links for files in three common resolution:
 ## Running the benchmarks
 
 ```sh
-$ ./decoding_display_pipeline.sh --use-vaapi --use-vaapi-scale --video-prefix-path 640x640_video --format RGBA --max-num-of-sources 8                                                                                                                                                                                  
+
+$ ./decoding_display_pipeline.sh --use-vaapi --use-vaapi-scale --video-prefix-path 640x640_video --format RGBA --max-num-of-sources 8                                                                                                                     
+
 Num of sources: 1, Average FPS: -nan                                                                                                                                                   
 Num of sources: 2, Average FPS: -nan                                                                                                                                                   
 Num of sources: 3, Average FPS: 2268.17                                                                                                                                                
@@ -53,6 +55,7 @@ Num of sources: 7, Average FPS: 1960.4
 Num of sources: 8, Average FPS: 2020.77                                                                                                                                                
 
 $ ./decoding_display_pipeline.sh --use-vaapi --use-vaapi-scale --video-prefix-path 1280x720_video --format RGBA --max-num-of-sources 8                                                                                      
+
 Num of sources: 1, Average FPS: 211.077
 Num of sources: 2, Average FPS: 332.512
 Num of sources: 3, Average FPS: 364.933
@@ -63,6 +66,7 @@ Num of sources: 7, Average FPS: 364.404
 Num of sources: 8, Average FPS: 355.913
 
 $ ./decoding_display_pipeline.sh --use-vaapi --use-vaapi-scale --video-prefix-path 1920x1080_video --format RGBA --max-num-of-sources 8
+
 Num of sources: 1, Average FPS: 96.7667
 Num of sources: 2, Average FPS: 161.755
 Num of sources: 3, Average FPS: 173.417

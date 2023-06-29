@@ -2,7 +2,7 @@
   "path": "apps/h8/gstreamer/general/century/resources",
   "requirements": [
     {
-        "bucket": "model_zoo",
+        "bucket": "tappas",
         "source": "general/hefs/yolov5m_wo_spp_60p.hef",
         "destination": "yolov5m_wo_spp_60p.hef"
     },
@@ -12,7 +12,7 @@
       "destination": "detection_5m.mp4"
     },
     {
-        "bucket": "model_zoo",
+        "bucket": "tappas",
         "source": "general/hefs/yolox_l_leaky.hef",
         "destination": "yolovx_l_leaky.hef"
     }

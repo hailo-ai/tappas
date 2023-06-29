@@ -7,7 +7,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.13.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.14.0-green
    :target: https://github.com/hailo-ai/hailort
    :alt: HailoRT
    :height: 20
@@ -22,7 +22,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
   :width: 20
   :align: middle
 
-.. image:: ./resources/TAPPAS.png
+.. image:: ./resources/github_TAPPAS.jpg
   :height: 300
   :width: 600
   :align: center
@@ -51,7 +51,7 @@ Demonstrating Hailo's system integration scenario of specific use cases on prede
 * Simplifying integration with Hailo’s runtime SW stack
 * Providing a starting point for customers to fine-tune their applications
 
-.. image:: ./resources/HAILO_TAPPAS_SW_STACK.jpg
+.. image:: ./resources/HAILO_TAPPAS_SW_STACK.svg
 
 
 ----
@@ -420,18 +420,22 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 Changelog
 ----------
 
+**v3.25.0 (July 2023)**
+
+* Improved Yolov5seg post-process performance
+* Updated Yolo networks to use the HailoRT native post-process (selected models)
+* Added "non-blocking mode" and "wait-time" properties to hailoroundrobin element
+
 **v3.24.0 (March 2023)**
 
 * Added support for `Rockchip RK3588 <apps/h8/gstreamer/rockchip/README.rst>`_ (validated on Firefly ITX-3588J platform)
 * `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ now supports multi-device (Ubuntu 22.04 only)
 * `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ (single device) now works on Ubuntu 20.04
-* Added a new model to `Instance Segmentation Pipeline <apps/h8/gstreamer/general/instance_segmentation/README.rst>`_ -- `yolov5seg`, which has improved
-  performance compared to `yolact`
+* Added a new model to `Instance Segmentation Pipeline <apps/h8/gstreamer/general/instance_segmentation/README.rst>`_:
+  * `yolov5seg` - which has improved performance compared to `yolact`
 * New applications for `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_:
-
   * Object Detection and Pose Estimation (cascaded)
   * Multi-Stream Detection
-
 * Added a TAPPAS Graphic User Interface to easily run selected general example applications (preview) on the TAPPAS Docker - to activate it, run `tappas-gui`
 * Added back `yolox_l_leaky` to the `Century general application <apps/h8/gstreamer/general/century/README.rst>`_
 * Reduced docker size

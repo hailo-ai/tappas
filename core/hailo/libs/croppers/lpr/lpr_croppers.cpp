@@ -121,7 +121,7 @@ std::vector<HailoROIPtr> license_plate_quality_estimation(std::shared_ptr<HailoM
     for (HailoDetectionPtr &vehicle : vehicle_ptrs)
     {
         if (VEHICLE_LABEL != vehicle->get_label())
-                continue;
+            continue;
         // For each detection, check the inner detections
         std::vector<HailoDetectionPtr> license_plate_ptrs = hailo_common::get_hailo_detections(vehicle);
         for (HailoDetectionPtr &license_plate : license_plate_ptrs)

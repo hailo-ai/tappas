@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 output_prefix='video'
 num_of_copies=''
 input=''

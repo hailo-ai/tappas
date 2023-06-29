@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include <vector>
 
 #include "xtensor/xarray.hpp"
@@ -17,14 +17,14 @@
 const char *OUTPUT_LAYER_NAME = "lprnet/conv31";
 /**
  * @brief recognize the characters that are in the license plate
- * 
+ *
  * @param roi holds the network output data
  */
 void OCR_postprocess(HailoROIPtr roi)
 {
     HailoTensorPtr net_output = roi->get_tensor(OUTPUT_LAYER_NAME);
     if (nullptr == net_output)
-         return;
+        return;
 
     xt::xarray<float> output_dequantize;
     output_dequantize = common::get_xtensor_float(net_output);
@@ -71,9 +71,10 @@ void OCR_postprocess(HailoROIPtr roi)
     }
 
     float conf_mean = std::accumulate(no_repeat_label_conf.begin(), no_repeat_label_conf.end(), 0.0) / no_repeat_label_conf.size();
-
     if (conf_mean >= MIN_SCORE_THRESHOLD && no_repeat_label.str().size() > MIN_CHARS)
+    {
         hailo_common::add_classification(roi, std::string("ocr"), no_repeat_label.str(), conf_mean);
+    }
 }
 
 void filter(HailoROIPtr roi)

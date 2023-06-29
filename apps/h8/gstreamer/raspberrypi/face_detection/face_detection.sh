@@ -9,7 +9,6 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/raspberrypi/face_detection/resources"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libface_detection_post.so"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/face_detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/lightface_slim.hef"
     readonly DEFAULT_NETWORK_NAME="lightface"
@@ -19,7 +18,6 @@ function init_variables() {
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
     postprocess_so=$DEFAULT_POSTPROCESS_SO
-    draw_so=$DEFAULT_DRAW_SO
     sync_pipeline=false
 
     print_gst_launch_only=false

@@ -12,7 +12,7 @@
 #include "common/math.hpp"
 #include "common/tensors.hpp"
 #include "common/nms.hpp"
-#include "common/json_config.hpp"
+#include "json_config.hpp"
 #include "face_detection.hpp"
 #include "xtensor/xadapt.hpp"
 #include "xtensor/xarray.hpp"

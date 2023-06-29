@@ -199,16 +199,13 @@ static std::vector<HailoROIPtr> gst_hailocropper_prepare_crops(GstHailoBaseCropp
     GstCaps *caps = gst_pad_get_current_caps(basecropper->sinkpad);
 
     GstVideoInfo *info = gst_video_info_new();
-    GstMapInfo map;
-    gst_buffer_map(buf, &map, GST_MAP_READ);
     gst_video_info_from_caps(info, caps);
 
-    std::shared_ptr<HailoMat> image = get_mat_by_format(buf, info, &map);
+    std::shared_ptr<HailoMat> image = get_mat_by_format(buf, info);
     gst_video_info_free(info);
 
     std::vector<HailoROIPtr> crop_rois = hailocropper->handler(image, hailo_roi);
     gst_caps_unref(caps);
-    gst_buffer_unmap(buf, &map);
     return crop_rois;
 }
 

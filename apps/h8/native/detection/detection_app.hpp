@@ -4,12 +4,12 @@
  **/
 /**
  * @file detection_app_c_api.cpp
- * @brief This example demonstrates running inference with virtual streams using the Hailort's C API on yolov5m
+ * @brief This example demonstrates running inference with virtual streams using the Hailort's C API on yolov5
  **/
 
 #include "hailo/hailort.h"
 #include "double_buffer.hpp"
-#include "yolo_postprocess.hpp"
+#include "yolo_hailortpp.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_tensors.hpp"
 #include "hailomat.hpp"
@@ -29,7 +29,6 @@
 #define OUTPUT_COUNT (3)
 #define INPUT_FILES_COUNT (10)
 #define HEF_FILE ("yolov5m_wo_spp_60p.hef")
-#define CONFIG_FILE ("yolov5.json")
 #define YOLOV5M_IMAGE_WIDTH 640
 #define YOLOV5M_IMAGE_HEIGHT 640
 #define MAX_BOXES 50

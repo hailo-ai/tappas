@@ -11,12 +11,11 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/detection/resources"
     readonly CROPPING_ALGORITHMS_DIR="$POSTPROCESS_DIR/cropping_algorithms"
 
-    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json"
 
     # Cropping Algorithm Macros
     readonly WHOLE_BUFFER_CROP_SO="$CROPPING_ALGORITHMS_DIR/libwhole_buffer.so"
@@ -28,7 +27,7 @@ function init_variables() {
     batch_size=$DEFAULT_BATCH_SIZE
     hef_path=$DEFAULT_HEF_PATH
     crop_so=$WHOLE_BUFFER_CROP_SO
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH
+    json_config_path="null"
 
     print_gst_launch_only=false
     additional_parameters=""
@@ -73,11 +72,13 @@ function parse_args() {
                 hef_path="$RESOURCES_DIR/yolov4_leaky.hef"
                 batch_size="4"
                 json_config_path="$RESOURCES_DIR/configs/yolov4.json"
+                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
             elif [ $2 == "yolov3" ]; then
                 network_name="yolov3"
                 hef_path="$RESOURCES_DIR/yolov3.hef"
                 batch_size="4"
                 json_config_path="$RESOURCES_DIR/configs/yolov3.json"
+                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
             elif [ $2 == "mobilenet_ssd" ]; then
                 network_name="mobilenet_ssd"
                 hef_path="$RESOURCES_DIR/ssd_mobilenet_v1.hef"

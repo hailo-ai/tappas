@@ -10,6 +10,7 @@ import sys
 from common import working_directory, ShellRunner, install_compilers_apt_packages, extract_and_install_toolchain, Arch, Target
 
 POSSIBLE_BUILD_TYPES = ['debug', 'release']
+POSSIBLE_BUILD_LIBS = ['all', 'apps', 'plugins', 'libs', 'tracers']
 
 TAPPAS_WORKSPACE = Path(os.environ['TAPPAS_WORKSPACE']).resolve()
 FOLDER_NAME = Path(__file__).resolve().parent
@@ -21,13 +22,15 @@ class GstreamerInstall:
     ]
     LIBARGS_TEMPLATE = "{}-std=c++17"
 
-    def __init__(self, arch, target, build_type, toolchain_tar_path, yocto_distribution='poky', remove_cache=False):
+    def __init__(self, arch, target, build_type, toolchain_tar_path, yocto_distribution='poky', build_lib='all', remove_cache=False, install_to_rootfs=False):
         self._logger = logging.getLogger(__file__)
         self._arch = arch
         self._target_platform = target
         self._build_type = build_type
         self._build_dir = FOLDER_NAME / f'{self._arch.value}-gsthailotools-build-{self._build_type}'
         self._remove_cache = remove_cache
+        self.install_to_rootfs = install_to_rootfs
+        self._build_lib = build_lib
         self._runner = ShellRunner()
 
         self._toolchain_tar_path = Path(toolchain_tar_path).absolute().resolve()
@@ -36,7 +39,6 @@ class GstreamerInstall:
         self._open_source_root = f'{TAPPAS_WORKSPACE}/core/open_source'
         self._tappas_sources_dir = f'{TAPPAS_WORKSPACE}/core/hailo'
 
-        self._cross_file = FOLDER_NAME / "cross_files" / f"{arch}_cross_file.txt"
         self._hailort_cross_compiled_output_dir = FOLDER_NAME / f"build.linux.{self._arch.value}.{self._build_type}"
 
         self._initialize_toolchain()
@@ -49,10 +51,6 @@ class GstreamerInstall:
             extract_and_install_toolchain(tar_path=self._toolchain_tar_path, logger=self._logger,
                                           dir_to_install_toolchain_in=self._unpacked_toolchain_dir)
             self._logger.info('Toolchain ready to use ({})'.format(self._unpacked_toolchain_dir))
-
-    def get_image_user_path(self):
-        usr_path = os.path.join(self._toolchain_rootfs_base_path, 'usr')
-        return usr_path
 
     def get_libargs_line(self, rootfs_base_path):
         def get_includes(includes):
@@ -88,15 +86,23 @@ class GstreamerInstall:
                          '-Dprefix={}'.format(usr_path),
                          '-Dinclude_blas=false',
                          '-Dtarget_platform={}'.format(self._target_platform),
+                         '-Dtarget={}'.format(self._build_lib),
                          '-Dlibxtensor={}'.format(xtensor_base_root),
                          '-Dlibblas={}'.format(xtensor_blas_root),
                          '-Dlibcxxopts={}'.format(cxxopts_root),
                          '-Dlibrapidjson={}'.format(rapidjson_root),
-                         '-Dinclude_unit_tests=false',
-                         '--cross-file={}'.format(self._cross_file)]
+                         '-Dinclude_unit_tests=false']
 
             self._runner.run(build_cmd, env=env, print_output=True)
             self._logger.info('Done running Meson command')
+
+    def run_ninja_install_command(self, env=None):
+        self._logger.info("Running Ninja install command.")
+
+        with working_directory(self._tappas_sources_dir):
+            ninja_cmd = ['ninja', 'install', '-C', self._build_dir]
+            self._runner.run(ninja_cmd, env, print_output=True)
+            self._logger.info('Done running Ninja install')
 
     def run_ninja_build_command(self, env=None):
         self._logger.info("Running Ninja command.")
@@ -130,6 +136,8 @@ class GstreamerInstall:
 
         self.run_meson_build_command(env)
         self.run_ninja_build_command(env)
+        if self.install_to_rootfs:
+            self.run_ninja_install_command(env)
 
         self._logger.info(f"Build done. Outputs could be found in {self._build_dir}")
 
@@ -141,7 +149,9 @@ def parse_args():
     parser.add_argument('build_type', choices=POSSIBLE_BUILD_TYPES, help='Build and compilation type')
     parser.add_argument('toolchain_tar_path', help='Toolchain TAR path')
     parser.add_argument('--yocto-distribution', help='The name of the Yocto distribution to use (default poky)', default='poky')
+    parser.add_argument('--build-lib', help='Build a specific tappas lib target (default all)', choices=POSSIBLE_BUILD_LIBS, default='all')
     parser.add_argument('--remove-cache', action='store_true', help='Delete previous build cache (default false)', default=False)
+    parser.add_argument('--install-to-rootfs', action='store_true', help='Install to rootfs (default false)', default=False)
 
     return parser.parse_args()
 
@@ -155,5 +165,7 @@ if __name__ == '__main__':
     gst_installer = GstreamerInstall(arch=args.arch, target=args.target, build_type=args.build_type,
                                      toolchain_tar_path=args.toolchain_tar_path,
                                      yocto_distribution=args.yocto_distribution,
-                                     remove_cache=args.remove_cache)
+                                     build_lib=args.build_lib,
+                                     remove_cache=args.remove_cache,
+                                     install_to_rootfs=args.install_to_rootfs)
     gst_installer.build()

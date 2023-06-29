@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include <vector>
 #include <iostream>
 #include "common/labels/imagenet.hpp"
@@ -13,6 +13,7 @@
 
 #define RESNET_50_LAYER_NAME "resnet_v1_50/softmax1"
 #define MOBILENET_V1_LAYER_NAME "mobilenet_v1/softmax1"
+#define RESNET_V1_18_LAYER_NAME "resnet_v1_18/softmax1"
 #define COMMA ","
 
 void top1(HailoROIPtr roi, std::string layer_name, int label_offset)
@@ -66,4 +67,9 @@ void resnet_v1_50(HailoROIPtr roi)
 void mobilenet_v1(HailoROIPtr roi)
 {
     top1(roi, MOBILENET_V1_LAYER_NAME, 1);
+}
+
+void resnet_v1_18(HailoROIPtr roi)
+{
+    top1(roi, RESNET_V1_18_LAYER_NAME, 0);
 }

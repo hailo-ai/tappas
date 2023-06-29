@@ -14,7 +14,7 @@ function init_variables() {
     readonly DEFAULT_DETECTION_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
     readonly DEFAULT_POST_ESTIMATION_HEF_PATH="$RESOURCES_DIR/mspn_regnetx_800mf.hef"
 
-    readonly DEFAULT_DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DEFAULT_DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly DEFAULT_LANDMARKS_POSTPROCESS_SO="$POSTPROCESS_DIR/libmspn_post.so"
 
     readonly DEFAULT_CROP_SO="$CROPING_ALGORITHMS_DIR/libmspn.so"
@@ -31,7 +31,6 @@ function init_variables() {
     input_source=$DEFAULT_DETECTION_VIDEO_SOURCE
     crop_so=$DEFAULT_CROP_SO
     json_config_path=$DEFAULT_JSON_CONFIG_PATH
-
 
     internal_offset=false
     print_gst_launch_only=false

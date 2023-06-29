@@ -20,8 +20,8 @@ function init_variables() {
 
     # Vehicle Detection Macros
     readonly VEHICLE_DETECTION_HEF="$RESOURCES_DIR/yolov5m_vehicles.hef"
-    readonly VEHICLE_DETECTION_POST_SO="$POSTPROCESS_DIR/libyolo_post.so"
-    readonly VEHICLE_DETECTION_POST_FUNC="yolov5_vehicles_only"
+    readonly VEHICLE_DETECTION_POST_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
+    readonly VEHICLE_DETECTION_POST_FUNC="yolov5m_vehicles"
 
     # License Plate Detection Macros
     readonly LICENSE_PLATE_DETECTION_HEF="$RESOURCES_DIR/tiny_yolov4_license_plates.hef"

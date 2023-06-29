@@ -240,10 +240,12 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     caps = gst_pad_get_current_caps(trans->sinkpad);
 
     GstVideoInfo *info = gst_video_info_new();
+    gst_video_info_from_caps(info, caps);
+
     GstMapInfo map;
     gst_buffer_map(buffer, &map, GST_MAP_READWRITE);
-    gst_video_info_from_caps(info, caps);
-    std::shared_ptr<HailoMat> hmat = get_mat_by_format(buffer, info, &map, hailooverlay->line_thickness, hailooverlay->font_thickness);
+
+    std::shared_ptr<HailoMat> hmat = get_mat_by_format(buffer, info, hailooverlay->line_thickness, hailooverlay->font_thickness);
     gst_video_info_free(info);
 
     hailo_roi = get_hailo_main_roi(buffer, true);
@@ -265,7 +267,7 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     }
     status = GST_FLOW_OK;
 cleanup:
-    gst_buffer_unmap(buffer, &map);
     gst_caps_unref(caps);
+    gst_buffer_unmap(buffer, &map);
     return status;
 }

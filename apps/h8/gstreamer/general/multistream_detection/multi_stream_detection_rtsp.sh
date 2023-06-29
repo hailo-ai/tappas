@@ -17,10 +17,9 @@ function init_variables() {
 
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/multistream_detection/resources"
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
-    readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly STREAM_DISPLAY_SIZE=640
     readonly HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
 
     num_of_src=8
     debug=false
@@ -33,8 +32,6 @@ function init_variables() {
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=640 sink_1::ypos=0 sink_2::xpos=1280 sink_2::ypos=0 sink_3::xpos=1920 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=640 sink_5::xpos=640 sink_5::ypos=640 sink_6::xpos=1280 sink_6::ypos=640 sink_7::xpos=1920 sink_7::ypos=640"
     print_gst_launch_only=false
     decode_scale_elements="decodebin ! queue leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! videoscale n-threads=8 ! video/x-raw,pixel-aspect-ratio=1/1"
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH 
-
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
 }
 
@@ -119,9 +116,9 @@ function main() {
     pipeline="$gst_top_command gst-launch-1.0 \
          funnel name=fun ! \
          queue name=hailo_pre_infer_q_0 leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-         hailonet  hef-path=$HEF_PATH ! \
+         hailonet hef-path=$HEF_PATH ! \
          queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-         hailofilter so-path=$POSTPROCESS_SO config-path=$json_config_path qos=false ! \
+         hailofilter so-path=$POSTPROCESS_SO qos=false ! \
          queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailooverlay ! streamiddemux name=sid \
          compositor name=comp start-time-selection=0 $compositor_locations ! videoscale n-threads=8 name=disp_scale ! video/x-raw,width=$screen_width,height=$screen_height ! \

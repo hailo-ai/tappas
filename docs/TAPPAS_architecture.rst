@@ -53,3 +53,7 @@ Hailo GStreamer Elements
 * `HailoTracker <elements/hailo_tracker.rst>`_ - HailoTracker is an element that applies Joint Detection and Embedding (JDE) model with Kalman filtering to track object instances.
 * `HailoRoundRobin <elements/hailo_roundrobin.rst>`_ - HailoRoundRobin is an element that provides muxing functionality in roundrobin method.
 * `HailoStreamRouter <elements/hailo_stream_router.rst>`_ - HailoStreamRouter is an element that provides de-muxing functionality.
+* `HailoOSD <elements/hailo_osd.rst>`_ - HailoOSD is an element specifically designed for Hailo-15 system, which enables the user to draw static text, images, and timestamps on GstBuffers.
+* `HailoUpload <elements/hailoupload.rst>`_ - HailoUpload is an element specifically designed for Hailo-15 system. It is responsible for transformation between memory spaces.
+* `HailoH265Enc <elements/hailo_h265enc.rst>`_ - HailoH265Enc is an element which enables the user to encode a video in h265 coding format using the using Hailo-15 encoding hardware accelerator.
+* `HailoH264Enc <elements/hailo_h264enc.rst>`_ - HailoH264Enc is an element which enables the user to encode a video in h264 coding format using the using Hailo-15 encoding hardware accelerator.

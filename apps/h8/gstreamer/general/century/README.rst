@@ -30,6 +30,7 @@ Supported Networks
 ------------------
 
 * 'yolov5m_wo_spp_60p' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
+* 'yolox_l_leaky' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
 
 Run
 ---
@@ -71,3 +72,13 @@ that are trained on your own dataset:
 
     - Update HEF_PATH on the .sh file
     - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)
+
+- ``yolox_l_leaky``
+
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolovx>`_
+
+   - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+    - Update ``resources/configs/yolox.json`` with your new post-processing parameters (NMS)

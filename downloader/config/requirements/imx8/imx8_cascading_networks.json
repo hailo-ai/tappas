@@ -7,7 +7,7 @@
       "destination": "joined_lightface_slim_tddfa_mobilenet_v1.hef"
     },
     {
-      "bucket": "model_zoo",
+      "bucket": "tappas",
       "source": "general/hefs/yolov5m_wo_spp_60p.hef",
       "destination": "yolov5m_wo_spp_60p.hef"
     },

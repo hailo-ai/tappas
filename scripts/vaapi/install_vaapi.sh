@@ -16,6 +16,7 @@ no_cache=false
 num_cores_to_use=$(($(nproc) / 2))
 log_filename="tappas_vaapi.log"
 skip_vainfo=false
+skip_clean=false
 
 function log() {
     message=$1
@@ -63,6 +64,7 @@ function print_usage() {
     echo "  --log-name             Specify output log file name (default is $log_filename) - Pass $NO_LOG string to disable"
     echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
     echo "  --skip-vainfo          Skip VA-Info check"
+    echo "  --skip-clean           Skip the cleaning of build artifacts"
     exit 1
 }
 
@@ -80,6 +82,8 @@ function parse_args() {
             shift
         elif [ "$1" == "--skip-vainfo" ]; then
             skip_vainfo=true
+        elif [ "$1" == "--skip-clean" ]; then
+            skip_clean=true
         else
             echo "Unknown parameters, exiting"
             print_usage
@@ -159,7 +163,11 @@ function gmmlib_install() {
     cmake -DCMAKE_BUILD_TYPE=Release CMAKE_C_COMPILER=/usr/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 ../
     cmake --build . --config Release -j $num_cores_to_use
     sudo cmake --install .
+    
     popd
+    if [ "$skip_clean" = false ]; then
+        rm -rf build
+    fi
     popd
 }
 
@@ -170,6 +178,11 @@ function libva_install() {
     meson libva_build --buildtype release -Dwith_x11=yes
     ninja -C libva_build
     sudo env "PATH=$PATH" ninja -C libva_build install
+    
+    if [ "$skip_clean" = false ]; then
+        rm -rf libva_build
+    fi
+
     popd
 }
 
@@ -180,6 +193,11 @@ function libva_utils_install() {
     meson libva_build --buildtype release
     ninja -C libva_build
     sudo env "PATH=$PATH" ninja -C libva_build install
+
+    if [ "$skip_clean" = false ]; then
+        rm -rf libva_build
+    fi
+
     popd
 }
 
@@ -193,7 +211,11 @@ function media_driver_install() {
     cmake -DCMAKE_BUILD_TYPE=Release CMAKE_C_COMPILER=/usr/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 ../
     make -j $num_cores_to_use
     sudo make install
+
     popd
+    if [ "$skip_clean" = false ]; then
+        rm -rf build
+    fi
     popd
 }
 
@@ -240,12 +262,12 @@ function main() {
     trap 'err_report $LINENO' ERR
     pushd ${TAPPAS_WORKSPACE}/sources
     install_libva_essentials
+    install_gstreamer_vaapi
 
     if [ "$skip_vainfo" = false ]; then
         check_va_info
     fi
 
-    install_gstreamer_vaapi
     log_success "Installed VA-API successfully"
 }
 

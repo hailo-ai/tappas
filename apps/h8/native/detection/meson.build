@@ -22,8 +22,7 @@ relative_tappas_workspace =  '../../../..'
 overlay_file = relative_tappas_workspace+'/core/hailo/plugins/overlay/overlay.cpp'
 
 # yolo postprocess paths
-yolo_post_file = relative_tappas_workspace+'/core/hailo/libs/postprocesses/detection/yolo_postprocess.cpp'
-yolo_out_file = relative_tappas_workspace+'/core/hailo/libs/postprocesses/detection/yolo_output.cpp'
+yolo_post_file = relative_tappas_workspace+'/core/hailo/libs/postprocesses/detection/yolo_hailortpp.cpp'
 
 # include directories
 rapidjson_inc = [include_directories(relative_tappas_workspace + '/core/open_source/rapidjson', is_system: true)]
@@ -40,7 +39,7 @@ hailort_lib = compiler.find_library('hailort')
 
 
 executable('detection_app',
-    [overlay_file, 'detection_app.cpp', yolo_post_file, yolo_out_file],
+    [overlay_file, 'detection_app.cpp', yolo_post_file],
     gnu_symbol_visibility : 'default',
     dependencies : [opencv_dep, hailort_lib],
     include_directories: [rapidjson_inc, hailo_general_inc, postproccess_inc],

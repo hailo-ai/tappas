@@ -292,6 +292,12 @@ void get_tensors_from_meta(GstBuffer *buffer, HailoROIPtr roi)
     {
         pmeta = reinterpret_cast<GstParentBufferMeta *>(meta);
         (void)gst_buffer_map(pmeta->buffer, &info, GST_MAP_READWRITE);
+        // check if the buffer has tensor metadata
+        if (!gst_buffer_get_meta(pmeta->buffer, g_type_from_name(TENSOR_META_API_NAME)))
+        {
+            gst_buffer_unmap(pmeta->buffer, &info);
+            continue;
+        }
         const hailo_vstream_info_t vstream_info = reinterpret_cast<GstHailoTensorMeta *>(gst_buffer_get_meta(pmeta->buffer, g_type_from_name(TENSOR_META_API_NAME)))->info;
         roi->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(info.data), vstream_info));
         gst_buffer_unmap(pmeta->buffer, &info);
@@ -333,15 +339,15 @@ static GstFlowReturn gst_hailofilter_transform_ip(GstBaseTransform *trans,
     HailoROIPtr hailo_roi = get_hailo_main_roi(buffer, true);
     get_tensors_from_meta(buffer, hailo_roi);
     GstPad *srcpad = trans->srcpad;
-    
+
     if (hailo_roi->get_stream_id().length() == 0)
     {
-        gchar * id = gst_pad_get_stream_id(srcpad);
+        gchar *id = gst_pad_get_stream_id(srcpad);
         std::string stream_id = std::string(reinterpret_cast<char *>(id));
         g_free(id);
         hailo_roi->set_stream_id(stream_id);
     }
-    
+
     // Call all functions.
     if (hailofilter->use_gst_buffer)
     {
@@ -384,7 +390,7 @@ static GstFlowReturn gst_hailofilter_transform_ip(GstBaseTransform *trans,
     {
         remove_tensors(buffer, hailo_roi);
     }
-    
+
     GST_DEBUG_OBJECT(hailofilter, "transform_ip");
     return GST_FLOW_OK;
 }

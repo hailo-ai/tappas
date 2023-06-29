@@ -130,4 +130,4 @@ HailoBBox resize_letterbox_rgb(cv::Mat &cropped_image, cv::Mat &resized_image, c
 HailoBBox resize_letterbox_nv12(cv::Mat &cropped_image, cv::Mat &resized_image, cv::Scalar color, int interpolation = cv::INTER_LINEAR);
 __END_DECLS
 
-std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *info, GstMapInfo *map, int line_thickness = 1, int font_thickness = 1);
+std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *info, int line_thickness = 1, int font_thickness = 1);

@@ -412,7 +412,7 @@ function create_pipeline_structure() {
 
     pipeline="gst-launch-1.0 \
             $sources \
-            hailoroundrobin name=roundrobin funnel-mode=false ! \
+            hailoroundrobin name=roundrobin mode=1 ! \
             queue leaky=no name=pre_detector_pipe_q max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
             $DETECTOR_PIPELINE ! \
             queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

@@ -10,4 +10,5 @@ __BEGIN_DECLS
 void filter(HailoROIPtr roi);
 void resnet_v1_50(HailoROIPtr roi);
 void mobilenet_v1(HailoROIPtr roi);
+void resnet_v1_18(HailoROIPtr roi);
 __END_DECLS

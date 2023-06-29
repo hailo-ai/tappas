@@ -12,7 +12,7 @@
 #include "common/math.hpp"
 #include "common/tensors.hpp"
 #include "common/nms.hpp"
-#include "common/json_config.hpp"
+#include "json_config.hpp"
 #include "scrfd.hpp"
 #include "xtensor/xarray.hpp"
 #include "xtensor/xio.hpp"

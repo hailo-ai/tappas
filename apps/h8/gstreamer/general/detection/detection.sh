@@ -10,12 +10,11 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/detection/resources"
 
-    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json"
 
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
@@ -25,7 +24,7 @@ function init_variables() {
     input_source=$DEFAULT_VIDEO_SOURCE
     batch_size=$DEFAULT_BATCH_SIZE
     hef_path=$DEFAULT_HEF_PATH
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH
+    json_config_path="null"
 
     print_gst_launch_only=false
     additional_parameters=""
@@ -33,8 +32,7 @@ function init_variables() {
     debug_stats_export=""
     sync_pipeline=false
     device_id_prop=""
-    tcp_host=""
-    tcp_port=""
+    tappas_gui_mode=false
 }
 
 function print_help_if_needed() {
@@ -57,7 +55,7 @@ function print_usage() {
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
     echo "  --print-device-stats       Print the power and temperature measured"
-    echo "  --tcp-address              If specified, set the sink to a TCP client (expected format is 'host:port')"
+    echo "  --tcp-address              Used for TAPPAS GUI, switchs the sink to TCP client"
     exit 0
 }
 
@@ -66,10 +64,12 @@ function parse_args() {
         if [ $1 == "--network" ]; then
             if [ $2 == "yolov4" ]; then
                 network_name="yolov4"
+                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
                 hef_path="$RESOURCES_DIR/yolov4_leaky.hef"
                 batch_size="4"
                 json_config_path="$RESOURCES_DIR/configs/yolov4.json"
             elif [ $2 == "yolov3" ]; then
+                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
                 network_name="yolov3"
                 hef_path="$RESOURCES_DIR/yolov3.hef"
                 batch_size="4"
@@ -108,9 +108,8 @@ function parse_args() {
             tcp_host=$(echo $2 | awk -F':' '{print $1}')
             tcp_port=$(echo $2 | awk -F':' '{print $2}')
             video_sink="queue name=queue_before_sink leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                        x264enc tune=zerolatency ! \
-                        queue max-size-bytes=0 max-size-time=0 ! matroskamux ! tcpclientsink host=$tcp_host port=$tcp_port" 
-
+                        videoscale ! video/x-raw,width=836,height=546,format=RGB ! \
+                        tcpclientsink host=$tcp_host port=$tcp_port"
             shift
         else
             echo "Received invalid argument: $1. See expected arguments below:"

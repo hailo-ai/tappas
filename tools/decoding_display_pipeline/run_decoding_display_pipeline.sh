@@ -2,6 +2,10 @@
 set -e
 
 function init_variables() {
+    # Assure all check are ready before running the pipeline
+    script_dir=$(dirname $(realpath "$0"))
+    source $script_dir/../../scripts/misc/checks_before_run.sh --no-hailo
+
     decode_element="decodebin"
     num_of_src=4
     num_of_buffers=500
@@ -109,6 +113,8 @@ function post_parse_args() {
         if [ -n "${converted_format_caps}" ]; then
             decode_element+=$converted_format_caps
         fi
+
+        source $script_dir/../../scripts/vaapi/set_env.sh
     else
         decode_element="decodebin ! video/x-raw, width=$width, height=$height"
     fi

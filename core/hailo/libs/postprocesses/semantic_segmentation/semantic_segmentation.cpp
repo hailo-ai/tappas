@@ -5,7 +5,7 @@
 #include "semantic_segmentation.hpp"
 #include "common/tensors.hpp"
 
-const char *output_layer_name = "fcn8_resnet_v1_18/argmax1";
+const char *output_layer_name = "argmax1";
 
 void semantic_segmentation(HailoROIPtr roi)
 {

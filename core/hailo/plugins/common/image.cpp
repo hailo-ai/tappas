@@ -157,15 +157,25 @@ HailoBBox resize_letterbox_nv12(cv::Mat &cropped_image, cv::Mat &resized_image, 
     return letterboxed_scale;
 }
 
-std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *info, GstMapInfo *map, int line_thickness, int font_thickness)
+std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *info, int line_thickness, int font_thickness)
 {
     std::shared_ptr<HailoMat> hmat = nullptr;
+    GstVideoFrame frame;
+    bool success = gst_video_frame_map(&frame, info, buffer, GstMapFlags(GST_MAP_READ));
+    if (!success)
+    {
+        gst_video_frame_unmap(&frame);
+        GST_CAT_ERROR(GST_CAT_DEFAULT, "Failed to map buffer to video frame, Buffer may be not writable");
+        throw std::runtime_error("Failed to map buffer to video frame, Buffer may be not writable");
+    }
+
+    uint8_t *plane0_data = (uint8_t *)GST_VIDEO_FRAME_PLANE_DATA(&frame, 0);
 
     switch (GST_VIDEO_INFO_FORMAT(info))
     {
     case GST_VIDEO_FORMAT_RGB:
     {
-        hmat = std::make_shared<HailoRGBMat>(map->data,
+        hmat = std::make_shared<HailoRGBMat>(plane0_data,
                                              GST_VIDEO_INFO_HEIGHT(info),
                                              GST_VIDEO_INFO_WIDTH(info),
                                              GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
@@ -175,7 +185,7 @@ std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *inf
     }
     case GST_VIDEO_FORMAT_RGBA:
     {
-        hmat = std::make_shared<HailoRGBAMat>(map->data,
+        hmat = std::make_shared<HailoRGBAMat>(plane0_data,
                                               GST_VIDEO_INFO_HEIGHT(info),
                                               GST_VIDEO_INFO_WIDTH(info),
                                               GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
@@ -185,7 +195,7 @@ std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *inf
     }
     case GST_VIDEO_FORMAT_YUY2:
     {
-        hmat = std::make_shared<HailoYUY2Mat>(map->data,
+        hmat = std::make_shared<HailoYUY2Mat>(plane0_data,
                                               GST_VIDEO_INFO_HEIGHT(info),
                                               GST_VIDEO_INFO_WIDTH(info),
                                               GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
@@ -195,40 +205,22 @@ std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *inf
     }
     case GST_VIDEO_FORMAT_NV12:
     {
-
-        GstVideoFrame frame;
-        bool success = gst_video_frame_map(&frame, info, buffer, GstMapFlags(GST_MAP_READ));
-
-        if (success)
-        {
-            hmat = std::make_shared<HailoNV12Mat>(map->data,
-                                                GST_VIDEO_INFO_HEIGHT(info),
-                                                GST_VIDEO_INFO_WIDTH(info),
-                                                GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
-                                                GST_VIDEO_INFO_PLANE_STRIDE(info, 1),
-                                                line_thickness,
-                                                font_thickness,
-                                                GST_VIDEO_FRAME_PLANE_DATA(&frame, 0),
-                                                GST_VIDEO_FRAME_PLANE_DATA(&frame, 1));
-            gst_video_frame_unmap(&frame);
-        }
-        else
-        {
-            hmat = std::make_shared<HailoNV12Mat>(map->data,
-                                                GST_VIDEO_INFO_HEIGHT(info),
-                                                GST_VIDEO_INFO_WIDTH(info),
-                                                GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
-                                                GST_VIDEO_INFO_PLANE_STRIDE(info, 1),
-                                                line_thickness,
-                                                font_thickness,
-                                                nullptr,
-                                                nullptr);
-        }
+        hmat = std::make_shared<HailoNV12Mat>(plane0_data,
+                                            GST_VIDEO_INFO_HEIGHT(info),
+                                            GST_VIDEO_INFO_WIDTH(info),
+                                            GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
+                                            GST_VIDEO_INFO_PLANE_STRIDE(info, 1),
+                                            line_thickness,
+                                            font_thickness,
+                                            plane0_data,
+                                            GST_VIDEO_FRAME_PLANE_DATA(&frame, 1));
         break;
     }
 
     default:
         break;
     }
+
+    gst_video_frame_unmap(&frame);
     return hmat;
 }

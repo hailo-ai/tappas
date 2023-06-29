@@ -18,9 +18,8 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/rockchip/multistream_detection/resources"
     readonly CONFIGS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/rockchip/multistream_detection/resources/configs"
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
-    readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly HEF_PATH="$RESOURCES_DIR/yolov5s_nv12.hef"
-    readonly DEFAULT_JSON_CONFIG_PATH="$CONFIGS_DIR/yolov5.json"
     readonly OVERLAY_PIPELINE="queue name=hailo_stream leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! hailooverlay !"
     readonly DEFAULT_IP_ADDRESS="127.0.0.1"
 
@@ -30,7 +29,6 @@ function init_variables() {
     streamrouter_input_streams=""
     print_gst_launch_only=false
     overlay_element=""
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH
     ip_address=$DEFAULT_IP_ADDRESS
 }
 
@@ -110,7 +108,7 @@ function main() {
     parse_args $@
     create_sources
     pipeline="gst-launch-1.0 \
-             hailoroundrobin name=fun ! \
+             hailoroundrobin mode=1 name=fun ! \
              queue name=hailo_pre_tee_q_0 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
              tee name=t hailomuxer name=hmux \
              t. ! queue name=bypass leaky=no max-size-buffers=20 max-size-bytes=0 max-size-time=0 ! hmux. \
@@ -120,7 +118,7 @@ function main() {
              queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
              hailonet hef-path=$HEF_PATH is-active=true batch-size=8 ! \
              queue name=hailo_postprocess0 leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-             hailofilter so-path=$POSTPROCESS_SO config-path=$DEFAULT_JSON_CONFIG_PATH qos=false ! \
+             hailofilter so-path=$POSTPROCESS_SO qos=false ! \
              hmux. hmux. ! \
              $overlay_element \
              queue name=hailo_over leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \

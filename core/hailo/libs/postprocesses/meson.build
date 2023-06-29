@@ -18,6 +18,23 @@ shared_library('mobilenet_ssd_post',
 )
 
 ################################################
+# DETECTION SOURCES - YOLOV5M
+################################################
+yolo_hailortpp_sources = [
+    'detection/yolo_hailortpp.cpp'
+]
+
+shared_library('yolo_hailortpp_post',
+    yolo_hailortpp_sources,
+    cpp_args : hailo_lib_args,
+    include_directories: [hailo_general_inc, include_directories('./')],
+    dependencies : post_deps,
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
+)
+
+################################################
 # FACE DETECTION SOURCES
 ################################################
 face_detection_post_sources = [

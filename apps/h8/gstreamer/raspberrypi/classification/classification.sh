@@ -9,7 +9,6 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/raspberrypi/classification/resources"
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libclassification.so"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libdetection_draw.so"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/classification_movie.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/resnet_v1_50.hef"
     readonly DEFAULT_VDEVICE_KEY="1"
@@ -17,7 +16,6 @@ function init_variables() {
     hef_path=$DEFAULT_HEF_PATH
     input_source=$DEFAULT_VIDEO_SOURCE
     postprocess_so=$DEFAULT_POSTPROCESS_SO
-    draw_so=$DEFAULT_DRAW_SO
 
     print_gst_launch_only=false
     additional_parameters=""

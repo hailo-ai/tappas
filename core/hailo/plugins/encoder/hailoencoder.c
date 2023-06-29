@@ -1,33 +1,60 @@
 #include "hailoencoder.h"
-#include "error.h"
-#define DEFAULT -255
 
-static void AdaptiveGOPSizeDecision(EncoderParams *enc_params, 
-                                 VCEncInst encoder,
-                                 VCEncIn *pEncIn);
-static void GetAlignedPicSizebyFormat(VCEncPictureType type, u32 width, u32 height, u32 alignment,
-                                       u32 *luma_Size, u32 *chroma_Size, u32 *picture_Size);
-
-void SetDefaultParameters(EncoderParams *enc_params)
+void SetDefaultParameters(EncoderParams *enc_params, bool codecH264)
 {
-  enc_params->frameRateNumer      = DEFAULT;
-  enc_params->frameRateDenom      = DEFAULT;
+  enc_params->frameRateNumer      = DEFAULT_UNCHANGED;
+  enc_params->frameRateDenom      = DEFAULT_UNCHANGED;
 
-  enc_params->width      = DEFAULT;
-  enc_params->height     = DEFAULT;
-  enc_params->inputFormat = VCENC_YUV420_SEMIPLANAR;
-  enc_params->profile = VCENC_HEVC_MAIN_10_PROFILE;
-  enc_params->level = VCENC_HEVC_LEVEL_5_2;
+  enc_params->width      = DEFAULT_UNCHANGED;
+  enc_params->height     = DEFAULT_UNCHANGED;
+
+  enc_params->codecH264 = codecH264;
+  enc_params->inputFormat = DEFAULT_INPUT_FORMAT;
+  enc_params->profile =  enc_params->codecH264 ? DEFAULT_H264_PROFILE : DEFAULT_HEVC_PROFILE;
+  enc_params->level =  enc_params->codecH264 ? DEFAULT_H264_LEVEL : DEFAULT_HEVC_LEVEL;
   enc_params->streamType = VCENC_BYTE_STREAM;
+  enc_params->gopSize = DEFAULT_GOP_SIZE;
+  enc_params->gopLength = DEFAULT_GOP_LENGTH;
+  enc_params->intraPicRate = DEFAULT_INTRA_PIC_RATE;
+  enc_params->qphdr = DEFAULT_QPHDR;
+  enc_params->qpmin = DEFAULT_QPMIN;
+  enc_params->qpmax = DEFAULT_QPMAX;
+  enc_params->intra_qp_delta = DEFAULT_INTRA_QP_DELTA;
+  enc_params->fixed_intra_qp = DEFAULT_FIXED_INTRA_QP;
+  enc_params->bitrate = DEFAULT_BITRATE;
+  enc_params->tolMovingBitRate = DEFAULT_TOL_MOVING_BITRATE;
+  enc_params->bitVarRangeI = DEFAULT_BITVAR_RANGE_I;
+  enc_params->bitVarRangeP = DEFAULT_BITVAR_RANGE_P;
+  enc_params->bitVarRangeB = DEFAULT_BITVAR_RANGE_B;
+  enc_params->pictureRc = 1;
+  enc_params->ctbRc = 0;
+  enc_params->blockRcSize = 0;
+  enc_params->pictureSkip = 0;
+  enc_params->hrd = 0;
+  enc_params->hrdCpbSize = DEFAULT_HRD_CPB_SIZE;
+  enc_params->monitorFrames = 0;
+  enc_params->roiArea1 = NULL;
+  enc_params->roiArea2 = NULL;
+  enc_params->compressor = 3;
 
-  enc_params->max_cu_size  = 64;
-  enc_params->min_cu_size  = 8;
-  enc_params->max_tr_size  = 16;
-  enc_params->min_tr_size  = 4;
-  enc_params->tr_depth_intra = 2;  //mfu =>0
-  enc_params->tr_depth_inter = (enc_params->max_cu_size == 64) ? 4 : 3;
-  enc_params->intraPicRate   = 0;  // only first is IDR.
-  enc_params->codecH264 = 0;
+  if (enc_params->codecH264)
+  {
+    enc_params->max_cu_size  = 16;
+    enc_params->min_cu_size  = 8;
+    enc_params->max_tr_size  = 16;
+    enc_params->min_tr_size  = 4;
+    enc_params->tr_depth_intra = 1;
+    enc_params->tr_depth_inter = 2;
+  }
+  else
+  {
+    enc_params->max_cu_size  = 64;
+    enc_params->min_cu_size  = 8;
+    enc_params->max_tr_size  = 16;
+    enc_params->min_tr_size  = 4;
+    enc_params->tr_depth_intra = 2;
+    enc_params->tr_depth_inter = 4;
+  }
   enc_params->outBufSizeMax = 12;
   enc_params->roiMapDeltaQpBlockUnit = 0;
 
@@ -47,12 +74,20 @@ int InitEncoderConfig(EncoderParams *enc_params, VCEncInst *pEnc)
   cfg.strongIntraSmoothing = 1;
   cfg.streamType = enc_params->streamType;
 
-  cfg.codecH264 = 0;
+  cfg.codecH264 = enc_params->codecH264;
   cfg.profile = enc_params->profile;
   cfg.level = enc_params->level;
 
-  cfg.bitDepthLuma = DEFAULT_BIT_DEPTH;
-  cfg.bitDepthChroma = DEFAULT_BIT_DEPTH;
+  if (cfg.profile == VCENC_HEVC_MAIN_10_PROFILE || cfg.profile == VCENC_H264_HIGH_10_PROFILE)
+  {
+    cfg.bitDepthLuma = 10;
+    cfg.bitDepthChroma = 10;
+  }
+  else
+  {
+    cfg.bitDepthLuma = 8;
+    cfg.bitDepthChroma = 8;
+  }
 
   //default maxTLayer
   cfg.maxTLayers = 1;
@@ -76,13 +111,13 @@ int InitEncoderConfig(EncoderParams *enc_params, VCEncInst *pEnc)
   }
   cfg.refFrameAmount = maxRefPics + cfg.interlacedFrame + (enc_params->encIn.gopConfig.ltrInterval > 0);
   cfg.maxTLayers = maxTemporalId +1;
-  cfg.compressor = 3;
+  cfg.compressor = enc_params->compressor;
   cfg.enableOutputCuInfo = 0;
   cfg.exp_of_alignment = 0;
   cfg.refAlignmentExp = 0;
   cfg.AXIAlignment = 0;
-  cfg.AXIreadOutstandingNum = ENCH2_ASIC_AXI_READ_OUTSTANDING_NUM;
-  cfg.AXIwriteOutstandingNum = ENCH2_ASIC_AXI_WRITE_OUTSTANDING_NUM;
+  cfg.AXIreadOutstandingNum = 64;   //ENCH2_ASIC_AXI_READ_OUTSTANDING_NUM;
+  cfg.AXIwriteOutstandingNum = 64;  //ENCH2_ASIC_AXI_WRITE_OUTSTANDING_NUM;
   if ((ret = VCEncInit(&cfg, pEnc)) != VCENC_OK)
   {
     //PrintErrorValue("VCEncInit() failed.", ret);
@@ -91,8 +126,58 @@ int InitEncoderConfig(EncoderParams *enc_params, VCEncInst *pEnc)
   return 0;
 }
 
+static void UpdateROIArea(EncoderParams *enc_params, VCEncCodingCtrl codingCfg)
+{
+  if (enc_params->roiArea1)
+  {
+    codingCfg.roi1Area.enable = 1;
+    sscanf(enc_params->roiArea1, 
+    "%u:%u:%u:%u:%u", 
+    &codingCfg.roi1Area.left,
+    &codingCfg.roi1Area.top,
+    &codingCfg.roi1Area.right,
+    &codingCfg.roi1Area.bottom,
+    &codingCfg.roi1DeltaQp);
+  }
+  if (enc_params->roiArea2)
+  {
+    codingCfg.roi2Area.enable = 1;
+    sscanf(enc_params->roiArea2, 
+    "%u:%u:%u:%u:%u", 
+    &codingCfg.roi2Area.left,
+    &codingCfg.roi2Area.top,
+    &codingCfg.roi2Area.right,
+    &codingCfg.roi2Area.bottom,
+    &codingCfg.roi2DeltaQp);
+  }
+}
 
-int InitEncoderCodingConfig(VCEncInst *pEnc)
+int UpdateEncoderROIArea(EncoderParams *enc_params, VCEncInst *pEnc)
+{
+  VCEncInst encoder;
+  VCEncRet ret;
+  VCEncCodingCtrl codingCfg;
+
+  encoder = *pEnc;
+
+  /* Encoder setup: coding control */
+  if ((ret = VCEncGetCodingCtrl(encoder, &codingCfg)) != VCENC_OK)
+  {
+    CloseEncoder(encoder);
+    return -1;
+  }
+
+  UpdateROIArea(enc_params, codingCfg);
+
+  if ((ret = VCEncSetCodingCtrl(encoder, &codingCfg)) != VCENC_OK)
+  {
+    CloseEncoder(encoder);
+    return -1;
+  }
+  return 0;
+}
+
+int InitEncoderCodingConfig(EncoderParams *enc_params, VCEncInst *pEnc)
 {
   VCEncInst encoder;
   VCEncRet ret;
@@ -145,17 +230,10 @@ int InitEncoderCodingConfig(VCEncInst *pEnc)
 
   codingCfg.ipcmMapEnable = 0;
   codingCfg.pcm_enabled_flag = 0;
-  codingCfg.roi1Area.enable = 0;
-  codingCfg.roi1Area.top = codingCfg.roi1Area.left = 
-                            codingCfg.roi1Area.bottom = 
-                            codingCfg.roi1Area.right = 0;
-  codingCfg.roi2Area.enable = 0;
-  codingCfg.roi2Area.top = codingCfg.roi2Area.left = 
-                            codingCfg.roi2Area.bottom = 
-                            codingCfg.roi2Area.right = 0;
-  codingCfg.roi1DeltaQp = 0;
-  codingCfg.roi2DeltaQp = 0;
-  codingCfg.codecH264 = 0;
+
+  UpdateROIArea(enc_params, codingCfg);
+
+  codingCfg.codecH264 = enc_params->codecH264;
             
   codingCfg.roiMapDeltaQpEnable = 0;
   codingCfg.roiMapDeltaQpBlockUnit = 0;
@@ -185,7 +263,6 @@ int InitEncoderCodingConfig(VCEncInst *pEnc)
   return 0;
 }
 
-
 int InitEncoderRateConfig(EncoderParams *enc_params, VCEncInst *pEnc)
 {
   VCEncInst encoder;
@@ -202,27 +279,37 @@ int InitEncoderRateConfig(EncoderParams *enc_params, VCEncInst *pEnc)
     return -1;
   }
 
-  rcCfg.qpHdr = 26;
-  rcCfg.qpMin = 0;
-  rcCfg.qpMax = 51;
-  rcCfg.pictureSkip = 0;
-  rcCfg.pictureRc =0;
-  rcCfg.ctbRc = 0;
+  rcCfg.qpHdr = enc_params->qphdr;
+  rcCfg.qpMin = enc_params->qpmin;
+  rcCfg.qpMax = enc_params->qpmax;
+  rcCfg.pictureSkip = enc_params->pictureSkip;
+  rcCfg.pictureRc = enc_params->pictureRc;
+  rcCfg.ctbRc = enc_params->ctbRc;
 
-  rcCfg.blockRCSize = 0;
-  rcCfg.bitPerSecond = 60000000;
-  rcCfg.bitVarRangeI = 2000;
-  rcCfg.bitVarRangeP = 2000;
-  rcCfg.bitVarRangeB = 2000;
-  rcCfg.tolMovingBitRate = 2000;
+  rcCfg.blockRCSize = enc_params->blockRcSize;
+
+  rcCfg.bitPerSecond = enc_params->bitrate;
+  rcCfg.bitVarRangeI = enc_params->bitVarRangeI;
+  rcCfg.bitVarRangeP = enc_params->bitVarRangeP;
+  rcCfg.bitVarRangeB = enc_params->bitVarRangeB;
+  rcCfg.tolMovingBitRate = enc_params->tolMovingBitRate;
   
-  rcCfg.monitorFrames = (enc_params->frameRateNumer+enc_params->frameRateDenom-1) / enc_params->frameRateDenom;
-  rcCfg.hrd = 0;
-  rcCfg.hrdCpbSize = 10000000;
+  if (enc_params->monitorFrames != 0)
+    rcCfg.monitorFrames = enc_params->monitorFrames;
+  else
+    rcCfg.monitorFrames = (enc_params->frameRateNumer+enc_params->frameRateDenom-1) / enc_params->frameRateDenom;
 
-  // rcCfg.gopLen = 0; // default is good.
-  rcCfg.intraQpDelta = -5;
-  rcCfg.fixedIntraQp = 0;
+  if(rcCfg.monitorFrames>MAX_MONITOR_FRAMES)
+    rcCfg.monitorFrames=MAX_MONITOR_FRAMES;
+  if(rcCfg.monitorFrames<MIN_MONITOR_FRAMES)
+    rcCfg.monitorFrames=MIN_MONITOR_FRAMES;
+
+  rcCfg.hrd = enc_params->hrd;
+  rcCfg.hrdCpbSize = enc_params->hrdCpbSize;
+
+  rcCfg.gopLen = enc_params->gopLength;
+  rcCfg.intraQpDelta = enc_params->intra_qp_delta;
+  rcCfg.fixedIntraQp = enc_params->fixed_intra_qp;
 
   if ((ret = VCEncSetRateCtrl(encoder, &rcCfg)) != VCENC_OK)
   {
@@ -326,7 +413,28 @@ int OpenEncoder(VCEncInst *encoder, EncoderParams *enc_params)
 {
   if (InitEncoderConfig(enc_params, encoder) != 0)
     return -1;
-  if (InitEncoderCodingConfig(encoder) != 0)
+  
+  return UpdateEncoderConfig(encoder, enc_params);
+}
+
+/*------------------------------------------------------------------------------
+
+    UpdateEncoderConfig
+        Configure an encoder instance.
+
+    Params:
+        encoder    - place where to save the new encoder instance
+        enc_params         - Arguments
+    Return:
+        0   - for success
+        -1  - error
+
+------------------------------------------------------------------------------*/
+int UpdateEncoderConfig(VCEncInst *encoder, EncoderParams *enc_params)
+{
+  enc_params->idr_interval = enc_params->intraPicRate;
+
+  if (InitEncoderCodingConfig(enc_params, encoder) != 0)
     return -1;
   if (InitEncoderRateConfig(enc_params, encoder) != 0)
     return -1;
@@ -357,33 +465,6 @@ void CloseEncoder(VCEncInst encoder)
 
 
 
-u32 SetupInputBuffer(EncoderParams *enc_params, VCEncIn *pEncIn)
-{
-  u32 src_img_size;
-  u32 bitsPerPixel = VCEncGetBitsPerPixel(enc_params->inputFormat);
-  ASSERT(bitsPerPixel != 0);
-  
-  u32 size_lum = 0;
-  u32 size_ch  = 0;
-
-  GetAlignedPicSizebyFormat(enc_params->inputFormat, enc_params->width, enc_params->height, enc_params->alignment, &size_lum, &size_ch, NULL);
-
-  pEncIn->busLuma = enc_params->pictureMem.busAddress;
-  enc_params->lum = (u8 *)enc_params->pictureMem.virtualAddress;
-  pEncIn->busChromaU = pEncIn->busLuma + size_lum;
-  enc_params->cb = enc_params->lum + (u32)size_lum;
-  pEncIn->busChromaV = pEncIn->busChromaU + (u32)size_ch/2;
-  enc_params->cr = enc_params->cb + (u32)size_ch/2;
-  src_img_size = enc_params->width * enc_params->height * bitsPerPixel / 8;
-  
-  return src_img_size;
-}
-
-static u32 get_aligned_width(int width, i32 input_format)
-{
-  return (width + 15) & (~15);
-}
-
 /*------------------------------------------------------------------------------
 
     AllocRes
@@ -398,53 +479,22 @@ static u32 get_aligned_width(int width, i32 input_format)
           as inside EWLMallocLinear().
 
 ------------------------------------------------------------------------------*/
-int AllocRes(VCEncInst enc, EncoderParams *enc_params)
+int AllocRes(EncoderParams *enc_params)
 {
   i32 ret;
-  u32 pictureSize;
   u32 outbufSize;
-  u32 lumaSize,chromaSize;
-
-  if (enc_params->alignment == 0)
-    pictureSize = get_aligned_width(enc_params->width, enc_params->inputFormat) * enc_params->height *
-                  VCEncGetBitsPerPixel(enc_params->inputFormat) / 8;
-  else
+  EWLInitParam_t ewl_params;
+  ewl_params.clientType = EWL_CLIENT_TYPE_HEVC_ENC;
+  enc_params->ewl = (void *)EWLInit(&ewl_params);
+  if (NULL == enc_params->ewl)
   {
-    if (enc_params->inputFormat==VCENC_YUV420_SEMIPLANAR||enc_params->inputFormat==VCENC_YUV420_SEMIPLANAR_VU)
-    {
-      lumaSize = STRIDE(enc_params->width,enc_params->alignment)* enc_params->height;
-      chromaSize = STRIDE(enc_params->width,enc_params->alignment)* enc_params->height/2;
-      pictureSize = lumaSize + chromaSize;
-    }
-    else if (enc_params->inputFormat==VCENC_YUV422_INTERLEAVED_YUYV||enc_params->inputFormat==VCENC_YUV422_INTERLEAVED_UYVY)
-    {
-      pictureSize = STRIDE(enc_params->width*2,enc_params->alignment)* enc_params->height;
-    }else{
-      pictureSize = 0; //This situation won't happen
-    }
-  }
-
-  GetAlignedPicSizebyFormat(enc_params->inputFormat,enc_params->width,enc_params->height,
-                             enc_params->alignment,&lumaSize,&chromaSize,&pictureSize);
-  
-  enc_params->pictureMem.virtualAddress = NULL;
-  enc_params->outbufMem.virtualAddress = NULL;
-
-  /* Here we use the EWL instance directly from the encoder
-   * because it is the easiest way to allocate the linear memories */
-  ret = EWLMallocLinear(((struct vcenc_instance *)enc)->asic.ewl, pictureSize,enc_params->alignment,
-                        &enc_params->pictureMem);
-  if (ret != EWL_OK)
-  {
-    enc_params->pictureMem.virtualAddress = NULL;
     return 1;
   }
-
+ 
   /* Limited amount of memory on some test environment */
-  outbufSize = 4 * enc_params->pictureMem.size < ((u32)enc_params->outBufSizeMax * 1024 * 1024) ?
-               4 * enc_params->pictureMem.size : ((u32)enc_params->outBufSizeMax * 1024 * 1024);
+  outbufSize =  ((u32)enc_params->outBufSizeMax * 1024 * 1024);
 
-  ret = EWLMallocLinear(((struct vcenc_instance *)enc)->asic.ewl, outbufSize,enc_params->alignment,
+  ret = EWLMallocLinear((const void *)enc_params->ewl, outbufSize,enc_params->alignment,
                         &enc_params->outbufMem);
   if (ret != EWL_OK)
   {
@@ -462,12 +512,12 @@ int AllocRes(VCEncInst enc, EncoderParams *enc_params)
     Release all resources allcoated byt AllocRes()
 
 ------------------------------------------------------------------------------*/
-void FreeRes(VCEncInst enc, EncoderParams *enc_params)
+void FreeRes(EncoderParams *enc_params)
 {
-  if (enc_params->pictureMem.virtualAddress != NULL)
-    EWLFreeLinear(((struct vcenc_instance *)enc)->asic.ewl, &enc_params->pictureMem);
   if (enc_params->outbufMem.virtualAddress != NULL)
-    EWLFreeLinear(((struct vcenc_instance *)enc)->asic.ewl, &enc_params->outbufMem);
+    EWLFreeLinear((const void *)enc_params->ewl, &enc_params->outbufMem);
+  if (NULL != enc_params->ewl)
+    (void)EWLRelease((const void *)enc_params->ewl);
 }
 
 
@@ -479,188 +529,27 @@ VCEncRet EncodeFrame(EncoderParams *enc_params, VCEncInst encoder,
   VCEncOut *pEncOut = &(enc_params->encOut);
 
   pEncIn->codingType = (pEncIn->poc == 0) ? VCENC_INTRA_FRAME : enc_params->nextCodingType;
-  enc_params->last_idr_picture_cnt = enc_params->picture_cnt;
+  if (pEncIn->codingType == VCENC_INTRA_FRAME)
+  {
+    pEncIn->poc = 0;
+    enc_params->last_idr_picture_cnt = enc_params->picture_cnt;
+  }
 
   return VCEncStrmEncode(encoder, pEncIn, pEncOut, sliceReadyCbFunc, pAppData);    
 }
 
-void UpdateEncoder(EncoderParams *enc_params, 
-                    VCEncInst encoder)
+void ForceKeyframe(EncoderParams *enc_params, VCEncInst encoder)
 {
   VCEncIn *pEncIn = &(enc_params->encIn);
-  VCEncOut *pEncOut = &(enc_params->encOut);
+  pEncIn->codingType = VCENC_INTRA_FRAME;
+  pEncIn->poc = 0;
+  enc_params->last_idr_picture_cnt = enc_params->picture_cnt;
+}
+
+void UpdateEncoderGOP(EncoderParams *enc_params, VCEncInst encoder)
+{
+  VCEncIn *pEncIn = &(enc_params->encIn);
   pEncIn->timeIncrement = enc_params->frameRateDenom;
-  enc_params->total_bits += pEncOut->streamSize * 8;
-  enc_params->streamSize += pEncOut->streamSize;
   enc_params->validencodedframenumber++;
-  //Adaptive GOP size decision
-  if ((enc_params->gopSize == 0) && pEncIn->codingType != VCENC_INTRA_FRAME)
-  {
-    AdaptiveGOPSizeDecision(enc_params, encoder, pEncIn);
-  }
   enc_params->nextCodingType = find_next_pic(enc_params);
 }
-
-/*------------------------------------------------------------------------------
-
-    Static Functions
-
-------------------------------------------------------------------------------*/
-
-static void AdaptiveGOPSizeDecision(EncoderParams *enc_params, 
-                                 VCEncInst encoder,
-                                 VCEncIn *pEncIn)
-{
-  struct vcenc_instance *vcenc_instance = (struct vcenc_instance *)encoder;
-  unsigned int uiIntraCu8Num = vcenc_instance->asic.regs.intraCu8Num;
-  unsigned int uiSkipCu8Num = vcenc_instance->asic.regs.skipCu8Num;
-  unsigned int uiPBFrameCost = vcenc_instance->asic.regs.PBFrame4NRdCost;
-  double dIntraVsInterskip = (double)uiIntraCu8Num/(double)((enc_params->width/8) * (enc_params->height/8));
-  double dSkipVsInterskip = (double)uiSkipCu8Num/(double)((enc_params->width/8) * (enc_params->height/8));          
-
-  enc_params->gop_frm_num++;
-  enc_params->sum_intra_vs_interskip += dIntraVsInterskip;
-  enc_params->sum_skip_vs_interskip += dSkipVsInterskip;
-  enc_params->sum_costP += (pEncIn->codingType == VCENC_PREDICTED_FRAME)? uiPBFrameCost:0;
-  enc_params->sum_costB += (pEncIn->codingType == VCENC_BIDIR_PREDICTED_FRAME)? uiPBFrameCost:0;
-  enc_params->sum_intra_vs_interskipP += (pEncIn->codingType == VCENC_PREDICTED_FRAME)? dIntraVsInterskip:0;
-  enc_params->sum_intra_vs_interskipB += (pEncIn->codingType == VCENC_BIDIR_PREDICTED_FRAME)? dIntraVsInterskip:0; 
-  if(pEncIn->gopPicIdx == pEncIn->gopSize-1)//last frame of the current gop. decide the gopsize of next gop.
-  {            
-    dIntraVsInterskip = enc_params->sum_intra_vs_interskip/enc_params->gop_frm_num;
-    dSkipVsInterskip = enc_params->sum_skip_vs_interskip/enc_params->gop_frm_num;
-    enc_params->sum_costB = (enc_params->gop_frm_num>1)?(enc_params->sum_costB/(enc_params->gop_frm_num-1)):0xFFFFFFF;
-    enc_params->sum_intra_vs_interskipB = (enc_params->gop_frm_num>1)?(enc_params->sum_intra_vs_interskipB/(enc_params->gop_frm_num-1)):0xFFFFFFF;
-    //Enabled adaptive GOP size for large resolution
-    if (((enc_params->width * enc_params->height) >= (1280 * 720)) || ((MAX_ADAPTIVE_GOP_SIZE >3)&&((enc_params->width * enc_params->height) >= (416 * 240))))
-    {
-        if ((((double)enc_params->sum_costP/(double)enc_params->sum_costB)<1.1)&&(dSkipVsInterskip >= 0.95))
-        {
-            enc_params->last_gopsize = enc_params->nextGopSize = 1;
-        }
-        else if (((double)enc_params->sum_costP/(double)enc_params->sum_costB)>5)
-        {
-            enc_params->nextGopSize = enc_params->last_gopsize;
-        }
-        else
-        {
-            if( ((enc_params->sum_intra_vs_interskipP > 0.40) && (enc_params->sum_intra_vs_interskipP < 0.70)&& (enc_params->sum_intra_vs_interskipB < 0.10)) )
-            {
-                enc_params->last_gopsize++;
-                if(enc_params->last_gopsize==5 || enc_params->last_gopsize==7)  
-                {
-                    enc_params->last_gopsize++;
-                }
-                enc_params->last_gopsize = MIN(enc_params->last_gopsize, MAX_ADAPTIVE_GOP_SIZE);
-                enc_params->nextGopSize = enc_params->last_gopsize; //
-            }
-            else if (dIntraVsInterskip >= 0.30)
-            {
-                enc_params->last_gopsize = enc_params->nextGopSize = 1; //No B
-            }
-            else if (dIntraVsInterskip >= 0.20)
-            {
-                enc_params->last_gopsize = enc_params->nextGopSize = 2; //One B
-            }
-            else if (dIntraVsInterskip >= 0.10)
-            {
-                enc_params->last_gopsize--;
-                if(enc_params->last_gopsize == 5 || enc_params->last_gopsize==7) 
-                {
-                    enc_params->last_gopsize--;
-                }
-                enc_params->last_gopsize = MAX(enc_params->last_gopsize, 3);
-                enc_params->nextGopSize = enc_params->last_gopsize; //
-            }
-            else
-            {
-                enc_params->last_gopsize++;
-                if(enc_params->last_gopsize==5 || enc_params->last_gopsize==7)  
-                {
-                    enc_params->last_gopsize++;
-                }
-                enc_params->last_gopsize = MIN(enc_params->last_gopsize, MAX_ADAPTIVE_GOP_SIZE);
-                enc_params->nextGopSize = enc_params->last_gopsize; //
-            }
-        }
-    }
-    else
-    {
-      enc_params->nextGopSize = 3;
-    }
-    enc_params->gop_frm_num = 0;
-    enc_params->sum_intra_vs_interskip = 0;
-    enc_params->sum_skip_vs_interskip = 0;
-    enc_params->sum_costP = 0;
-    enc_params->sum_costB = 0;
-    enc_params->sum_intra_vs_interskipP = 0;
-    enc_params->sum_intra_vs_interskipB = 0;
-
-    enc_params->nextGopSize = MIN(enc_params->nextGopSize, MAX_ADAPTIVE_GOP_SIZE);
-  }
-}
-
-static void GetAlignedPicSizebyFormat(VCEncPictureType type, u32 width, u32 height, u32 alignment,
-                                       u32 *luma_Size, u32 *chroma_Size, u32 *picture_Size)
-{
-  u32 luma_stride = 0, chroma_stride = 0;
-  u32 lumaSize = 0, chromaSize = 0, pictureSize = 0;
-
-  VCEncGetAlignedStride(width, type, &luma_stride, &chroma_stride, alignment);
-  switch(type)
-  {
-    case VCENC_YUV420_PLANAR:
-     lumaSize = luma_stride * height;
-     chromaSize = chroma_stride * height/2*2;
-     break;
-    case VCENC_YUV420_SEMIPLANAR:
-    case VCENC_YUV420_SEMIPLANAR_VU:
-     lumaSize = luma_stride * height;
-     chromaSize = chroma_stride * height/2;
-     break;
-    case VCENC_YUV422_INTERLEAVED_YUYV:
-    case VCENC_YUV422_INTERLEAVED_UYVY:
-    case VCENC_RGB565:
-    case VCENC_BGR565:
-    case VCENC_RGB555:
-    case VCENC_BGR555:
-    case VCENC_RGB444:
-    case VCENC_BGR444:
-    case VCENC_RGB888:
-    case VCENC_BGR888:
-    case VCENC_RGB101010:
-    case VCENC_BGR101010:
-     lumaSize = luma_stride * height;
-     chromaSize = 0;
-     break;
-    case VCENC_YUV420_PLANAR_10BIT_I010:
-     lumaSize = luma_stride * height;
-     chromaSize = chroma_stride * height/2*2;
-     break;
-    case VCENC_YUV420_PLANAR_10BIT_P010:
-     lumaSize = luma_stride * height;
-     chromaSize = chroma_stride * height/2;
-     break;
-    case VCENC_YUV420_PLANAR_10BIT_PACKED_PLANAR:
-     lumaSize = luma_stride *10/8 * height;
-     chromaSize = chroma_stride *10/8* height/2*2;
-     break;
-    case VCENC_YUV420_10BIT_PACKED_Y0L2:
-     lumaSize = luma_stride *2*2* height/2;
-     chromaSize = 0;
-     break;
-    default:
-     printf("not support this format\n");
-     chromaSize = lumaSize = 0;
-     break;
-  }
-
-  pictureSize = lumaSize + chromaSize;
-  if (luma_Size != NULL)
-    *luma_Size = lumaSize;
-  if (chroma_Size != NULL)
-    *chroma_Size = chromaSize;
-  if (picture_Size != NULL)
-    *picture_Size = pictureSize;
-}
-

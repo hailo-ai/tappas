@@ -71,3 +71,19 @@ Hierarchy
      internal-offset     : Whether to use Gstreamer offset of internal offset.
                            flags: readable, writable, controllable
                            Boolean. Default: false
+
+Hailo-15
+--------
+HailoCropper can utilize the on-chip DSP (Digital Signal Processor), to perform resize and crop operations.
+
+The DSP is used by default on the Hailo-15 machine, and can be disabled by setting the ``use-dsp`` property.
+When disabled OpenCV will be used (on the CPU) to perform the resize and crop operations.
+
+HailoCropper holds a buffer pool (GstBufferPool) that manages the buffers, used by the DSP.
+The bufferpool is responsible for allocating and freeing the buffers when the reference count of a buffer reaches 0.
+Buffer pool size (maximum buffers that can be allocated simultaneously in the pool) can be controlled using the ``pool-size`` property.
+
+It is recommended to make sure that a buffer is contiguous in memory, before being sent to the DSP.
+Non-contiguous buffers will be copied to a new buffer, before being sent to the DSP.
+
+.. image:: ../resources/cropper_hailo15.png

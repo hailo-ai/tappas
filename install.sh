@@ -93,7 +93,7 @@ function python_venv_create_and_install() {
 
 function install_hailo() {
   if [ "$skip_hailort" = false ]; then
-    sudo dpkg -i ${TAPPAS_WORKSPACE}/hailort/hailort_*_$(dpkg --print-architecture).deb
+    yes N | sudo dpkg -i ${TAPPAS_WORKSPACE}/hailort/hailort_*_$(dpkg --print-architecture).deb
   fi
 
   if [ "$target_platform" != "x86" ]; then

@@ -27,6 +27,15 @@ apt_reqs[13]='cmake'
 apt_reqs[14]='libgstreamer-plugins-base1.0-dev'
 apt_reqs[15]='libzmq3-dev'
 apt_reqs[16]='rsync'
+apt_reqs[17]='git'
+apt_reqs[18]='libgstreamer-plugins-bad1.0-dev'
+apt_reqs[19]='gstreamer1.0-plugins-base'
+apt_reqs[20]='gstreamer1.0-plugins-good'
+apt_reqs[21]='gstreamer1.0-plugins-bad'
+apt_reqs[22]='gstreamer1.0-libav'
+apt_reqs[23]='gstreamer1.0-tools'
+apt_reqs[24]='gstreamer1.0-x'
+
 
 declare -a pkg_config_reqs
 
@@ -80,7 +89,7 @@ function check_system_requirements__pkg_config(){
             found="X"
         else
             found="V"
-            echo "$log_found Package $requrement found." >> $log_file
+            echo "$log_found Package $requirement found." >> $log_file
         fi
         echo -e "Pkg_config-Package\t$requirement\t$found\tRequired" >> $table_file
     done

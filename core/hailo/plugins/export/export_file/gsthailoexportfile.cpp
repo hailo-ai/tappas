@@ -187,6 +187,18 @@ gst_hailoexportfile_transform_ip(GstBaseTransform *trans,
     encoded_roi.AddMember("timestamp (ms)", rapidjson::Value(timenow), encoded_roi.GetAllocator());
     encoded_roi.AddMember("buffer_offset", rapidjson::Value(hailoexportfile->buffer_offset), encoded_roi.GetAllocator());
 
+    // Add the stream-id
+    std::string stream_id = hailo_roi->get_stream_id();
+
+    if (stream_id.length() == 0)
+    {
+        gchar * id = gst_pad_get_stream_id(trans->srcpad);
+        stream_id = std::string(reinterpret_cast<char *>(id));
+        g_free(id);
+    }
+
+    encoded_roi.AddMember("stream_id", stream_id, encoded_roi.GetAllocator() );
+
     // Open the file 
     hailoexportfile->json_file = fopen(hailoexportfile->file_path, "rb+");
 

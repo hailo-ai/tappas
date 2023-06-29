@@ -112,7 +112,7 @@ function main() {
     create_sources
 
     pipeline="gst-launch-1.0 \
-           hailoroundrobin name=fun ! \
+           hailoroundrobin mode=1 name=fun ! \
            queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            hailonet hef-path=$HEF_PATH ! \
            queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

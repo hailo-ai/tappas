@@ -20,12 +20,12 @@ function init_variables() {
     readonly POSE_ESTIMATION_HEF_PATH="$RESOURCES_DIR/joined_centerpose_repvgg_a0_center_nms_joint_nms.hef"
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
-    readonly DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly POSE_ESTIMATION_POSTPROCESS_SO="$POSTPROCESS_DIR/libcenterpose_post.so"
     readonly POSE_ESTIMATION_POSTPROCESS_FUNCTION_NAME="centerpose_416"
     readonly DETECTION_POSTPROCESS_FUNCTION_NAME="yolov5_no_persons"
     readonly STREAM_DISPLAY_SIZE=300
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
+    readonly DEFAULT_JSON_CONFIG_PATH="None" 
 
     num_of_src=8
     debug=false
@@ -128,7 +128,7 @@ function main() {
     determine_screen_size
 
     pipeline="$gst_top_command gst-launch-1.0 \
-         hailoroundrobin funnel-mode=true name=fun ! video/x-raw, width=640, height=640 ! \
+         hailoroundrobin mode=0 name=fun ! video/x-raw, width=640, height=640 ! \
          queue name=hailo_pre_split leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
          hailomuxer name=hailomuxer ! queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailooverlay qos=false ! videoscale n-threads=8 ! video/x-raw,width=300,height=300 ! $streamrouter_disp_element \

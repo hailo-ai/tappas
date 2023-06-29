@@ -31,6 +31,46 @@ std::vector<int> seen_ocr_track_ids;
 const gchar *OCR_LABEL_TYPE = "ocr";
 std::string tracker_name = "hailo_tracker";
 
+void catalog_nv12_mat(std::string text, cv::Mat &mat)
+{
+    // Resize the mat to a presentable size, add padding
+    int target_h = 114;
+    int target_w = 300;
+    cv::Mat resized_nv12 = cv::Mat(target_h, target_w, CV_8UC1);
+    resize_nv12(mat, resized_nv12);
+
+    // Split planes
+    int y_h = target_h * 2 / 3;
+    int y_w = target_w;
+    int uv_h = target_h / 3;
+    int uv_w = target_w / 2;
+    cv::Mat y_mat = cv::Mat(y_h, y_w, CV_8UC1, (char *)resized_nv12.data, resized_nv12.step);
+    cv::Mat uv_mat = cv::Mat(uv_h, uv_w, CV_8UC2, (char *)resized_nv12.data + (y_h * y_w), resized_nv12.step);
+
+    // To make padding, prepare a padded mat and split channels from that mat
+    int padded_h = target_h + 45;
+    cv::Mat padded_nv12 = cv::Mat(padded_h, target_w, CV_8UC1, cv::Scalar(0));
+    int padded_y_h = padded_h * 2 / 3;
+    int padded_y_w = target_w;
+    int padded_uv_h = padded_h / 3;
+    int padded_uv_w = target_w / 2;
+    cv::Mat padded_y_mat = cv::Mat(padded_y_h, padded_y_w, CV_8UC1, (char *)padded_nv12.data, padded_nv12.step);
+    cv::Mat padded_uv_mat = cv::Mat(padded_uv_h, padded_uv_w, CV_8UC2, (char *)padded_nv12.data + (padded_y_h * padded_y_w), padded_nv12.step);
+
+    // Fill the padded image with white padding
+    cv::copyMakeBorder(y_mat, padded_y_mat, 30, 0, 0, 0, cv::BORDER_CONSTANT, cv::Scalar(235));
+    cv::copyMakeBorder(uv_mat, padded_uv_mat, 15, 0, 0, 0, cv::BORDER_CONSTANT, cv::Scalar(128, 128));
+
+    // Draw text on the two channels
+    cv::Point y_position = cv::Point(4, 24);
+    cv::Point uv_position = cv::Point(2, 12);
+    cv::putText(padded_y_mat, text, y_position, cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(65), 2);
+    cv::putText(padded_uv_mat, text, uv_position, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(110, 255), 1);
+
+    CVMatSingleton::GetInstance().set_mat_at_key(singleton_map_key % MAP_LIMIT, padded_nv12);
+    CVMatSingleton::GetInstance().set_mat_type(HAILO_MAT_NV12);
+}
+
 void catalog_yuy2_mat(std::string text, cv::Mat &mat)
 {
     // Resize the mat to a presentable size, add padding
@@ -48,6 +88,7 @@ void catalog_yuy2_mat(std::string text, cv::Mat &mat)
 
     // Set the new license plate in our CV Map singleton
     CVMatSingleton::GetInstance().set_mat_at_key(singleton_map_key % MAP_LIMIT, padded_yuy2);
+    CVMatSingleton::GetInstance().set_mat_type(HAILO_MAT_YUY2);
 }
 
 void catalog_rgb_mat(std::string text, cv::Mat &mat)
@@ -66,9 +107,10 @@ void catalog_rgb_mat(std::string text, cv::Mat &mat)
 
     // Set the new license plate in our CV Map singleton
     CVMatSingleton::GetInstance().set_mat_at_key(singleton_map_key % MAP_LIMIT, padded_image);
+    CVMatSingleton::GetInstance().set_mat_type(HAILO_MAT_RGB);
 }
 
-void catalog_license_plate(std::string label, float confidence, HailoBBox license_plate_box, std::shared_ptr<HailoMat> hmat)
+void catalog_license_plate(std::string label, float confidence, HailoBBox license_plate_box, std::shared_ptr<HailoMat> hmat, HailoROIPtr crop_roi)
 {
     cv::Mat &mat = hmat->get_mat();
     // Prepare the cropped license plate and text
@@ -80,7 +122,7 @@ void catalog_license_plate(std::string label, float confidence, HailoBBox licens
     rect.height = CLAMP(license_plate_box.height() * mat.rows, 0, mat.rows - rect.y);
     if (rect.width == 0 || rect.height == 0)
         return;
-    cv::Mat cropped_image = mat(rect);
+    cv::Mat cropped_image = hmat->crop(crop_roi);
 
     switch (hmat->get_type())
     {
@@ -92,6 +134,11 @@ void catalog_license_plate(std::string label, float confidence, HailoBBox licens
     case HAILO_MAT_RGB:
     {
         catalog_rgb_mat(text, cropped_image);
+        break;
+    }
+    case HAILO_MAT_NV12:
+    {
+        catalog_nv12_mat(text, cropped_image);
         break;
     }
     default:
@@ -150,7 +197,7 @@ void ocr_sink(HailoROIPtr roi, std::shared_ptr<HailoMat> hmat)
                                                                 unique_ids[0]->get_id(),
                                                                 classification);
 
-                catalog_license_plate(license_plate_ocr_label, confidence, license_plate_box, hmat);
+                catalog_license_plate(license_plate_ocr_label, confidence, license_plate_box, hmat, lp_detection);
             }
         }
     }
@@ -160,6 +207,6 @@ void ocr_sink(HailoROIPtr roi, std::shared_ptr<HailoMat> hmat)
 
 void filter(HailoROIPtr roi, GstVideoFrame *frame)
 {
-    std::shared_ptr<HailoMat> hmat = get_mat_by_format(*(&frame->buffer), &frame->info, frame->map, 1, 1);
+    std::shared_ptr<HailoMat> hmat = get_mat_by_format(*(&frame->buffer), &frame->info, 1, 1);
     ocr_sink(roi, hmat);
 }

@@ -2,7 +2,7 @@
   "path": "apps/h8/gstreamer/rockchip/multistream_detection/resources/",
   "requirements": [
     {
-      "bucket": "model_zoo",
+      "bucket": "tappas",
       "source": "rockchip/hefs/yolov5s_nv12.hef",
       "destination": "yolov5s_nv12.hef"
     },

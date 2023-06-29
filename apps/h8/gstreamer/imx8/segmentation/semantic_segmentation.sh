@@ -10,7 +10,7 @@ function init_variables() {
     readonly POSTPROCESS_DIR="/usr/lib/hailo-post-processes"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libsemantic_segmentation.so"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/full_mov_slow.mp4"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/fcn8_resnet_v1_18.hef"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/resnet18_fcn8_fhd.hef"
 
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH

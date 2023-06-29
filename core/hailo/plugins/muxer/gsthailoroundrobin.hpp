@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 /*
  * GStreamer ROUND_ROBIN element
  *
@@ -13,8 +13,12 @@
 
 #include <gst/gst.h>
 #include <vector>
+#include <queue>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
+#include <pthread.h>
+#include <thread>
 
 G_BEGIN_DECLS
 
@@ -33,6 +37,13 @@ G_BEGIN_DECLS
 typedef struct _GstHailoRoundRobin GstHailoRoundRobin;
 typedef struct _GstHailoRoundRobinClass GstHailoRoundRobinClass;
 
+typedef enum
+{
+    GST_HAILO_ROUND_ROBIN_MODE_FUNNEL_MODE = 0,
+    GST_HAILO_ROUND_ROBIN_MODE_BLOCKING = 1,
+    GST_HAILO_ROUND_ROBIN_MODE_NON_BLOCKING = 2,
+} GstHailoRoundRobinMode;
+
 /**
  * GstHailoRoundRobin:
  *
@@ -41,12 +52,23 @@ typedef struct _GstHailoRoundRobinClass GstHailoRoundRobinClass;
 struct _GstHailoRoundRobin
 {
     GstElement element;
-    /*< private >*/
     GstPad *srcpad;
     size_t current_pad_num;
-    gboolean funnel_mode;
-    std::vector<std::unique_ptr<std::mutex>> mutexes;
-    std::vector<std::unique_ptr<std::condition_variable>> condition_vars;
+    GstHailoRoundRobinMode mode;
+    uint retries_num;
+    uint queue_size;
+    uint wait_time;
+    uint preroll_frames;
+    std::vector<std::unique_ptr<std::mutex>> mutexes_blocking;
+    std::vector<std::unique_ptr<std::mutex>> mutexes_non_blocking;
+    std::unique_ptr<std::shared_mutex> counter_mutex;
+    int preroll_buffer_counter;
+    std::vector<std::unique_ptr<std::condition_variable>> condition_vars_blocking;
+    std::vector<std::unique_ptr<std::condition_variable>> condition_vars_non_blocking;
+    std::vector<std::unique_ptr<std::queue<GstBuffer *>>> pad_queues;
+    std::thread *thread;
+    gboolean stop_thread;
+    std::unique_ptr<std::shared_mutex> current_pad_mutex;
 };
 
 struct _GstHailoRoundRobinClass

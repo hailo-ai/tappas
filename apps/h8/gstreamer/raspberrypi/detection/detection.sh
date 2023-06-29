@@ -9,12 +9,11 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/raspberrypi/detection/resources"
 
-    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
 
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
@@ -33,7 +32,6 @@ function init_variables() {
     camera_input_width=640
     camera_input_height=640
     camera_input_format="RGB"
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH 
 }
 
 function print_help_if_needed() {
@@ -142,7 +140,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter function-name=$network_name config-path=$json_config_path so-path=$postprocess_so qos=false ! \
+    hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \

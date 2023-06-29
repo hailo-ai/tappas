@@ -10,7 +10,7 @@
 
 #include "yolo_postprocess.hpp"
 #include "common/nms.hpp"
-#include "common/json_config.hpp"
+#include "json_config.hpp"
 
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"

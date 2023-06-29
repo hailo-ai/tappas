@@ -15,6 +15,7 @@ public:
     float score_threshold;
     int num_anchors;
     std::vector<int> outputs_size;
+    std::vector<std::string> outputs_name;
     std::vector<xt::xarray<float>> anchors;
     std::vector<int> input_shape;
     std::vector<int> strides;
@@ -25,6 +26,7 @@ public:
         iou_threshold = 0.6;
         score_threshold = 0.25;
         outputs_size = {20, 40, 80};
+        outputs_name = {"yolov5n_seg/conv63", "yolov5n_seg/conv48", "yolov5n_seg/conv55", "yolov5n_seg/conv61"};
         anchors = {{116, 90, 156, 198, 373, 326},
                                             {30, 61, 62, 45, 59, 119},
                                             {10, 13, 16, 30, 33, 23} };

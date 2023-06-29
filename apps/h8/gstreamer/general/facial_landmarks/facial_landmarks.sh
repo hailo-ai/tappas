@@ -9,14 +9,12 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/facial_landmarks/resources"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libfacial_landmarks_post.so"
-    readonly DEFAULT_DRAW_SO="$POSTPROCESS_DIR/libfacial_landmarks_draw.so"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/faces_120_120.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/tddfa_mobilenet_v1.hef"
 
     hef_path=$DEFAULT_HEF_PATH
     input_source=$DEFAULT_VIDEO_SOURCE
     postprocess_so=$DEFAULT_POSTPROCESS_SO
-    draw_so=$DEFAULT_DRAW_SO
 
     print_gst_launch_only=false
     additional_parameters=""

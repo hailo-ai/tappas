@@ -26,6 +26,7 @@
 
 typedef enum
 {
+    HAILO_MAT_NONE = -1,
     HAILO_MAT_RGB,
     HAILO_MAT_RGBA,
     HAILO_MAT_YUY2,
@@ -121,11 +122,18 @@ public:
      */
     virtual cv::Mat crop(HailoROIPtr crop_roi)
     {
-        auto bbox = hailo_common::create_flattened_bbox(crop_roi->get_bbox(), crop_roi->get_scaling_bbox());
-        cv::Rect rect = get_bounding_rect(bbox, m_width, m_height);
+        cv::Rect rect = get_crop_rect(crop_roi);
         cv::Mat cropped_cv_mat = get_mat()(rect);
         return cropped_cv_mat;
     }
+
+    virtual cv::Rect get_crop_rect(HailoROIPtr crop_roi)
+    {
+        auto bbox = hailo_common::create_flattened_bbox(crop_roi->get_bbox(), crop_roi->get_scaling_bbox());
+        cv::Rect rect = get_bounding_rect(bbox, m_width, m_height);
+        return rect;
+    }
+
     /**
      * @brief Get the type of mat
      *
@@ -439,9 +447,8 @@ public:
         cv::blur(target_roi, target_roi, ksize);
     }
 
-    virtual cv::Mat crop(HailoROIPtr crop_roi)
+    virtual cv::Rect get_crop_rect(HailoROIPtr crop_roi)
     {
-        // Wrap the mat with Y and UV channel windows
         auto bbox = hailo_common::create_flattened_bbox(crop_roi->get_bbox(), crop_roi->get_scaling_bbox());
 
         // The Y channel is packed before the U & V on it's own
@@ -451,6 +458,14 @@ public:
         y_rect.height = floor_to_even_number(y_rect.height);
         y_rect.x = floor_to_even_number(y_rect.x);
         y_rect.y = floor_to_even_number(y_rect.y);
+
+        return y_rect;
+    }
+
+    virtual cv::Mat crop(HailoROIPtr crop_roi)
+    {
+        // Wrap the mat with Y and UV channel windows
+        cv::Rect y_rect = get_crop_rect(crop_roi);
 
         // The U and V channels are interlaced together after the Y channel,
         // so they need to be cropped separately

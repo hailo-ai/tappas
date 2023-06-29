@@ -6,6 +6,9 @@ CURRENT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 function init_variables() {
     print_help_if_needed $@
 
+    # Temporary file
+    readonly FILE_LOADED_TO_CACHE_PATH=/tmp/hailo_lpr
+
     # Basic Directories
     readonly POSTPROCESS_DIR="/usr/lib/hailo-post-processes"
     readonly CROPPING_ALGORITHMS_DIR="$POSTPROCESS_DIR/cropping_algorithms"
@@ -98,10 +101,24 @@ function parse_args() {
     done
 }
 
+function load_file_to_cache() {
+    # Loading the file to the cache is required after every reboot when using iMX8 based machines
+    # This file is an indication that we already loaded the file to the cache
+    if [ ! -f "$FILE_LOADED_TO_CACHE_PATH" ]; then
+        load_file_to_cache_pipeline="$source_element ! fakesink sync=false"
+        eval "gst-launch-1.0 $load_file_to_cache_pipeline"
+
+        # Indicate that the file is already loaded
+        touch "$FILE_LOADED_TO_CACHE_PATH"
+    fi
+}
+
 init_variables $@
 parse_args $@
 source_element="filesrc location=$input_source name=src_0 ! rawvideoparse format=yuy2 width=1920 height=1080"
 internal_offset=true
+load_file_to_cache
+
 
 function create_lp_detection_pipeline() {
     pipeline_1="queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

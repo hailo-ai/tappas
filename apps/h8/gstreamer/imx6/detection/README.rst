@@ -8,6 +8,9 @@ Detection
 The purpose of ``detection.sh`` is to demonstrate object detection using a camera/file as input with i.MX6 hardware accelerators.
 This is done by running a ``single-stream object detection pipeline`` on top of GStreamer i.MX6 elements using the Hailo-8 device.
 
+.. warning:: 
+    This application is currently not supported on i.MX6
+
 .. raw:: html
   
   <div align="center"><img src="readme_resources/pipeline_run.gif"/></div>

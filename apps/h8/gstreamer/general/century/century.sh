@@ -9,12 +9,11 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/century/resources"
 
-    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection_5m.mp4"
     readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
     readonly DEVICE_COUNT=4
     readonly DEVICE_PREFIX="[-]"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5m.json"
     readonly DEFAULT_NETWORK_NAME="yolov5"
 
     network_name=$DEFAULT_NETWORK_NAME
@@ -24,7 +23,6 @@ function init_variables() {
     device_count=$DEVICE_COUNT
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH
 
     print_gst_launch_only=false
     additional_parameters=""
@@ -73,7 +71,6 @@ function parse_args() {
             if [ $2 == "yolox" ]; then
                 network_name="yolox"
                 hef_path="$RESOURCES_DIR/yolovx_l_leaky.hef"
-                json_config_path="$RESOURCES_DIR/configs/yolox.json"
             elif [ $2 != "yolov5m" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
@@ -115,16 +112,16 @@ else
 fi
 
 PIPELINE="gst-launch-1.0 \
-    $source_element ! videoconvert ! \
-    videoscale ! video/x-raw, pixel-aspect-ratio=1/1 ! \
+    $source_element ! videoconvert qos=false ! \
+    videoscale qos=false ! video/x-raw, pixel-aspect-ratio=1/1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path device-count=$device_count scheduling-algorithm=0 is-active=true ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
+    hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailooverlay qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    videoconvert ! \
+    videoconvert qos=false n-threads=4 ! \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false ${additional_parameters}"
 
 echo "Running $network_name"

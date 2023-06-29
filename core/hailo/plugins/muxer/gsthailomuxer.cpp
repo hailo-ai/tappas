@@ -7,7 +7,6 @@
  * @title: hailomuxer
  *
  * Takes packets from various input sinks into one output source.
- * TODO: Add description
  *
  */
 #include "gsthailomuxer.hpp"

@@ -12,11 +12,10 @@ function init_variables() {
     readonly POSE_ESTIMATION_HEF_PATH="$RESOURCES_DIR/centerpose_regnetx_1.6gf_fpn.hef"
 
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
-    readonly DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly POSE_ESTIMATION_POSTPROCESS_SO="$POSTPROCESS_DIR/libcenterpose_post.so"
     readonly POSE_ESTIMATION_POSTPROCESS_FUNCTION_NAME="centerpose"
     readonly DETECTION_POSTPROCESS_FUNCTION_NAME="yolov5_no_persons"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
 
     num_of_src=8
     debug=false
@@ -25,7 +24,6 @@ function init_variables() {
     decode_element="decodebin"
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=640 sink_1::ypos=0 sink_2::xpos=1280 sink_2::ypos=0 sink_3::xpos=1920 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=640 sink_5::xpos=640 sink_5::ypos=640 sink_6::xpos=1280 sink_6::ypos=640 sink_7::xpos=1920 sink_7::ypos=640"
     print_gst_launch_only=false
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH 
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
 }
@@ -101,13 +99,13 @@ function main() {
     create_sources
 
     pipeline="$gst_top_command gst-launch-1.0 \
-         hailoroundrobin name=fun ! queue name=hailo_pre_split leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
+         hailoroundrobin mode=1 name=fun ! queue name=hailo_pre_split leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! tee name=splitter \
          hailomuxer name=hailomuxer ! queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailooverlay qos=false ! $streamrouter_disp_element \
          splitter. ! queue name=hailo_pre_infer_q_1 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailonet hef-path=$DETECTION_HEF_PATH scheduling-algorithm=0 is-active=true ! \
          queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-         hailofilter so-path=$DETECTION_POSTPROCESS_SO config-path=$json_config_path function-name=$DETECTION_POSTPROCESS_FUNCTION_NAME qos=false ! hailomuxer. \
+         hailofilter so-path=$DETECTION_POSTPROCESS_SO function-name=$DETECTION_POSTPROCESS_FUNCTION_NAME qos=false ! hailomuxer. \
          splitter. ! queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailonet hef-path=$POSE_ESTIMATION_HEF_PATH scheduling-algorithm=0 is-active=true ! \
          queue name=hailo_postprocess1 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

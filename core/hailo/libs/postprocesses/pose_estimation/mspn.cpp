@@ -9,7 +9,7 @@
 
 #include "mspn.hpp"
 #include "common/tensors.hpp"
-#include "common/json_config.hpp"
+#include "json_config.hpp"
 
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"

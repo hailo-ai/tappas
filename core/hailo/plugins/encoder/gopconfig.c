@@ -284,12 +284,12 @@ static int HEVCReadGopConfig (char *fname, char **config, VCEncGopConfig *gopCfg
   return ret;
 }
 
-int VCEncInitGopConfigs (int gopSize, char *gopCfgName, VCEncGopConfig *gopCfg, u8 *gopCfgOffset)
+int VCEncInitGopConfigs (int gopSize, char *gopCfgName, VCEncGopConfig *gopCfg, u8 *gopCfgOffset, int bFrameQpDelta, bool codecH264)
 {
   int i, pre_load_num;
   char *fname = gopCfgName;
   char **default_configs[8] = {
-              RpsDefault_GOPSize_1,
+              codecH264?RpsDefault_H264_GOPSize_1:RpsDefault_GOPSize_1,
               RpsDefault_GOPSize_2,
               RpsDefault_GOPSize_3,
               RpsDefault_GOPSize_4,
@@ -340,6 +340,7 @@ int VCEncInitGopConfigs (int gopSize, char *gopCfgName, VCEncGopConfig *gopCfg, 
   }
 
   if (gopCfg->ltrInterval > 0)
+  {
     for(i = 0; i < (gopSize == 0 ? gopCfg->size : gopCfgOffset[gopSize]); i++)
     {
       // when use long-term, change P to B in default configs (used for last gop)
@@ -347,6 +348,19 @@ int VCEncInitGopConfigs (int gopSize, char *gopCfgName, VCEncGopConfig *gopCfg, 
       if (cfg->codingType == VCENC_PREDICTED_FRAME)
         cfg->codingType = VCENC_BIDIR_PREDICTED_FRAME;
     }
+  }
+
+  //Compatible with old bFrameQpDelta setting
+  if (bFrameQpDelta >= 0)
+  {
+    for (i = 0; i < gopCfg->size; i++)
+    {
+      VCEncGopPicConfig *cfg = &(gopCfg->pGopPicCfg[i]);
+      if (cfg->codingType == VCENC_BIDIR_PREDICTED_FRAME)
+        cfg->QpOffset = bFrameQpDelta;
+    }
+  }
+
   return 0;
 }
 
@@ -388,38 +402,36 @@ VCEncPictureCodingType find_next_pic_internal(VCEncIn *encIn, EncoderParams *enc
   //next picture cnt
   enc_params->picture_cnt = picture_cnt_tmp + delta_poc_to_next;
 
-  //Handle Tail (seqence end or cut by an I frame) 
+  //Handle Tail (cut by an I frame) 
   {
     //just finished a GOP and will jump to a P frame
     if (encIn->gopPicIdx == 0 && delta_poc_to_next > 1)
     {
-       int gop_end_pic = enc_params->picture_cnt;
-       int gop_shorten = 0, gop_shorten_idr = 0, gop_shorten_tail = 0;
+      int gop_end_pic = enc_params->picture_cnt;
+      int gop_shorten = 0;
 
-       //cut  by an IDR
-       if ((enc_params->idr_interval) && ((gop_end_pic - enc_params->last_idr_picture_cnt) >= enc_params->idr_interval))
-          gop_shorten_idr = 1 + ((gop_end_pic - enc_params->last_idr_picture_cnt) - enc_params->idr_interval);
+      //cut by an IDR
+      if ((enc_params->idr_interval) && ((gop_end_pic - enc_params->last_idr_picture_cnt) >= enc_params->idr_interval))
+        gop_shorten = 1 + ((gop_end_pic - enc_params->last_idr_picture_cnt) - enc_params->idr_interval);
 
-       gop_shorten = gop_shorten_idr > gop_shorten_tail ? gop_shorten_idr : gop_shorten_tail;
+      if (gop_shorten >= next_gop_size)
+      {
+        //for gopsize = 1
+        enc_params->picture_cnt = picture_cnt_tmp + 1 - cur_poc;
+      }
+      else if (gop_shorten > 0)
+      {
+        //reduce gop size
+        const int max_reduced_gop_size = 4;
+        next_gop_size -= gop_shorten;
+        if (next_gop_size > max_reduced_gop_size)
+          next_gop_size = max_reduced_gop_size;
 
-       if (gop_shorten >= next_gop_size)
-       {
-         //for gopsize = 1
-         enc_params->picture_cnt = picture_cnt_tmp + 1 - cur_poc;
-       }
-       else if (gop_shorten > 0)
-       {
-         //reduce gop size
-         const int max_reduced_gop_size = 4;
-         next_gop_size -= gop_shorten;
-         if (next_gop_size > max_reduced_gop_size)
-           next_gop_size = max_reduced_gop_size;
-
-         idx = gopCfgOffset[next_gop_size];
-         delta_poc_to_next = gopCfg->pGopPicCfg[idx].poc - cur_poc;
-         enc_params->picture_cnt = picture_cnt_tmp + delta_poc_to_next;
-       }
-       encIn->gopSize = next_gop_size;
+        idx = gopCfgOffset[next_gop_size];
+        delta_poc_to_next = gopCfg->pGopPicCfg[idx].poc - cur_poc;
+        enc_params->picture_cnt = picture_cnt_tmp + delta_poc_to_next;
+      }
+      encIn->gopSize = next_gop_size;
     }
 
     encIn->poc += enc_params->picture_cnt - picture_cnt_tmp;

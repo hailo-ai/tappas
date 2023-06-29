@@ -29,7 +29,7 @@ class VideoFrame:
         
         python_version = platform.sys.version_info
         
-        if python_version.major is not 3:
+        if python_version.major != 3:
             raise RuntimeError(f"Python {python_version.major}.{python_version.minor} is not supported")
         
         if python_version.minor < 10:

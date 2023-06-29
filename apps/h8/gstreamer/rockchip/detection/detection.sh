@@ -10,7 +10,7 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/rockchip/detection/resources"
 
-    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
@@ -63,6 +63,7 @@ function parse_args() {
         if [ $1 == "--network" ]; then
             if [ $2 == "yolov4" ]; then
                 network_name="yolov4"
+                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
                 hef_path="$RESOURCES_DIR/yolov4_leaky.hef"
                 batch_size="4"
                 json_config_path="$RESOURCES_DIR/configs/yolov4.json"
@@ -70,6 +71,7 @@ function parse_args() {
                 network_name="yolov3"
                 hef_path="$RESOURCES_DIR/yolov3.hef"
                 batch_size="4"
+                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
                 json_config_path="$RESOURCES_DIR/configs/yolov3.json"
             elif [ $2 == "nanodet" ]; then
                 network_name="nanodet_repvgg"

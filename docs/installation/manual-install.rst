@@ -2,8 +2,8 @@
 Manual installation
 ===================
 
-Manual installing TAPPAS requires preparations, our recommended method is to begin with ``Hailo SW Suite`` or ``Pre-built Docker image``.
-In this guide we instruct how to install our required components manually.
+The manual installation of TAPPAS requires preparations, our recommended method is to begin with ``Hailo SW Suite`` or ``Pre-built Docker image``.
+In this guide we instruct how to install the required components manually.
 
 .. note::
     Only Ubuntu 20.04 and 22.04 are supported
@@ -77,7 +77,7 @@ To install the above packages, run the following command:
     
     sudo apt-get install -y rsync ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-9 g++-9 cmake git libzmq3-dev
 
-The following packages are required as well, and see their installation instructions below:
+The following packages are required as well, and their installation instructions can be viewed from the links below:
 
 * `OpenCV installation`_.
 * `GStreamer installation`_.
@@ -151,7 +151,7 @@ Please refer to: `PyGobject offical installation guide <https://pygobject.readth
 TAPPAS installation
 -------------------
 
-On x86, run: 
+On most platforms (such as x86-based platforms), run:
 
 .. code-block:: sh
 
@@ -159,13 +159,21 @@ On x86, run:
 
 And then, `Make sure that HailoRT works <./verify_hailoRT.rst>`_
 
-On Raspberry Pi, run: 
+Raspberry Pi 4 has its own set of example applications, so the installation command on this platform is slightly different:
 
 .. code-block:: sh
 
     ./install.sh --skip-hailort --target-platform rpi
 
-And then, `Get back to Raspberry Pi section <./raspberry-pi-install.rst>`_
+And then, `Go back to Raspberry Pi section <./raspberry-pi-install.rst>`_
+
+On Rockchip, run: 
+
+.. code-block:: sh
+
+    ./install.sh --skip-hailort --target-platform rockchip
+
+And then, `Go back to Rockchip section <./rockchip.rst>`_
 
 On Rockchip, run: 
 
@@ -191,7 +199,7 @@ Remove old ``libgsthailotools.so``
 
    rm /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailotools.so
 
-And then, `TAPPAS installation section`_
+and then, `TAPPAS installation section`_
 
 Troubleshooting
 ---------------
@@ -199,13 +207,13 @@ Troubleshooting
 Cannot allocate memory in static TLS block
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In some sceneraios (especially aarch64), you might face the following error:
+In some sceneraios (especially aarch64), you might experience the following:
 
 .. code-block:: sh
 
     (gst-plugin-scanner:15): GStreamer-WARNING **: 13:58:20.557: Failed to load plugin '/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstlibav.so': /lib/aarch64-linux-gnu/libgomp.so.1: cannot allocate memory in static TLS block 
 
-The solution is to export an enviroment variable:
+The solution is to export an environment variable:
 
 .. code-block:: sh
 

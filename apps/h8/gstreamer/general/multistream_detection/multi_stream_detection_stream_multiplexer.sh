@@ -8,9 +8,8 @@ function init_variables() {
 
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/multistream_detection/resources"
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
-    readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
+    readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
     readonly HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
 
     num_of_src=12
     additional_parameters=""
@@ -18,7 +17,6 @@ function init_variables() {
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=640 sink_1::ypos=0 sink_2::xpos=1280 sink_2::ypos=0 sink_3::xpos=1920 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=640 sink_5::xpos=640 sink_5::ypos=640 sink_6::xpos=1280 sink_6::ypos=640 sink_7::xpos=1920 sink_7::ypos=640 sink_8::xpos=0 sink_8::ypos=1280 sink_9::xpos=640 sink_9::ypos=1280 sink_10::xpos=1280 sink_10::ypos=1280 sink_11::xpos=1920 sink_11::ypos=1280 sink_12::xpos=0 sink_12::ypos=1920 sink_13::xpos=640 sink_13::ypos=1920 sink_14::xpos=1280 sink_14::ypos=1920 sink_15::xpos=1920 sink_15::ypos=1920"
     print_gst_launch_only=false
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH         
 }
 
 function print_usage() {
@@ -74,7 +72,7 @@ function create_sources() {
                 queue name=hailo_pre_infer_q_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                 hailonet hef-path=$HEF_PATH scheduling-algorithm=1 batch-size=1 vdevice-key=1 ! \
                 queue name=hailo_postprocess0_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                hailofilter so-path=$POSTPROCESS_SO config-path=$json_config_path qos=false ! \
+                hailofilter so-path=$POSTPROCESS_SO qos=false ! \
                 queue name=hailo_draw0_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                 hailooverlay ! \
                 queue name=comp_q_$n leaky=downstream max-size-buffers=30 \

@@ -43,7 +43,7 @@ function print_usage() {
     echo "  --num-of-sources NUM            Setting number of sources to given input (default value is 4)"
     echo "  --print-gst-launch              Print the ready gst-launch command without running it"
     echo "  --online-dewarp                 Perform online dewarping"
-    echo "  --tcp-address              If specified, set the sink to a TCP client (expected format is 'host:port')"
+    echo "  --tcp-address              Used for TAPPAS GUI, switchs the sink to TCP client"
     exit 0
 }
 
@@ -79,8 +79,8 @@ function parse_args() {
             tcp_host=$(echo $2 | awk -F':' '{print $1}')
             tcp_port=$(echo $2 | awk -F':' '{print $2}')
             video_sink="queue name=queue_before_sink leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                        x264enc tune=zerolatency ! \
-                        queue max-size-bytes=0 max-size-time=0 ! matroskamux ! tcpclientsink host=$tcp_host port=$tcp_port" 
+                        videoscale ! video/x-raw,width=836,height=546,format=RGB ! \
+                        queue max-size-bytes=0 max-size-time=0 ! tcpclientsink host=$tcp_host port=$tcp_port" 
 
             shift
         else
@@ -134,7 +134,7 @@ function main() {
         agg1. agg1."
 
     pipeline="gst-launch-1.0 \
-        hailoroundrobin name=fun ! \
+        hailoroundrobin mode=1 name=fun ! \
         queue name=hailo_pre_convert_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         videoconvert n-threads=1 qos=false ! video/x-raw,format=RGB ! \
         $dewarp_element \
