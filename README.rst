@@ -69,7 +69,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.13.
+    This version is compatible with HailoRT v4.14.
 
 
 Installation
