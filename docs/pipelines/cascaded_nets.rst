@@ -6,12 +6,12 @@ Cascaded Networks Structure
 .. image:: ../../resources/cascaded_nets_pipeline.png
 
 
-This page provides a drill-down into the template of our cascaded networks pipelines with a focus on explaining the ``GStreamer`` pipeline.
+This section provides a drill-down into the template of our cascaded network pipelines with a focus on explaining the ``GStreamer`` pipeline.
 
-Example pipeline
+Example Pipeline
 ----------------
 
-First, we will declare two sub-pipelines, these pipelines are derived from our `Single network template <single_network.rst>`_
+First, it is necessary to declare two sub-pipelines, these pipelines are derived from our `Single network template <single_network.rst>`_
 
 .. code-block:: sh
 
@@ -30,7 +30,7 @@ First, we will declare two sub-pipelines, these pipelines are derived from our `
        hailofilter so-path=$NETWORK_TWO_SO function-name=$NETWORK_TWO_FUNC_NAME qos=false ! \
        queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"
 
-Then, we insert them into the full pipeline:
+Next, insert them into the full pipeline:
 
 .. code-block:: sh
 
@@ -55,7 +55,7 @@ Then, we insert them into the full pipeline:
        queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! videoconvert ! \
        fpsdisplaysink video-sink=xvimagesink name=hailo_display sync=false text-overlay=false ${additional_parameters}
 
-Let's explain this pipeline section by section:
+To clarify the user's understanding pipeline is described section by section:
 
 .. code-block:: sh
 
@@ -93,7 +93,7 @@ The first part of the cascading network pipeline, passes the original frame on t
        agg. ! queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
        hailooverlay ! \
 
-Aggregates all objcts to the original frame, and draws them over the frame using the `hailooverlay <../elements/hailo_overlay.rst>`_ with specific drawing function.
+Aggregates all objects to the original frame, and draws them over the frame using the `hailooverlay <../elements/hailo_overlay.rst>`_ with specific drawing function.
 
 .. code-block:: sh
 

@@ -28,6 +28,10 @@ function init_variables() {
     hef_path=$DEFAULT_HEF_PATH
     crop_so=$WHOLE_BUFFER_CROP_SO
     json_config_path="null"
+    nms_score_threshold=0.3 
+    nms_iou_threshold=0.45
+
+    thresholds_str="nms-score-threshold=${nms_score_threshold} nms-iou-threshold=${nms_iou_threshold} output-format-type=HAILO_FORMAT_TYPE_FLOAT32"
 
     print_gst_launch_only=false
     additional_parameters=""
@@ -73,22 +77,26 @@ function parse_args() {
                 batch_size="4"
                 json_config_path="$RESOURCES_DIR/configs/yolov4.json"
                 postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
+                thresholds_str=""
             elif [ $2 == "yolov3" ]; then
                 network_name="yolov3"
                 hef_path="$RESOURCES_DIR/yolov3.hef"
                 batch_size="4"
                 json_config_path="$RESOURCES_DIR/configs/yolov3.json"
                 postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
+                thresholds_str=""
             elif [ $2 == "mobilenet_ssd" ]; then
                 network_name="mobilenet_ssd"
                 hef_path="$RESOURCES_DIR/ssd_mobilenet_v1.hef"
                 postprocess_so="$POSTPROCESS_DIR/libmobilenet_ssd_post.so"
                 json_config_path="null"
+                thresholds_str="output-format-type=HAILO_FORMAT_TYPE_FLOAT32"
             elif [ $2 == "nanodet" ]; then
                 network_name="nanodet_repvgg"
                 hef_path="$RESOURCES_DIR/nanodet_repvgg.hef"
                 postprocess_so="$POSTPROCESS_DIR/libnanodet_post.so"
                 json_config_path="null"
+                thresholds_str=""
             elif [ $2 != "yolov5" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
@@ -150,7 +158,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     agg1. \
     cropper1. ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size ! \
+        hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size $thresholds_str ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

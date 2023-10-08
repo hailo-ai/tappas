@@ -54,31 +54,26 @@ if get_option('target_platform') == 'hailo15'
         'dsp/gsthailodsp.c',
         'dsp/gsthailodspbufferpool.cpp',
         'dsp/gsthailodspbufferpoolutils.cpp',
-        'dsp/osd/osd.cpp',
-        'dsp/osd/gsthailoosd.cpp',
         'dsp/gsthailodspbasetransform.cpp',
         'dsp/upload/gsthailoupload.cpp',
         'dsp/upload2/gsthailoupload2.cpp',
-        'dsp/gsthailovideoscale.cpp',
-        'encoder/hailoencoder.c',
-        'encoder/gopconfig.c',
-        'encoder/gsthailoh265enc.c',
-        'encoder/gsthailoh264enc.c'
+        'dsp/gsthailovideoscale.cpp'
     ]
     gsthailotools_deps += [dsp_dep]
     common_args += ['-DHAILO15_TARGET']
     hailo_link_args += sysroot_arg
-    hailo_link_args += ['-lhantro_vc8000e', '-lm']
+elif get_option('target_platform') == 'imx8' 
+    common_args += ['-DIMX8_TARGET']
+elif get_option('target_platform') == 'imx6'
+    common_args += ['-DIMX6_TARGET']
 endif
-
-    
 
 ################################################
 # Hailo Gstreamer Shared Library
 ################################################
 shared_library('gsthailotools',
     plugin_sources,
-    cpp_args : hailo_lib_args + common_args + sysroot_arg+['-pthread'],
+    cpp_args : hailo_lib_args + common_args + sysroot_arg + ['-pthread'],
     c_args : hailo_lib_args + common_args + sysroot_arg,
     link_args: hailo_link_args,
     include_directories: [hailo_general_inc, xtensor_inc, rapidjson_inc, hailo_mat_inc],

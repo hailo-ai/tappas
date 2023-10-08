@@ -94,7 +94,7 @@ PIPELINE="gst-launch-1.0 \
     fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
     t. ! \
     videoscale ! queue ! \
-    hailonet hef-path=$hef_path is-active=true scheduling-algorithm=0 vdevice-key=$DEFAULT_VDEVICE_KEY net-name=$detection_net_name ! \
+    hailonet hef-path=$hef_path is-active=true scheduling-algorithm=0 vdevice-key=$DEFAULT_VDEVICE_KEY net-name=$detection_net_name output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$detection_post_so function-name=mobilenet_ssd_merged qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

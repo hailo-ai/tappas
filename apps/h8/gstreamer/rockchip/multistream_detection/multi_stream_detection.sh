@@ -104,7 +104,7 @@ function main() {
              videoscale qos=false !  \
              video/x-raw, format=NV12, width=640, height=640 ! \
              queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-             hailonet hef-path=$HEF_PATH is-active=true batch-size=$BATCH_SIZE ! \
+             hailonet hef-path=$HEF_PATH is-active=true batch-size=$BATCH_SIZE output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
              queue name=hailo_postprocess0 leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
              hailofilter so-path=$POSTPROCESS_SO qos=false ! \
              hmux. hmux. ! \

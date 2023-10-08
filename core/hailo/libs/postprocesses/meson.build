@@ -173,23 +173,6 @@ shared_library('facial_landmarks_post',
 )
 
 ################################################
-# YOLACT SOURCES
-################################################
-yolact_post_sources = [
-    'instance_segmentation/yolact.cpp',
-]
-
-shared_library('yolact_post',
-    yolact_post_sources,
-    cpp_args : hailo_lib_args,
-    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc,
-    dependencies : post_deps,
-    gnu_symbol_visibility : 'default',
-    install: true,
-    install_dir: post_proc_install_dir,
-)
-
-################################################
 # YOLOV5SEG SOURCES
 ################################################
 yolov5seg_post_sources = [

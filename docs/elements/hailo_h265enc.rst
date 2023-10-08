@@ -11,7 +11,7 @@ Overview
 Parameters
 ^^^^^^^^^^
 
-| The hailoh265enc element provides a veriaty of properties that control the encoding performance and quality.
+| The hailoh265enc element provides a variety of properties that control the encoding performance and quality.
 | Among those properties are the encoding profile, bitrate, encoding level, etc...
 | When a property has the "changeable in NULL, READY, PAUSED or PLAYING state" flag, it means that it can be changed during the pipeline.
 

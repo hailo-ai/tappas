@@ -1,11 +1,11 @@
-Hailo On Screen Display
+Hailo On-Screen Display
 =======================
 
 Overview
 --------
 
 | HailoOSD is an element which enables the user to draw static text, images, and timestamps on GstBuffers **using the DSP provided in Hailo-15**.
-  By offloading the image blending to the DSP, high performance overlays can be acheived.
+  By offloading the image blending to the DSP, high performance overlays can be achieved.
   The DSP also supports transparent blending, allowing HailoOSD to draw image files with transparency.
 | **Currently only NV12 pipelines are supported by HailoOSD.**
 

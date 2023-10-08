@@ -1,19 +1,19 @@
 function gst_set_debug() {
     # set gstreamer debug
     export HAILO_PROFILE_LOCATION=/tmp/profile
-    export GST_DEBUG="GST_TRACER:7"
+    export GST_DEBUG="GST_TRACER:7,GST_PIPELINE:4"
     export GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log
     export GST_DEBUG_NO_COLOR=1
 
     if [[ "$1" == "-r" ]]; then
         echo "Exporting in reduced mode"
-        export GST_TRACERS="cpuusage;proctime;interlatency;framerate;queuelevel;graphic"
+        export GST_TRACERS="cpuusage;proctime;interlatency;framerate;queuelevel;bufferdrop;graphic"
     else
-        export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;graphic"
+        export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;bufferdrop;graphic"
     fi
 
     echo 'Options for TRACERS:"'
-    echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;graphic"'
+    echo 'export GST_TRACERS="cpuusage;proctime;interlatency;scheduletime;bitrate;framerate;queuelevel;threadmonitor;numerator;buffer;detections;bufferdrop;graphic"'
 }
 
 function gst_set_graphic() {
@@ -47,6 +47,14 @@ function gst_prepare_tracers_dir() {
     fi
 
     $TAPPAS_WORKSPACE/tools/trace_analyzer/split_traces.sh $split_traces_dir
+    
+    pipeline=$(cat $GST_DEBUG_FILE | grep GST_PIPELINE | grep "parsing pipeline description" | head -n 1 | awk -F"'" '{print $2}')
+    
+    if [ -n "$pipeline" ]; then
+        echo $pipeline > $split_traces_dir/pipeline.log
+    fi
+
+
     echo "Splited tracers dir: $split_traces_dir"
 }
 

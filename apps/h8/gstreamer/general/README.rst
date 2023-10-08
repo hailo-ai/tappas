@@ -1,11 +1,11 @@
 
-GStreamer based general applications
+GStreamer Based General Applications
 ================================
 
-Where should I start?
----------------------
+Where to Begin?
+---------------
 
-That's a great question! Hailo provides a `Sanity Pipeline <sanity_pipeline/README.rst>`_ that helps you verify that the installation phase went well. This is a good starting point.
+For the starting point Hailo provides a `Sanity Pipeline <sanity_pipeline/README.rst>`_ that helps verify that the installation phase went well.
 
 .. important:: Example applications performance varies on different hosts (affected by the host's processing power and throughput).
 

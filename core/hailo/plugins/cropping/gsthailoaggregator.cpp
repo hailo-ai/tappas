@@ -350,6 +350,7 @@ gst_hailoaggregator_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
     }
     lock.unlock();
 
+    
     hailoaggregator_class->handle_main_roi_post_aggregation(hailoaggregator, hailo_roi);
 
     gst_pad_sticky_events_foreach(hailoaggregator->sinkpad_main, forward_events, hailoaggregator->srcpad);

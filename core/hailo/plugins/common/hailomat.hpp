@@ -79,6 +79,7 @@ protected:
     uint m_stride;
     int m_line_thickness;
     int m_font_thickness;
+    std::vector<cv::Mat> m_matrices;
     cv::Rect get_bounding_rect(HailoBBox bbox, uint channel_width, uint channel_height)
     {
         cv::Rect rect;
@@ -105,7 +106,7 @@ public:
     uint height() { return m_height; };
     uint native_width() { return m_native_width; };
     uint native_height() { return m_native_height; };
-    virtual cv::Mat &get_mat() = 0;
+    std::vector<cv::Mat> &get_matrices() { return m_matrices; }
     virtual void draw_rectangle(cv::Rect rect, const cv::Scalar color) = 0;
     virtual void draw_text(std::string text, cv::Point position, double font_scale, const cv::Scalar color) = 0;
     virtual void draw_line(cv::Point point1, cv::Point point2, const cv::Scalar color, int thickness, int line_type) = 0;
@@ -120,11 +121,15 @@ public:
      * @return cv::Mat
      *         The cropped mat.
      */
-    virtual cv::Mat crop(HailoROIPtr crop_roi)
+    virtual std::vector<cv::Mat> crop(HailoROIPtr crop_roi)
     {
         cv::Rect rect = get_crop_rect(crop_roi);
-        cv::Mat cropped_cv_mat = get_mat()(rect);
-        return cropped_cv_mat;
+        cv::Mat cropped_cv_mat = get_matrices()[0](rect); // assuming only one channel (NV12 that has 2 matrices is handled in the derived class)
+        // create a vector of 1 mat
+        std::vector<cv::Mat> cropped_mats;
+        cropped_mats.emplace_back(std::move(cropped_cv_mat));
+
+        return cropped_mats;
     }
 
     virtual cv::Rect get_crop_rect(HailoROIPtr crop_roi)
@@ -145,18 +150,18 @@ public:
 class HailoRGBMat : public HailoMat
 {
 protected:
-    cv::Mat m_mat;
     std::string m_name;
 
 public:
     HailoRGBMat(uint8_t *buffer, uint height, uint width, uint stride, int line_thickness = 1, int font_thickness = 1, std::string name = "HailoRGBMat") : HailoMat(height, width, stride, line_thickness, font_thickness)
     {
         m_name = name;
-        m_mat = cv::Mat(m_height, m_width, CV_8UC3, buffer, m_stride);
+        cv::Mat mat = cv::Mat(m_height, m_width, CV_8UC3, buffer, m_stride);
+        m_matrices.push_back(mat);
     };
     HailoRGBMat(cv::Mat mat, std::string name, int line_thickness = 1, int font_thickness = 1)
     {
-        m_mat = mat;
+        m_matrices.push_back(mat);
         m_name = name;
         m_height = mat.rows;
         m_width = mat.cols;
@@ -170,45 +175,44 @@ public:
     {
         return HAILO_MAT_RGB;
     }
-    virtual cv::Mat &get_mat()
-    {
-        return m_mat;
-    }
     virtual std::string get_name() const
     {
         return m_name;
     }
     virtual void draw_rectangle(cv::Rect rect, const cv::Scalar color)
     {
-        cv::rectangle(m_mat, rect, color, m_line_thickness);
+        cv::rectangle(m_matrices[0], rect, color, m_line_thickness);
     }
     virtual void draw_text(std::string text, cv::Point position, double font_scale, const cv::Scalar color)
     {
-        cv::putText(m_mat, text, position, cv::FONT_HERSHEY_SIMPLEX, font_scale, color, m_font_thickness);
+        cv::putText(m_matrices[0], text, position, cv::FONT_HERSHEY_SIMPLEX, font_scale, color, m_font_thickness);
     }
     virtual void draw_line(cv::Point point1, cv::Point point2, const cv::Scalar color, int thickness, int line_type)
     {
-        cv::line(m_mat, point1, point2, color, thickness, line_type);
+        cv::line(m_matrices[0], point1, point2, color, thickness, line_type);
     }
     virtual void draw_ellipse(cv::Point center, cv::Size axes, double angle, double start_angle, double end_angle, const cv::Scalar color, int thickness)
     {
-        cv::ellipse(m_mat, center, axes, angle, start_angle, end_angle, color, thickness);
+        cv::ellipse(m_matrices[0], center, axes, angle, start_angle, end_angle, color, thickness);
     }
     virtual void blur(cv::Rect rect, cv::Size ksize)
     {
-        cv::Mat target_roi = this->m_mat(rect);
+        cv::Mat target_roi = this->m_matrices[0](rect);
         cv::blur(target_roi, target_roi, ksize);
     }
     virtual ~HailoRGBMat()
     {
-        m_mat.release();
+        for (auto &mat : m_matrices)
+        {
+            mat.release();
+        }
+        m_matrices.clear();
     }
 };
 
 class HailoRGBAMat : public HailoMat
 {
 protected:
-    cv::Mat m_mat;
     cv::Scalar get_rgba_color(cv::Scalar rgb_color, int alpha = 1.0)
     {
         // setting default alpha as 1.0 as shown in an example: https://www.w3schools.com/css/css_colors_rgb.asp
@@ -219,47 +223,43 @@ protected:
 public:
     HailoRGBAMat(uint8_t *buffer, uint height, uint width, uint stride, int line_thickness = 1, int font_thickness = 1) : HailoMat(height, width, stride, line_thickness, font_thickness)
     {
-        m_mat = cv::Mat(m_height, m_width, CV_8UC4, buffer, m_stride);
+        cv::Mat mat = cv::Mat(m_height, m_width, CV_8UC4, buffer, m_stride);
+        m_matrices.push_back(mat);
     };
     virtual hailo_mat_t get_type()
     {
         return HAILO_MAT_RGBA;
     }
-    virtual cv::Mat &get_mat()
-    {
-        return m_mat;
-    }
     virtual void draw_rectangle(cv::Rect rect, const cv::Scalar color)
     {
-        cv::rectangle(m_mat, rect, get_rgba_color(color), m_line_thickness);
+        cv::rectangle(m_matrices[0], rect, get_rgba_color(color), m_line_thickness);
     }
     virtual void draw_text(std::string text, cv::Point position, double font_scale, const cv::Scalar color)
     {
-        cv::putText(m_mat, text, position, cv::FONT_HERSHEY_SIMPLEX, font_scale, get_rgba_color(color), m_font_thickness);
+        cv::putText(m_matrices[0], text, position, cv::FONT_HERSHEY_SIMPLEX, font_scale, get_rgba_color(color), m_font_thickness);
     }
     virtual void draw_line(cv::Point point1, cv::Point point2, const cv::Scalar color, int thickness, int line_type)
     {
-        cv::line(m_mat, point1, point2, get_rgba_color(color), thickness, line_type);
+        cv::line(m_matrices[0], point1, point2, get_rgba_color(color), thickness, line_type);
     }
     virtual void draw_ellipse(cv::Point center, cv::Size axes, double angle, double start_angle, double end_angle, const cv::Scalar color, int thickness)
     {
-        cv::ellipse(m_mat, center, axes, angle, start_angle, end_angle, get_rgba_color(color), thickness);
+        cv::ellipse(m_matrices[0], center, axes, angle, start_angle, end_angle, get_rgba_color(color), thickness);
     }
     virtual void blur(cv::Rect rect, cv::Size ksize)
     {
-        cv::Mat target_roi = this->m_mat(rect);
+        cv::Mat target_roi = this->m_matrices[0](rect);
         cv::blur(target_roi, target_roi, ksize);
     }
     virtual ~HailoRGBAMat()
     {
-        m_mat.release();
+        m_matrices.clear();
     }
 };
 
 class HailoYUY2Mat : public HailoMat
 {
 protected:
-    cv::Mat m_mat;
     cv::Scalar get_yuy2_color(cv::Scalar rgb_color)
     {
         uint r = rgb_color[0];
@@ -275,20 +275,17 @@ public:
     HailoYUY2Mat(uint8_t *buffer, uint height, uint width, uint stride, int line_thickness = 1, int font_thickness = 1) : HailoMat(height, width, stride, line_thickness, font_thickness)
     {
         m_width = m_width / 2;
-        m_mat = cv::Mat(m_height, m_width, CV_8UC4, buffer, m_stride);
+        cv::Mat mat = cv::Mat(m_height, m_width, CV_8UC4, buffer, m_stride);
+        m_matrices.push_back(mat);
     };
     virtual hailo_mat_t get_type()
     {
         return HAILO_MAT_YUY2;
     }
-    virtual cv::Mat &get_mat()
-    {
-        return m_mat;
-    }
     virtual void draw_rectangle(cv::Rect rect, const cv::Scalar color)
     {
         cv::Rect fixed_rect = cv::Rect(rect.x / 2, rect.y, rect.width / 2, rect.height);
-        cv::rectangle(m_mat, fixed_rect, get_yuy2_color(color), m_line_thickness);
+        cv::rectangle(m_matrices[0], fixed_rect, get_yuy2_color(color), m_line_thickness);
     }
     virtual void draw_text(std::string text, cv::Point position, double font_scale, const cv::Scalar color){};
     virtual void draw_line(cv::Point point1, cv::Point point2, const cv::Scalar color, int thickness, int line_type){};
@@ -296,7 +293,7 @@ public:
     virtual void blur(cv::Rect rect, cv::Size ksize){};
     virtual ~HailoYUY2Mat()
     {
-        m_mat.release();
+        m_matrices.clear();
     }
 };
 
@@ -326,10 +323,8 @@ class HailoNV12Mat : public HailoMat
         +-----+-----+-----+-----+-----+-----+
     */
 protected:
-    cv::Mat m_mat;
-    cv::Mat m_y_plane_mat;
-    cv::Mat m_uv_plane_mat;
-
+    uint m_y_stride;
+    uint m_uv_stride;
     cv::Scalar get_nv12_color(cv::Scalar rgb_color)
     {
         uint r = rgb_color[0];
@@ -345,24 +340,23 @@ public:
     HailoNV12Mat(uint8_t *buffer, uint height, uint width, uint y_plane_stride, uint uv_plane_stride, int line_thickness = 1, int font_thickness = 1, void *plane0 = nullptr, void *plane1 = nullptr) : HailoMat(height, width, y_plane_stride, line_thickness, font_thickness)
     {
         m_height = (m_height * 3 / 2);
-        m_mat = cv::Mat(m_height, m_width, CV_8UC1, buffer, y_plane_stride);
+        m_y_stride = y_plane_stride;
+        m_uv_stride = uv_plane_stride;
 
         if (plane0 == nullptr)
-            plane0 = (char *)m_mat.data;
+            plane0 = (char *)buffer;
         if (plane1 == nullptr)
-            plane1 = (char *)m_mat.data + ((m_native_height)*m_native_width);
-
-
-        m_y_plane_mat = cv::Mat(m_native_height, m_width, CV_8UC1, plane0, y_plane_stride);
-        m_uv_plane_mat = cv::Mat(m_native_height / 2, m_native_width / 2, CV_8UC2, plane1, uv_plane_stride);
+        {
+            plane1 = (char *)buffer + ((m_native_height) * m_uv_stride);
+        }
+        cv::Mat y_plane_mat = cv::Mat(m_native_height, m_width, CV_8UC1, plane0, y_plane_stride);
+        cv::Mat uv_plane_mat = cv::Mat(m_native_height / 2, m_native_width / 2, CV_8UC2, plane1, uv_plane_stride);
+        m_matrices.push_back(y_plane_mat);
+        m_matrices.push_back(uv_plane_mat);
     };
     virtual hailo_mat_t get_type()
     {
         return HAILO_MAT_NV12;
-    }
-    virtual cv::Mat &get_mat()
-    {
-        return m_mat;
     }
     virtual void draw_rectangle(cv::Rect rect, const cv::Scalar color)
     {
@@ -376,11 +370,11 @@ public:
 
         cv::Rect y1_rect = cv::Rect(y_plane_rect_x, y_plane_rect_y, y_plane_rect_width, y_plane_rect_height);
         cv::Rect y2_rect = cv::Rect(y_plane_rect_x + 1, y_plane_rect_y + 1, y_plane_rect_width - 2, y_plane_rect_height - 2);
-        cv::rectangle(m_y_plane_mat, y1_rect, cv::Scalar(yuv_color[0]), thickness);
-        cv::rectangle(m_y_plane_mat, y2_rect, cv::Scalar(yuv_color[0]), thickness);
+        cv::rectangle(m_matrices[0], y1_rect, cv::Scalar(yuv_color[0]), thickness);
+        cv::rectangle(m_matrices[0], y2_rect, cv::Scalar(yuv_color[0]), thickness);
 
         cv::Rect uv_rect = cv::Rect(y_plane_rect_x / 2, y_plane_rect_y / 2, y_plane_rect_width / 2, y_plane_rect_height / 2);
-        cv::rectangle(m_uv_plane_mat, uv_rect, cv::Scalar(yuv_color[1], yuv_color[2]), thickness);
+        cv::rectangle(m_matrices[1], uv_rect, cv::Scalar(yuv_color[1], yuv_color[2]), thickness);
     }
 
     virtual void draw_text(std::string text, cv::Point position, double font_scale, const cv::Scalar color)
@@ -388,8 +382,8 @@ public:
         cv::Scalar yuv_color = get_nv12_color(color);
         cv::Point y_position = cv::Point(position.x, position.y);
         cv::Point uv_position = cv::Point(position.x / 2, position.y / 2);
-        cv::putText(m_y_plane_mat, text, y_position, cv::FONT_HERSHEY_SIMPLEX, font_scale, cv::Scalar(yuv_color[0]), m_font_thickness);
-        cv::putText(m_uv_plane_mat, text, uv_position, cv::FONT_HERSHEY_SIMPLEX, font_scale / 2, cv::Scalar(yuv_color[1], yuv_color[2]), m_font_thickness / 2);
+        cv::putText(m_matrices[0], text, y_position, cv::FONT_HERSHEY_SIMPLEX, font_scale, cv::Scalar(yuv_color[0]), m_font_thickness);
+        cv::putText(m_matrices[1], text, uv_position, cv::FONT_HERSHEY_SIMPLEX, font_scale / 2, cv::Scalar(yuv_color[1], yuv_color[2]), m_font_thickness / 2);
     };
 
     virtual void draw_line(cv::Point point1, cv::Point point2, const cv::Scalar color, int thickness, int line_type)
@@ -401,25 +395,25 @@ public:
         int y_plane_x2_value = floor_to_even_number(point2.x);
         int y_plane_y2_value = floor_to_even_number(point2.y);
 
-        cv::line(m_uv_plane_mat, cv::Point(y_plane_x1_value / 2, y_plane_y1_value / 2), cv::Point(y_plane_x2_value / 2, y_plane_y2_value / 2), cv::Scalar(yuv_color[1], yuv_color[2]), thickness, line_type);
+        cv::line(m_matrices[1], cv::Point(y_plane_x1_value / 2, y_plane_y1_value / 2), cv::Point(y_plane_x2_value / 2, y_plane_y2_value / 2), cv::Scalar(yuv_color[1], yuv_color[2]), thickness, line_type);
 
         switch (line_orientation(point1, point2))
         {
         case HORIZONTAL:
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value, y_plane_y1_value + 1), cv::Point(y_plane_x2_value, y_plane_y2_value + 1), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value, y_plane_y1_value + 1), cv::Point(y_plane_x2_value, y_plane_y2_value + 1), cv::Scalar(yuv_color[0]), thickness, line_type);
             break;
         case VERTICAL:
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value + 1, y_plane_y1_value), cv::Point(y_plane_x2_value + 1, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value + 1, y_plane_y1_value), cv::Point(y_plane_x2_value + 1, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
             break;
         case DIAGONAL:
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value + 1, y_plane_y1_value + 1), cv::Point(y_plane_x2_value + 1, y_plane_y2_value + 1), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value + 1, y_plane_y1_value + 1), cv::Point(y_plane_x2_value + 1, y_plane_y2_value + 1), cv::Scalar(yuv_color[0]), thickness, line_type);
             break;
         case ANTI_DIAGONAL:
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
-            cv::line(m_y_plane_mat, cv::Point(y_plane_x1_value + 1, y_plane_y1_value), cv::Point(y_plane_x2_value + 1, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value, y_plane_y1_value), cv::Point(y_plane_x2_value, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
+            cv::line(m_matrices[0], cv::Point(y_plane_x1_value + 1, y_plane_y1_value), cv::Point(y_plane_x2_value + 1, y_plane_y2_value), cv::Scalar(yuv_color[0]), thickness, line_type);
             break;
         default:
             break;
@@ -435,16 +429,16 @@ public:
         cv::Point y_position = cv::Point(floor_to_even_number(center.x), floor_to_even_number(center.y));
         cv::Point uv_position = cv::Point(floor_to_even_number(center.x) / 2, floor_to_even_number(center.y) / 2);
 
-        cv::ellipse(m_y_plane_mat, y_position, {floor_to_even_number(axes.width), floor_to_even_number(axes.height)}, angle, start_angle, end_angle, cv::Scalar(yuv_color[0]), thickness / 2);
-        cv::ellipse(m_y_plane_mat, y_position, {floor_to_even_number(axes.width) + 1, floor_to_even_number(axes.height) + 1}, angle, start_angle, end_angle, cv::Scalar(yuv_color[0]), thickness / 2);
-        cv::ellipse(m_uv_plane_mat, uv_position, axes / 2, angle, start_angle, end_angle, cv::Scalar(yuv_color[1], yuv_color[2]), thickness);
+        cv::ellipse(m_matrices[0], y_position, {floor_to_even_number(axes.width), floor_to_even_number(axes.height)}, angle, start_angle, end_angle, cv::Scalar(yuv_color[0]), thickness / 2);
+        cv::ellipse(m_matrices[0], y_position, {floor_to_even_number(axes.width) + 1, floor_to_even_number(axes.height) + 1}, angle, start_angle, end_angle, cv::Scalar(yuv_color[0]), thickness / 2);
+        cv::ellipse(m_matrices[1], uv_position, axes / 2, angle, start_angle, end_angle, cv::Scalar(yuv_color[1], yuv_color[2]), thickness);
     }
 
     virtual void blur(cv::Rect rect, cv::Size ksize)
     {
         cv::Rect y_rect = cv::Rect(rect.x, rect.y, rect.width, rect.height);
-        cv::Mat target_roi = this->m_mat(y_rect);
-        cv::blur(target_roi, target_roi, ksize);
+        cv::Mat target_roi_y = this->m_matrices[0](y_rect);
+        cv::blur(target_roi_y, target_roi_y, ksize);
     }
 
     virtual cv::Rect get_crop_rect(HailoROIPtr crop_roi)
@@ -462,7 +456,7 @@ public:
         return y_rect;
     }
 
-    virtual cv::Mat crop(HailoROIPtr crop_roi)
+    virtual std::vector<cv::Mat> crop(HailoROIPtr crop_roi)
     {
         // Wrap the mat with Y and UV channel windows
         cv::Rect y_rect = get_crop_rect(crop_roi);
@@ -476,20 +470,22 @@ public:
         uv_rect.x = y_rect.x / 2;
         uv_rect.y = y_rect.y / 2;
 
-        // Prepare the cropped mat, and channel windows to fill with Y, U , & V
-        cv::Mat cropped_mat = cv::Mat(y_rect.height + uv_rect.height, y_rect.width, CV_8UC1, m_stride);
-        cv::Mat cropped_y_mat = cv::Mat(y_rect.height, y_rect.width, CV_8UC1, (char *)cropped_mat.data, y_rect.width);
-        cv::Mat cropped_uv_mat = cv::Mat(uv_rect.height, uv_rect.width, CV_8UC2, (char *)cropped_mat.data + (y_rect.height * y_rect.width), y_rect.width);
+        cv::Mat cropped_y_mat = cv::Mat(y_rect.height, y_rect.width, CV_8UC1, m_y_stride);
+        cv::Mat cropped_uv_mat = cv::Mat(uv_rect.height, uv_rect.width, CV_8UC2, m_uv_stride);
 
         // Fill the cropped mat with the cropped channels
-        m_y_plane_mat(y_rect).copyTo(cropped_y_mat);
-        m_uv_plane_mat(uv_rect).copyTo(cropped_uv_mat);
-        return cropped_mat;
+        m_matrices[0](y_rect).copyTo(cropped_y_mat);
+        m_matrices[1](uv_rect).copyTo(cropped_uv_mat);
+
+        // create vector that will hold the cropped mat
+        std::vector<cv::Mat> cropped_mat_vec;
+        cropped_mat_vec.emplace_back(std::move(cropped_y_mat));
+        cropped_mat_vec.emplace_back(std::move(cropped_uv_mat));
+
+        return cropped_mat_vec;
     }
     virtual ~HailoNV12Mat()
     {
-        m_y_plane_mat.release();
-        m_uv_plane_mat.release();
-        m_mat.release();
+        m_matrices.clear(); // this will call the destructor of each mat
     }
 };

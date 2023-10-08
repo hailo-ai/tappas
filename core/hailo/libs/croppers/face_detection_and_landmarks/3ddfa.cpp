@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #include "3ddfa.hpp"
 #include <iostream>
 
@@ -46,8 +46,9 @@ std::vector<HailoROIPtr> create_crops(std::shared_ptr<HailoMat> image, HailoROIP
         // Modify only detections with "face" label.
         if (std::string(FACE_LABEL) == detection->get_label())
         {
+            cv::Mat mat = image->get_matrices()[0];
             // Modifies a rectengle according to 3ddfa cropping algorithm only on faces
-            auto new_bbox = algorithm_3ddfa(image->get_mat(), detection->get_bbox());
+            auto new_bbox = algorithm_3ddfa(mat, detection->get_bbox());
             detection->set_bbox(new_bbox);
             crop_rois.emplace_back(detection);
         }

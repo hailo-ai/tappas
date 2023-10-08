@@ -7,9 +7,9 @@
       "destination": "yolov5s_personface_reid.hef"
     },
     {
-        "bucket": "tappas",
-        "source": "general/hefs/repvgg_a0_person_reid_2048.hef",
-        "destination": "repvgg_a0_person_reid_2048.hef"
+      "bucket": "tappas",
+      "source": "general/hefs/repvgg_a0_person_reid_2048.hef",
+      "destination": "repvgg_a0_person_reid_2048.hef"
     },
     {
       "bucket": "tappas",
@@ -18,10 +18,10 @@
       "should_extract": true
     },
     {
-        "bucket": "tappas",
-        "source": "general/media/re_id/reid_orig.tar.gz",
-        "destination": "reid_orig.tar.gz",
-        "should_extract": true
+      "bucket": "tappas",
+      "source": "general/media/re_id/reid_orig.tar.gz",
+      "destination": "reid_orig.tar.gz",
+      "should_extract": true
     }
   ]
 }

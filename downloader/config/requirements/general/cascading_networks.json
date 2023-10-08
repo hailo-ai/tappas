@@ -2,9 +2,14 @@
   "path": "apps/h8/gstreamer/general/cascading_networks/resources/",
   "requirements": [
     {
-      "bucket": "tappas",
-      "source": "general/hefs/joined_lightface_slim_tddfa_mobilenet_v1.hef",
-      "destination": "joined_lightface_slim_tddfa_mobilenet_v1.hef"
+      "bucket": "model_zoo",
+      "source": "general/hefs/tddfa_mobilenet_v1.hef",
+      "destination": "tddfa_mobilenet_v1.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/lightface_slim.hef",
+      "destination": "lightface_slim.hef"
     },
     {
       "bucket": "tappas",
@@ -17,7 +22,7 @@
       "destination": "instance_segmentation.mp4"
     },
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/yolov5m_wo_spp_60p.hef",
       "destination": "yolov5m_wo_spp_60p.hef"
     },

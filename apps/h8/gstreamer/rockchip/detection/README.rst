@@ -5,8 +5,7 @@ Detection Pipeline
 Overview
 --------
 
-``detection.sh`` demonstrates detection on one video file source and verifies Hailo’s configuration.
- This is done by running a ``single-stream object detection pipeline`` on top of GStreamer using the Hailo-8 device.
+``detection.sh`` demonstrates detection on one video file source and verifies Hailo’s configuration, by running a ``single-stream object detection pipeline`` on top of GStreamer using the Hailo-8 device.
 
 Options
 -------
@@ -53,24 +52,24 @@ The output should look like:
    :height: 500px
 
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
-This app is based on our `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_
+This app is based on the `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_
 
-How to use Retraining to replace models
+Using Retraining to Replace Models
 ---------------------------------------
 
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
-You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
-that are trained on your own dataset:
+Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
+that are trained in the dataset:
 
 - ``yolov5m``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
@@ -79,27 +78,27 @@ that are trained on your own dataset:
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov4>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update ``resources/configs/yolov4.json`` with your new post-processing parameters (NMS)
+    - Update ``resources/configs/yolov4.json`` with the new post-processing parameters (NMS)
 - ``yolov3``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov3>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update ``resources/configs/yolov3.json`` with your new post-processing parameters (NMS)
+    - Update ``resources/configs/yolov3.json`` with the new post-processing parameters (NMS)
 - ``nanodet_repvgg``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/nanodet>`_
     
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
     - Update `nanodet.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/nanodet.cpp#L221>`_
-      with your new paremeters, then recompile to create ``libnanodet_post.so``
+      with your the parameters, then recompile to create ``libnanodet_post.so``

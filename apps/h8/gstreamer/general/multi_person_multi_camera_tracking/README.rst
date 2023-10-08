@@ -47,8 +47,8 @@ Models
 * ``yolov5s_personface``: yolov5s pre-trained on Hailo's dataset - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5s_personface.yaml
 * ``repvgg_a0_person_reid_2048``: repvgg_a0_person_reid_2048 pre-trained on Hailo's dataset - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/repvgg_a0_person_reid_2048.yaml
 
-How the application works
--------------------------
+Method of Operation
+-------------------
 
 The app is based on the `Cascaded Networks Structure  <../../../../../docs/pipelines/cascaded_nets.rst>`
 In addition it uses the `HailoTracker <../../../../../docs/elements/hailo_tracker.rst>` and the new `HailoGallery Element <../../../../../docs/elements/hailo_gallery.rst>` gstreamer elements.
@@ -57,18 +57,18 @@ Note that we are not using the regular `HailoOverlay  <../../../../../docs/eleme
 Instead we are using `HailoFilter <../../../../../docs/elements/hailo_filter.rst>` to draw our results
 since we want to also blur the faces of the persons in the picture and draw different color for each different person.
 
-Pipeline diagram
+Pipeline Diagram
 ----------------
 
 .. image:: readme_resources/re_id_pipeline.png
 
-How to use Retraining to replace models
+Using Retraining to Replace Models
 ---------------------------------------
 
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
-You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
-that are trained on your own dataset:
+Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
+that are trained in the User's dataset:
 
 - ``yolov5s_personface``
   
@@ -84,4 +84,4 @@ that are trained on your own dataset:
 
     - Update HEF_PATH on the .sh file
     - Update `re_id.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/re_id/re_id.cpp#L32>`_
-      with your new paremeters, then recompile to create ``libre_id.so``
+      with your new parameters, then recompile to create ``libre_id.so``

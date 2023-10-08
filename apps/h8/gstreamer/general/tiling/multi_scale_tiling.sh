@@ -119,7 +119,7 @@ fi
 # Detection section
 DETECTION_PIPELINE="\
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path ! \
+    hailonet hef-path=$hef_path output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$postprocess_func_name so-path=$detection_postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"

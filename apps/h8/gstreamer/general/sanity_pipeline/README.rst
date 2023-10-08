@@ -1,13 +1,13 @@
 
-Sanity pipeline
+Sanity Pipeline
 ===============
 
 Overview
 --------
 
-Sanity apps purpose is to help you verify that all the required components have been installed successfully.
+Sanity apps purpose is to help verify that all the required components have been installed successfully.
 
-First of all, you would need to run ``sanity_gstreamer.sh`` and make sure that the image presented looks like the one that would be presented later.
+First of all, ``sanity_gstreamer.sh`` needs to be run to ensure that the image presented looks like the one that will be presented later.
 
 Sanity GStreamer
 ^^^^^^^^^^^^^^^^
@@ -26,7 +26,7 @@ In order to run the app just ``cd`` to the ``sanity_pipeline`` directory and lau
    cd $TAPPAS_WORKSPACE/apps/h8/gstreamer/general/sanity_pipeline
    ./sanity_gstreamer.sh
 
-The output should look like:
+The display should look like the image below:
 
 
 .. image:: readme_resources/sanity_gstreamer.png
@@ -34,4 +34,4 @@ The output should look like:
    :height: 250px
 
 
-If the output is similar to the image shown above, you are good to go to the next verification phase!
+If the output is similar to the image shown above, continue to the next verification phase.

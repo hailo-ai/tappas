@@ -13,7 +13,7 @@ function init_variables() {
     readonly POSTPROCESS_DIR="/usr/lib/hailo-post-processes"
     readonly CROPPING_ALGORITHMS_DIR="$POSTPROCESS_DIR/cropping_algorithms"
     readonly RESOURCES_DIR="${CURRENT_DIR}/resources"
-    readonly DEFAULT_LICENCE_PLATE_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov4_licence_plate.json" 
+    readonly DEFAULT_LICENSE_PLATE_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov4_license_plate.json"
     readonly DEFAULT_VEHICLE_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5_vehicle_detection.json" 
 
     # Default Video
@@ -54,7 +54,7 @@ function init_variables() {
     tee_name="context_tee"
     internal_offset=false
     pipeline_1=""
-    licence_plate_json_config_path=$DEFAULT_LICENCE_PLATE_JSON_CONFIG_PATH 
+    license_plate_json_config_path=$DEFAULT_LICENSE_PLATE_JSON_CONFIG_PATH
     car_json_config_path=$DEFAULT_VEHICLE_JSON_CONFIG_PATH 
 }
 
@@ -131,7 +131,7 @@ function create_lp_detection_pipeline() {
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                     hailonet hef-path=$LICENSE_PLATE_DETECTION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                    hailofilter so-path=$LICENSE_PLATE_DETECTION_POST_SO config-path=$licence_plate_json_config_path function-name=$LICENSE_PLATE_DETECTION_POST_FUNC qos=false ! \
+                    hailofilter so-path=$LICENSE_PLATE_DETECTION_POST_SO config-path=$license_plate_json_config_path function-name=$LICENSE_PLATE_DETECTION_POST_FUNC qos=false ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                 agg1. \
                 agg1. ! queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

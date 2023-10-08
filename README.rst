@@ -7,7 +7,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.14.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.15.0-green
    :target: https://github.com/hailo-ai/hailort
    :alt: HailoRT
    :height: 20
@@ -56,7 +56,7 @@ Demonstrating Hailo's system integration scenario of specific use cases on prede
 
 ----
 
-Getting started
+Getting Started
 ---------------
 
 Prerequisites
@@ -69,7 +69,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.14.
+    This version is compatible with HailoRT v4.15.
 
 
 Installation
@@ -112,7 +112,7 @@ Documentation
 
 ----
 
-Example Applications built with TAPPAS
+Example Applications Built with TAPPAS
 --------------------------------------
 
 TAPPAS comes with a rich set of pre-configured pipelines optimized for different common hosts.
@@ -361,7 +361,7 @@ Example Use Case Pipelines
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Our LPR reference application demonstrates the use of 3 networks, with a database.
-The pipeline demonstrates inference based decision making (Vehicle detection) for secondary inference tasks (License plate extraction). This allows multiple networks to cooperate in the pipeline for reactive behavior.
+The pipeline demonstrates inference based decision making (Vehicle detection) for secondary inference tasks (License plate data extraction). This allows multiple networks to cooperate in the pipeline for reactive behavior.
 
 
 .. image:: resources/lpr_pipeline.png
@@ -420,6 +420,21 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 Changelog
 ----------
 
+**v3.26.0 (October 2023)**
+
+* Added Hailo-15 supported application examples:
+
+  * Detection
+  * License Plate Recognition
+  * A new Hailo-15 specific example application - Basic Security Camera (streaming)
+
+* Removed Yolact models support from Instance Segmentation
+* Various bug fixes:
+
+  * Fixed the Detection application on i.MX6 platforms
+  * Fixed an issue with Face Recognition which prevented faces to be recognized ins some scenarios
+  * Fixed an issue which caused a warning when running some networks
+
 **v3.25.0 (July 2023)**
 
 * Improved Yolov5seg post-process performance
@@ -432,10 +447,14 @@ Changelog
 * `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ now supports multi-device (Ubuntu 22.04 only)
 * `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ (single device) now works on Ubuntu 20.04
 * Added a new model to `Instance Segmentation Pipeline <apps/h8/gstreamer/general/instance_segmentation/README.rst>`_:
+
   * `yolov5seg` - which has improved performance compared to `yolact`
+
 * New applications for `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_:
+
   * Object Detection and Pose Estimation (cascaded)
   * Multi-Stream Detection
+
 * Added a TAPPAS Graphic User Interface to easily run selected general example applications (preview) on the TAPPAS Docker - to activate it, run `tappas-gui`
 * Added back `yolox_l_leaky` to the `Century general application <apps/h8/gstreamer/general/century/README.rst>`_
 * Reduced docker size

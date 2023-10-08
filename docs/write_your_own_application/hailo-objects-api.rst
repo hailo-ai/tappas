@@ -2,7 +2,7 @@
 Hailo Objects API
 ========================
 
-| The ``TAPPAS`` provides a set of abstractions for the different objects you might handle in your pipeline, such as ``tensors``\ , ``detections``\ , ``classifications``\ , or ``landmarks``. If you want to write your own custom pipeline behavior (\ ``postprocessing``\ , ``drawing``\ , etc..), then it is worthwhile to get familiar with these classes.
+| The ``TAPPAS`` provides a set of abstractions for the different objects that might be handled in a user's pipeline, such as ``tensors``\ , ``detections``\ , ``classifications``\ , or ``landmarks``. If the user wants to write their own custom pipeline behavior (\ ``postprocessing``\ , ``drawing``\ , etc..), then it is worthwhile to become familiar with these classes.
 | This guide documents the different classes available in the ``TAPPAS`` and their interactions.
 
 Structs
@@ -125,7 +125,7 @@ Typing enumeration for `HailoObject`_ instances.
 HailoTensor
 ======================
 
-``Tensors`` are the ouput vector of your network inference. Usually these are N-dimensional matrices that hold little "human readable" value at first, but after a little postprocessing become meaningful objects such as detections or landmarks. All postprocesses start by looking at the output tensors. In fact, usually you will not be constructing a new one - they will be `provided to your postprocess <write-your-own-postprocess.rst>`_ via the `hailofilter <../elements/hailo_filter.rst>`_ element. To make handling these vectors easier, they are provided in a ``HailoTensor`` class.  \
+``Tensors`` are the ouput vector of the network inference. Usually these are N-dimensional matrices that hold little "human readable" value at first, but after a little postprocessing become meaningful objects such as detections or landmarks. All postprocesses start by looking at the output tensors. In fact, usually there will be no need to construct one it will be `provided to your postprocess <write-your-own-postprocess.rst>`_ via the `hailofilter <../elements/hailo_filter.rst>`_ element. To make handling these vectors easier, they are provided in a ``HailoTensor`` class.  \
 ``Shared pointer handle``\ : **HailoTensorPtr**  \
 ``SOURCE``\ : `core/hailo/general/hailo_tensors.hpp <../../core/hailo/general/hailo_tensors.hpp>`_  
 
@@ -481,7 +481,7 @@ HailoUniqueID
 =====================
 
 | Inherits from `HailoObject`_
-| ``HailoUniqueID`` represents a unique id of an ROI. Sometimes we may want to give ROIs unique ids (for example, when tracking detections), and having a `HailoObject`_ abstraction makes adding and removing ids very simple (via ``add_object()`` and ``remove_object()``\ ). If no unique if is provided at construction, then a default -1 is used.
+| ``HailoUniqueID`` represents a unique id of an ROI. Sometimes the user may want to give ROIs unique ids (for example, when tracking detections), and having a `HailoObject`_ abstraction makes adding and removing ids very simple (via ``add_object()`` and ``remove_object()``\ ). If no unique if is provided at construction, then a default -1 is used.
 | ``Shared pointer handle``\ : **HailoUniqueIDPtr**  \
 | ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
 

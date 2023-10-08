@@ -26,7 +26,11 @@ function init_variables() {
     batch_size=$DEFAULT_BATCH_SIZE
     hef_path=$DEFAULT_HEF_PATH
     json_config_path=$DEFAULT_JSON_CONFIG_PATH
+    nms_score_threshold=0.3 
+    nms_iou_threshold=0.45
 
+    thresholds_str="nms-score-threshold=${nms_score_threshold} nms-iou-threshold=${nms_iou_threshold}"
+    hailonet_props="output-format-type=HAILO_FORMAT_TYPE_FLOAT32"
     print_gst_launch_only=false
     additional_parameters=""
     stats_element=""
@@ -67,17 +71,23 @@ function parse_args() {
                 hef_path="$RESOURCES_DIR/yolov4_leaky.hef"
                 batch_size="4"
                 json_config_path="$RESOURCES_DIR/configs/yolov4.json"
+                thresholds_str=""
+                hailonet_props=""
             elif [ $2 == "yolov3" ]; then
                 network_name="yolov3"
                 hef_path="$RESOURCES_DIR/yolov3.hef"
                 batch_size="4"
                 postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
                 json_config_path="$RESOURCES_DIR/configs/yolov3.json"
+                thresholds_str=""
+                hailonet_props=""
             elif [ $2 == "nanodet" ]; then
                 network_name="nanodet_repvgg"
                 hef_path="$RESOURCES_DIR/nanodet_repvgg.hef"
                 postprocess_so="$POSTPROCESS_DIR/libnanodet_post.so"
                 json_config_path="null"
+                thresholds_str=""
+                hailonet_props=""
             elif [ $2 != "yolov5" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
@@ -124,7 +134,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert n-threads=2 qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size ! \
+    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size $thresholds_str $hailonet_props ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

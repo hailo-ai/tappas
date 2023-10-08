@@ -71,4 +71,4 @@ that are trained on your own dataset:
 
     - Replace HEF_PATH on the .sh file
     - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
-      with your new paremeters, then recompile to create ``libcenterpose_post.so``
+      with your new parameters, then recompile to create ``libcenterpose_post.so``

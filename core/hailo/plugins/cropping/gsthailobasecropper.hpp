@@ -52,11 +52,11 @@ struct _GstHailoBaseCropperClass
     GstElementClass parent_class;
 
     std::vector<HailoROIPtr> (*prepare_crops) (GstHailoBaseCropper *hailocropper,  GstBuffer *buf);
-    void (*resize) (GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
+    void (*resize) (GstHailoBaseCropper *basecropper, std::vector<cv::Mat> &cropped_image, std::vector<cv::Mat> &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
 };
 
 G_GNUC_INTERNAL GType gst_hailo_basecropper_get_type(void);
-void resize_normal(cv::InterpolationFlags method, cv::Mat &cropped_image, cv::Mat &resized_image, GstVideoFormat image_format);
-void resize_letterbox(cv::InterpolationFlags method, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
+void resize_normal(cv::InterpolationFlags method, std::vector<cv::Mat> &cropped_image_vec, std::vector<cv::Mat> &resized_image_vec, GstVideoFormat image_format);
+void resize_letterbox(cv::InterpolationFlags method, std::vector<cv::Mat> &cropped_image_vec, std::vector<cv::Mat> &resized_image_vec, HailoROIPtr roi, GstVideoFormat image_format);
 
 G_END_DECLS

@@ -12,16 +12,16 @@ Two layers are provided by Hailo, the first one is ``meta-hailo`` which compiles
 The layers are stored in `Meta-Hailo Github <https://github.com/hailo-ai/meta-hailo.git>`_\ , with branch for each supported yocto release:
 
 
-* Zeus (kernel 5.4.24)
-* Dunfell (kernel 5.4.85)
-* Honister (kernel  5.14)
-* Kirkstone (kernel 5.15)
-
-.. warning:: Kirkstone branch does not support i.MX6 devices.
+* Zeus 3.0 (kernel 5.4.24)
+* Dunfell 3.1 (kernel 5.4.85)
+* Honister 3.4 (kernel 5.14)
+* Kirkstone 4.0 (kernel 5.15)
 
 .. warning:: On i.MX8-based devices Kirkstone branch does not support OpenGL, therefore, the Kirkstone applications portfolio is reduced.
 
-.. note:: Zeus will not be supported by TAPPAS in future versions.
+.. note:: Zeus will not be supported by HailoRT future version.
+
+.. note:: Honister will not be supported by HailoRT future version.
 
 Setup
 -----
@@ -42,7 +42,7 @@ Add the recipes to your image in your ``conf/local.conf``\ :
 
    IMAGE_INSTALL_append = "hailo-firmware libhailort hailortcli hailo-pci libgsthailo"
 
-Tappas
+TAPPAS
 ^^^^^^
 
 Add the following to your image in your ``conf/bblayers.conf``\ :

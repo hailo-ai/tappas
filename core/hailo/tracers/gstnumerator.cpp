@@ -1,4 +1,8 @@
 /**
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
+/**
  * SECTION:gstnumerator
  * @short_description: this tracer numberates the offset of the buffers 
  * after the decoding phase, meaning that the first buffer 

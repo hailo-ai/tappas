@@ -14,7 +14,7 @@ Model
 
 * ``ssd_mobilenet_v1_visdrone`` in resolution of 300X300: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1_visdrone.yaml
 
-The VisDrone dataset consists of only small objects which we can assume are always confined within an single tile. As such it is better suited for running single-scale tiling with little overlap and without additional filtering.
+The VisDrone dataset consists of only small objects which can be assumed to be always confined within an single tile. As such it is better suited for running single-scale tiling with little overlap and without additional filtering.
 
 Options
 ^^^^^^^
@@ -52,8 +52,8 @@ The output should look like:
    </div>
 
 
-How it works
-^^^^^^^^^^^^
+Method of Operation
+^^^^^^^^^^^^^^^^^^^
 
 This app is based on our `tiling pipeline template <../../../../../docs/pipelines/single_network.rst#example-pipeline-single-network-with-tiling>`_
 
@@ -72,8 +72,8 @@ For example we use 3 sets of tiles at 3 different scales:
 * Small scale dividing the frame to 3x3 tiles.
 
 In this mode we use 1 + 4 + 9 = 14 tiles for each frame.
-We can simplify the process by highliting the main tasks:
-crop -> inference -> post-process -> aggregate → remove exceeded boxes → remove large landscape → perform NMS
+We can simplify the process by highlighting the main tasks:
+Crop -> Inference -> Ppost-process -> Aggregate → Remove exceeded boxes → Remove large landscape → Perform NMS
 
 Model
 ^^^^^
@@ -118,10 +118,10 @@ The output should look like:
    </div>
 
 
-How it works
+Mode of Operation
 ^^^^^^^^^^^^
 
-As multi scale tiling is almost equal to single scale i will mention the differences:
+As multi scale tiling is almost equal to single scale, the differences are listed below:
 
 .. code-block:: sh
 
@@ -137,13 +137,13 @@ As multi scale tiling is almost equal to single scale i will mention the differe
 
  ``hailotileaggregator`` sets ``border-threshold`` used in remove tile's exceeded objects process.
 
-How to use Retraining to replace models
+Using Retraining to Replace Models
 ---------------------------------------
 
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
-You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
-that are trained on your own dataset:
+Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
+that are trained in the dataset:
 
 - ``mobilenet_ssd``
   
@@ -152,4 +152,4 @@ that are trained on your own dataset:
 
     - Update HEF_PATH on the .sh file
     - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
-      with your new paremeters, then recompile to create ``libmobilenet_ssd_post.so``
+      with the new paremeters, then recompile to create ``libmobilenet_ssd_post.so``

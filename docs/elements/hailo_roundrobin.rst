@@ -13,6 +13,7 @@ The metadata's pupose is to be able to de-mux it easily later on by `hailostream
 De-muxing by streamiddemux is not supported with this element.
 
 It can work in 3 modes:
+
 * Funnel mode - push every buffer when it is ready no matter which pad it came from.
 * Blocking mode - push every buffer when it is its pad's turn, and if the buffer is not ready, block until ready. This is the default mode.
 * Non Blocking mode - push every buffer when it is its pad's turn, and if the buffer is not ready, skip it. This mode is useful when the video sources are not stable and may stop sending buffers for a while. In this case, the pipeline should not be blocked and should continue to process the other streams.
@@ -23,12 +24,11 @@ When the src pad wants to push a buffer, the element tries to get a buffer from 
 If the queue is empty, the element retries to get a buffer from the queue for a number of times (retries-num property).
 If the queue is still empty, the element skips the pad and tries to get a buffer from the next pad in line.
 The size of the queue and the number of retries can be configured by the properties: 
+
 * queue-size - Size of the queue for each pad.
 * retries-num - Number of retries to get a buffer from a pad queue.
 
 When using non-blocking mode, Compositor element is not supported, since it requires all the streams to be synchronized.
-
-
 
 Example
 -------

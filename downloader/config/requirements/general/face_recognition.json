@@ -25,7 +25,12 @@
     {
       "bucket": "tappas",
       "source": "general/media/face_recognition/face_recognition_local_gallery.json",
-      "destination": "gallery/face_recognition_local_gallery.json"
+      "destination": "gallery/face_recognition_local_gallery_rgba.json"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/face_recognition/face_recognition_local_gallery_nv12.json",
+      "destination": "gallery/face_recognition_local_gallery_nv12.json"
     },
     {
       "bucket": "tappas",

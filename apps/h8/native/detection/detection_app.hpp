@@ -32,6 +32,8 @@
 #define YOLOV5M_IMAGE_WIDTH 640
 #define YOLOV5M_IMAGE_HEIGHT 640
 #define MAX_BOXES 50
+#define DETECTION_THRESHOLD float32_t(0.3)
+#define IOU_THRESHOLD float32_t(0.45)
 
 #define REQUIRE_ACTION(cond, action, label, ...)     \
     do                                               \

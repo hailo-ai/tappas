@@ -5,18 +5,18 @@ Writing Your Own Python Postprocess
 Overview
 --------
 
-If you want to add a network to the TAPPAS that is not already supported, then you will likely need to implement a new postprocess. Fortunately with the use of the `hailopython <../elements/hailo_python.rst>`_\ , you don't need to create any new GStreamer elements, just provide a Python module that applies your post-processing! \
-In this guide we will go over how to create such a python module and what mechanisms/structures are available to you as you create your postprocess.
+To add a network to the TAPPAS that is not already supported, requires the implementation of a new post-process. Fortunately with the use of the `hailopython <../elements/hailo_python.rst>`_\ , there is no need to create any new GStreamer elements, only to provide a Python module that applies your post-processing! \
+This section will review how to create a python module and what mechanisms/structures are available for creating a post-process.
 
 Getting Started
 ---------------
 
 hailopython requires a module and a Python function.
 
-Python module template
+Python Module Template
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Here is a template for a Python module for the hailopython element.
+Below is a template for a Python module for the hailopython element.
 
 .. code-block:: py
 
@@ -39,11 +39,11 @@ To call it, create a pipeline with hailopython:
 
    gst-launch-1.0 videotestsrc ! hailopython module=$PATH_TO_MODULE/my_module.py ! autovideosink
 
-Extracting the tensors
+Extracting the Tensors
 ^^^^^^^^^^^^^^^^^^^^^^
 
-One of the first steps in each postprocess is to get the output tensors.
-This can be done by one of ``video_frame.roi.get_tensor(tensor_name)`` or ``video_frame.roi.get_tensors()`` 
+One of the first steps in each post-process is to get the output tensors.
+This can be done by one of two methods ``video_frame.roi.get_tensor(tensor_name)`` or ``video_frame.roi.get_tensors()`` 
 
 .. code-block:: py
 
@@ -53,12 +53,12 @@ This can be done by one of ``video_frame.roi.get_tensor(tensor_name)`` or ``vide
        my_tensor = roi.get_tensor("output_layer_name")
        print(f"shape is {my_tensor.height()}X{my_tensor.width()}X{my_tensor.features()})
 
-After doing that you might want to convert this object of type HailoTensor to a numpy array on which you can perform post-processing operations more conveniently.
-This is a fairly simple step, you just use np.array on a given HailoTensor.
+After doing this it is possible to convert this object of type HailoTensor to a numpy array on which perform post-processing operations can be performed more conveniently.
+This is a fairly simple step, just use np.array on a given HailoTensor.
 
 ..
 
-   Notice that np.array has a parameter that determines whether we copy the memory or using the original buffer.
+   Notice that np.array has a parameter that determines whether to copy the memory or use the original buffer.
 
 
 .. code-block:: py
@@ -70,20 +70,20 @@ This is a fairly simple step, you just use np.array on a given HailoTensor.
        # To create a numpy array with original memory
        my_array = np.array(my_tensor, copy=False)
 
-There are some other methods in HailoTensor, you are welcome to perform ``dir(my_tensor)`` or ``help(my_tensor)``.
+There are some other methods in HailoTensor, that can be performed ``dir(my_tensor)`` or ``help(my_tensor)``.
 
-Adding results
+Adding Results
 ^^^^^^^^^^^^^^
 
-After you process your net results and come up with post-processed results, you can use them however you want.
-Here we will show you how to add them to the original image in order to draw them later by hailooverlay element.
-In order to add post-processed result to the original image - use the ``video_frame.roi.add_object`` method.
-This method adds a HailoObject object to our image. There are several types of objects that are currently supported:
+After processing  the net results and obtaining the post-processed results, they can be used as preferred.
+Below demonstrates how to add them to the original image in order to draw them later with the hailooverlay element.
+In order to add the post-processed result to the original image - use the ``video_frame.roi.add_object`` method.
+This method adds a HailoObject object to the image. There are several types of objects that are currently supported:
 hailo.HailoClassification - Classification of the image.
 hailo.HailoDetection - Detection in the image.
 hailo.HailoLandmarks - Landmarks in the image.
 
-You can create one of these objects and then add it with the roi.add_object method.
+It is possible to create one of these objects and then add it with the roi.add_object method.
 
 .. code-block:: py
 
@@ -95,7 +95,7 @@ You can create one of these objects and then add it with the roi.add_object meth
        
        video_frame.roi.add_object(classification)
 
-You can also add objects to detections:
+One can also add objects to detections:
 
 .. code-block:: py
 
@@ -117,7 +117,7 @@ Next Steps
 Drawing
 ^^^^^^^
 
-In order to draw your postprocessed results on the original image use the hailooverlay element.
+In order to draw the post-processed results on the original image use the hailooverlay element.
 It is already familiar with our HailoObject types and knows how to draw classifications, detections, and landmarks onto the image.
 
 .. code-block:: sh
@@ -135,11 +135,11 @@ It is already familiar with our HailoObject types and knows how to draw classifi
    This is the standard detection pipeline with a python module for post-processing.
 
 
-Multiple functions in one Python module
+Multiple Functions in One Python Module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
  There is an option to write several post-process functions in the same module.
- In order to run each of them you just need to add the ``function`` property to the ``hailopython`` element:
+ In order to run each of them just add the ``function`` property to the ``hailopython`` element:
 
 .. code-block:: py
 
@@ -167,7 +167,7 @@ VideoFrame Class
 In addition to providing ``buffer`` and ``HailoROI`` access functions, the ``VideoFrame`` module provides helper functions for accessing the buffer through NumPy 
 
 
-List all available methods and members
+List all Available Methods and Members
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Running the following command would display a list of methods and members available:

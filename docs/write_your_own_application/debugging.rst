@@ -11,7 +11,7 @@ GstShark
 
 GstShark is an open-source project from RidgeRun that provides benchmarks and profiling tools for GStreamer 1.7.1 (and above). It includes tracers for generating debug information plus some tools to analyze the debug information. GstShark provides easy to use and useful tracers, paired with analysis tools to enable straightforward optimizations.
 
-GstShark leverages GStreamer's built in tracing system and adds plotting tools to simplify the process of understanding the bottlenecks in your pipeline.
+GstShark leverages GStreamer's built in tracing system and adds plotting tools to simplify the process of understanding the bottlenecks in the user's pipeline.
 
 As part of the TAPPAS framework, we have expanded the available profiling mechanisms to include TAPPAS related tracers and a new plotting tool.
 
@@ -19,10 +19,10 @@ The profiling tool provides 3 general features that can be used to debug the pip
 
 
 * 
-  Tracers log printouts - At the most basic level, you should get printouts from the traces about the different measurements made. If you know what you are looking for, you may see it here at runtime. You can see the printouts in the debug file: GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log.
+  Tracers log printouts - At the most basic level, printouts are available from the traces of the different measurements made. An experienced user will be able to make observations at runtime. Printouts can be found in the debug file: GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log.
 
 * 
-  Graphic visualization - Shown above, gst-shark can generate a pipeline graph that shows how elements are connected and what caps were negotiated between them. This is a very convenient feature to look at the pipeline in a more comfortable way. The graph is generated at runtime so it is a great way to see and debug how elements were actually connected and what formats the data ended up in.
+  Graphic visualization - Shown above, gst-shark can generate a pipeline graph that shows how elements are connected and what caps were negotiated between them. This is a very convenient feature for observing the pipeline in a more comfortable way. The graph is generated at runtime so it is very effective for seeing and debugging how elements were actually connected and in what formats the data ended up in.
 
 * 
   Plotting tool - A python script that generates a graph plot for each tracer metric enabled. This is a powerful tool to visualize each metric that can be used for deeper debugging.
@@ -30,16 +30,16 @@ The profiling tool provides 3 general features that can be used to debug the pip
 Install
 -------
 
-Our docker image already contains GstShark! If you decide to not use our Docker image, our suggestion is to follow RidgeRun tutorial: `GstShark <https://developer.ridgerun.com/wiki/index.php?title=GstShark>`_
+The docker image already contains GstShark! If the user decides to not use the TAPPAS Docker image, our suggestion is to follow RidgeRun tutorial: `GstShark <https://developer.ridgerun.com/wiki/index.php?title=GstShark>`_
 
-Bash shortcuts
+Bash Shortcuts
 --------------
       
 .. note::
-    These shortcuts are only available if you are using the docker tappas installation, Otherwise, please refer to the following section: `Using GstShark in yocto-compiled images`_
+    These shortcuts are only available if the Docker TAPPAS installation is being used, otherwise, please refer to the following section: `Using GstShark in yocto-compiled images`_
 
 
-As part of our creation of the Docker image, we copy some convinet shortcuts to GstShark:
+As part of the TAPPAS creation of the Docker image, some convenient shortcuts are copied to GstShark:
 
 .. code-block:: sh
 
@@ -87,11 +87,11 @@ As part of our creation of the Docker image, we copy some convinet shortcuts to 
      echo "dot $HAILO_PROFILE_LOCATION/graphic/pipeline_<timestamp>.dot -T x11"
    }
 
-Note that we added 4 functions: two sets, an unset, and a plot function. The set functions enable gst-shark by setting environment variables, the chief of which is GST_TRACERS. This enables the different trace hooks in the pipeline. The available tracers are listed in the echo command at the end of each set. You can enable any combination of the available tracers, just chain them together with a ';' (notice that the difference between gst_set_debug and gst_set_graphic is that gst_set_debug enables all tracers whereas gst_set_graphic only enables the graphic tracer that draws the pipeline graph). HAILO_PROFILE_LOCATION and GST_DEBUG_DUMP_DOT_DIR set locations where the dump files are stored, the first sets where the tracer dumps are (used for gst-plot), and the latter where the dot file is saved (the graphic pipeline graph). Unset disables all tracers, and gst_plot_debug runs plot script.
+Note that 4 functions were added: two sets, an unset, and a plot function. The set functions enable gst-shark by setting environment variables, the chief of which is GST_TRACERS. This enables the different trace hooks in the pipeline. The available tracers are listed in the echo command at the end of each set. You can enable any combination of the available tracers, just chain them together with a ';' (notice that the difference between gst_set_debug and gst_set_graphic is that gst_set_debug enables all tracers whereas gst_set_graphic only enables the graphic tracer that draws the pipeline graph). HAILO_PROFILE_LOCATION and GST_DEBUG_DUMP_DOT_DIR set locations where the dump files are stored, the first sets where the tracer dumps are (used for gst-plot), and the latter where the dot file is saved (the graphic pipeline graph). Unset disables all tracers, and gst_plot_debug runs plot script.
 
 .. _Using GstShark in yocto-compiled images:
 
-Using GstShark in yocto-compiled images
+Using GstShark in Yocto-Compiled Images
 ---------------------------------------
 Enable TAPPAS tracers:
 
@@ -105,7 +105,7 @@ Enable TAPPAS tracers:
      export GST_DEBUG_NO_COLOR=1
 
 * 
-  Select the tracers by setting the GST_TRACERS environment variable to the list of tracers, seperated by ; as in the example:
+  Select the tracers by setting the GST_TRACERS environment variable to the list of tracers, separated by ; as in the example:
 
   .. code-block:: sh
 
@@ -134,7 +134,7 @@ Enable TAPPAS tracers:
 Using GstShark
 --------------
 
-Let’s say you have a gstreamer app you want to profile. Start by enabling gst-shark:
+Let’s say there is a GStreamer app to be profiled, Start by enabling gst-shark:
 
 
 .. raw:: html
@@ -142,20 +142,20 @@ Let’s say you have a gstreamer app you want to profile. Start by enabling gst-
    <div align="left"><img src="../resources/using.gif"/></div>
 
 
-Then just run your app. You can see all kinds of tracer prints on the debug output file: GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log.
+Then just run your app, it will be possible to see all kinds of tracer prints on the debug output file: GST_DEBUG_FILE=$TAPPAS_WORKSPACE/tappas_traces.log.
 
 .. raw:: html
 
    <div align="left"><img src="../resources/tappas_traces_log.png"/></div>
 
 
-After you have run a gstreamer pipeline with tracers enabled, you can plot them using the plot script, just run: 
+After you have run a gstreamer pipeline with tracers enabled, plot them using the plot script, just run: 
 
 .. code-block:: sh
 
    gst_plot_debug
 
-It will print to the console the path of the html file that contains the plots. You can open it in your browser. In addition it will print the command to open the pipeline graph. You can run it in a terminal to open the graph.
+It will print to the console the path of the html file that contains the plots, which can be opened in the browser. In addition it will print the command to open the pipeline graph, which can be run in a terminal to open the graph.
 
 
 .. raw:: html
@@ -166,7 +166,7 @@ It will print to the console the path of the html file that contains the plots. 
 
 .. _Understanding GstShark tappas plotted graphs:
 
-Understanding GstShark tappas plotted graphs
+Understanding GstShark TAPPAS Plotted Graphs
 --------------------------------------------
 
 Each graph inspects a different metric of the pipeline, it is recommended to read more about what each one represents here:
@@ -187,7 +187,7 @@ Each graph inspects a different metric of the pipeline, it is recommended to rea
 
 
 .. note::
-    When using the Thread Monitor tracer, give meaningful names to the queues because the names of the threads in the graph will be based on the names of the queues. This can help you easily identify the threads and understand their purpose when analyzing the trace. In addition, due to the way this tracer works, it is important to keep the names of the queues shorter than 16 characters. If the names are longer than this, the thread names in the graph will be truncated.
+    When using the Thread Monitor tracer, provide meaningful names to the queues because the names of the threads in the graph will be based on the names of the queues. This will  help easily identify the threads and understand their purpose when analyzing the trace. In addition, due to the way this tracer works, it is important to keep the names of the queues shorter than 16 characters. If the names are longer than this, the thread names in the graph will be truncated.
 
 Modify Buffering Mode and Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -209,7 +209,7 @@ Individual Element Tracing (filter)
 
 The individual element tracing, or filter parameter, allows the user to choose which elements get included in the tracing. The value to be set in the filter is a Glib Compatible Regular Expression, meaning that elements to be traced can be grouped by using a regex that matches with their name.
 
-The filtering applies to the element name, NOT the factory. This is, if your element is specified as "identity name=myelem", you should refer to "myelem" and not to "identity"
+The filtering applies to the element name, NOT the factory. This is, if the element is specified as "identity name=myelem", it should be referred to as "myelem" and not to "identity"
 
 Print the amount of frames that flow every 5 seconds through the different src pads in the pipe:
 
@@ -235,7 +235,7 @@ Print the amount of frames that flow every 5 through the identity:
 
    GST_TRACERS="framerate(period=5,filter=identity);bitrate(period=3)" GST_DEBUG=GST_TRACER:7
 
-Good luck, happy hunting.
+
 
 
 Using gst-instruments

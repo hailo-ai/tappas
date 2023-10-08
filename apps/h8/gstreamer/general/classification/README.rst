@@ -46,7 +46,7 @@ Run
   <div align="center"><img src="readme_resources/pipeline_run.gif" width="600px" height="500px"/></div>
 
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
 This app is based on our `single network with resolution preservation pipeline template <../../../../../docs/pipelines/single_network.rst#example-pipeline-with-resolution-preservation>`_

@@ -4,8 +4,8 @@ Parallel Networks Structure
 
 This page provides a drill-down into the template of our parallel networks pipeline with a focus on explaining the ``GStreamer`` pipeline.
 
-Example pipeline one display multi source
------------------------------------------
+Example Pipeline of One Display Multi Source
+--------------------------------------------
 
 
 .. image:: ../../resources/parallel_nets_pipeline.png
@@ -31,7 +31,7 @@ Example pipeline one display multi source
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
 
-Example pipeline two displays
+Example Pipeline of Two Displays
 -----------------------------
 
 
@@ -58,4 +58,4 @@ Example pipeline two displays
        hailooverlay ! videoconvert ! \
        fpsdisplaysink video-sink=$video_sink_element name=hailo_display2 sync=false text-overlay=false ${additional_parameters}
 
-This pipeline is based on-top of our `single network pipeline <single_network.rst>`_\ , the modification amounts to using the GStreamer built in tee element.
+This pipeline is based on-top of the `single network pipeline <single_network.rst>`_\ , the modification amounts to using the GStreamer built in the tee element.

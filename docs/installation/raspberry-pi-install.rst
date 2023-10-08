@@ -1,14 +1,14 @@
-Run Tappas on Raspberry PI 4 
+Run TAPPAS on Raspberry PI 4
 ============================
 
 Overview
 --------
 
-Hailo supports both Ubuntu 20.04 and Raspberry Pi OS, our recomenddion is to install TAPPAS on Raspberry Pi OS.
+Hailo supports both Ubuntu 20.04 and Raspberry Pi OS, our recommendation is to install TAPPAS on Raspberry Pi OS.
 
-This guide would focus on installating TAPPAS on Raspberry Pi OS.
+This guide focuses on the installation of TAPPAS on Raspberry Pi OS.
 
-Preparing the device
+Preparing the Device
 --------------------
 
 * Device: Raspberry Pi Compute Module 4
@@ -38,7 +38,7 @@ TAPPAS Installation
 Read through on how to `pre build docker image for Raspberry Pi <./docker-install.rst>`_ or `installing TAPPAS manually <./manual-install.rst>`_ 
 
 .. note::
-    Raspberry Pi we limit the number of cpu cores to 1 during compilation (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines like Raspberry Pi)
+    Raspberry Pi we limit the number of cpu cores to 1 during compilation (more cores accelerates the compilation process, but may cause 'out of swap memory' issue on weak machines like Raspberry Pi)
 
 .. code-block:: sh
 
@@ -72,7 +72,7 @@ After installing TAPPAS and HailoRT, A known issue regarding working with displa
 
     installing the module manually is required on every boot of the raspberry-pi.
 
-4) `Make sure that HailoRT works <./verify_hailoRT.rst>`_
+4) `Confirm that HailoRT works <./verify_hailoRT.rst>`_
 
 
 Working with Raspberry PI's MIPI Camera
@@ -80,16 +80,16 @@ Working with Raspberry PI's MIPI Camera
 
 We tested our applications with  `Raspberry Pi Camera Module 2 <https://www.raspberrypi.com/products/camera-module-v2/>`_\
 
-To support Tappas apps, enable camera features that support v4l by doing the following steps:
+To support TAPPAS apps, enable camera features that support v4l by doing the following steps:
 
-1) Configure raraspicam:
+1) Configure Raspicam:
 
 .. code-block:: sh
 
     sudo wget https://datasheets.raspberrypi.com/cmio/dt-blob-cam1.bin -O /boot/dt-blob.bin
 
 
-2) Enable Lagecy camera features:
+2) Enable Legacy camera features:
 
 .. code-block:: sh
 
@@ -121,9 +121,9 @@ To support Tappas apps, enable camera features that support v4l by doing the fol
    :align: center
 
 
-Run Tappas Applications
+Run TAPPAS Applications
 -----------------------
-To read furture and get more more details about each application enter `This section <../../apps/h8/gstreamer/raspberrypi/README.rst>`_
+To read further and learn more more details about each application refer to the link `This section <../../apps/h8/gstreamer/raspberrypi/README.rst>`_
 
 Troubleshooting
 ---------------

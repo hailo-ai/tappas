@@ -335,7 +335,7 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
 {
     overlay_status_t ret = OVERLAY_STATUS_UNINITIALIZED;
     uint number_of_classifications = 0;
-    cv::Mat &mat = hmat.get_mat();
+    cv::Mat &mat = hmat.get_matrices()[0];
     for (auto obj : roi->get_objects())
     {
         switch (obj->get_type())

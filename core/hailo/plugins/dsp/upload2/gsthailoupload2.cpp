@@ -81,6 +81,7 @@ gst_hailo_upload2_propose_allocation (GstBaseTransform *trans,
     GstStructure *config = gst_buffer_pool_get_config(buffer_pool);
     guint buffer_size = 0;
     gst_buffer_pool_config_get_params(config, NULL, &buffer_size, NULL, NULL);
+    gst_structure_free(config);
 
     gst_query_add_allocation_pool(query, buffer_pool, buffer_size, dspbasetrans->bufferpool_min_size, dspbasetrans->bufferpool_max_size);
 

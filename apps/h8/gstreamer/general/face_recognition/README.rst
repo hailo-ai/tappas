@@ -42,10 +42,10 @@ The output should look like:
    </div>
 
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
-The pipeline is devided to 4 steps:
+The pipeline is divided to 4 steps:
 
 1. Face detection and landmarks:
     Detect faces and predict the locations of key facial landmarks (such as eyes, nose, and mouth), in the video stream.
@@ -62,8 +62,8 @@ The pipeline is devided to 4 steps:
 4. Gallery:
     Use the generated embeddings to find the closest matching face in the local database (named "Local Gallery" and stored in a JSON file). This allows the application to identify the person in the video stream.
 
-How to save faces to the local gallery?
----------------------------------------
+Saving Faces to the Local Gallery
+---------------------------------
 The local gallery file ``face_recognition_local_gallery.json`` is stored under ``apps/h8/gstreamer/general/face_recognition/resources/gallery`` directory.
 It contains the embeddings of the faces.
 
@@ -86,12 +86,12 @@ To use your own video sources and faces, add your images to the ``resources/face
 Make sure to use ``.png`` format image files and a file name including the name of the person.
 Also use --clean option to order the script to clean the gallery file before saving the new faces.
 
-How to use Retraining to replace models
+Retraining to Replace Models
 ---------------------------------------
 
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
-You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
 that are trained on your own dataset:
 
 - ``scrfd_10g``
@@ -100,14 +100,14 @@ that are trained on your own dataset:
   - Post process CPP file edit update post-processing:
 
     - Update `face_detection.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/face_detection.cpp#L609>`_
-      (``scrfd()`` fucttion) with your new paremeters, then recompile to create ``libface_detection_post.so``
+      (``scrfd()`` function) with your new parameters, then recompile to create ``libface_detection_post.so``
 - ``scrfd_2.5g``
   
   - No retraining docker is available.
   - Post process CPP file edit update post-processing:
 
     - Update `face_detection.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/face_detection.cpp#L609>`_
-      (``scrfd()`` fucttion) with your new paremeters, then recompile to create ``libface_detection_post.so``
+      (``scrfd()`` function) with your new parameters, then recompile to create ``libface_detection_post.so``
 - ``arcface_mobilefacenet``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/arcface>`_
@@ -115,4 +115,4 @@ that are trained on your own dataset:
 
     - Update HEF_PATH on the .sh file
     - Update `arcface.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/apps/x86/vms/postprocesses/arcface.cpp#L19>`_
-      with your new paremeters, then recompile to create ``libface_recognition_post.so``
+      with your new parameters, then recompile to create ``libface_recognition_post.so``

@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #pragma once
 
 #include "xtensor/xarray.hpp"
@@ -12,11 +12,12 @@
 
 namespace common
 {
-    
+
     //-------------------------------
     // COMMON FILTERS
     //-------------------------------
-    xt::xarray<int> top_k(xt::xarray<uint8_t> &data, const int k)
+    template <typename T>
+    xt::xarray<int> top_k(xt::xarray<T> &data, const int k)
     {
         // First we negate the array so that we sort in descending order.
         auto descending_order_array = xt::eval(-data);

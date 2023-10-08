@@ -5,7 +5,7 @@ Classification
 --------------
 
 The purpose of ``classification.sh`` is to demonstrate classification on one video file source with python post-processing
- This is done by running a ``single-stream object classification pipeline`` on top of GStreamer using the Hailo-8 device.
+by running a ``single-stream object classification pipeline`` on top of GStreamer using the Hailo-8 device.
 
 .. raw:: html
 
@@ -45,8 +45,8 @@ Model
 
 * ``resnet_v1_50``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/resnet_v1_50.yaml
 
-How it works
-------------
+Method of Operation
+-------------------
 
-This app is based on our `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_
+This app is based on `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_
 With a slight modification, instead of using ``hailofilter`` for post-process, ``hailopython`` is used.

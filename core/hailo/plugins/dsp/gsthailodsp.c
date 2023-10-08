@@ -305,9 +305,9 @@ dsp_image_properties_t create_image_properties_from_video_frame(GstVideoFrame *v
 
         // Allocate memory for the plane
         dsp_data_plane_t *plane = malloc(sizeof(*plane));
-        plane->ptr = data;
-        plane->line_stride = input_line_stride;
-        plane->plane_size = input_size;
+        plane->userptr = data;
+        plane->bytesperline = input_line_stride;
+        plane->bytesused = input_size;
 
         // Fill in dsp_image_properties_t values
         image_properties = (dsp_image_properties_t){
@@ -331,18 +331,18 @@ dsp_image_properties_t create_image_properties_from_video_frame(GstVideoFrame *v
         size_t y_channel_stride = GST_VIDEO_FRAME_PLANE_STRIDE(video_frame, 0);
         size_t y_channel_size = y_channel_stride * image_height;
         dsp_data_plane_t y_plane_data = {
-            .ptr = y_channel_data,
-            .line_stride = y_channel_stride,
-            .plane_size = y_channel_size,
+            .userptr = y_channel_data,
+            .bytesperline = y_channel_stride,
+            .bytesused = y_channel_size,
         };
         // Gather uv channel info
         void *uv_channel_data = (void *)GST_VIDEO_FRAME_PLANE_DATA(video_frame, 1);
         size_t uv_channel_stride = GST_VIDEO_FRAME_PLANE_STRIDE(video_frame, 1);
         size_t uv_channel_size = uv_channel_stride * image_height / 2;
         dsp_data_plane_t uv_plane_data = {
-            .ptr = uv_channel_data,
-            .line_stride = uv_channel_stride,
-            .plane_size = uv_channel_size,
+            .userptr = uv_channel_data,
+            .bytesperline = uv_channel_stride,
+            .bytesused = uv_channel_size,
         };
         dsp_data_plane_t *yuv_planes = malloc(sizeof(*yuv_planes) * 2);
         yuv_planes[0] = y_plane_data;
@@ -373,9 +373,9 @@ dsp_image_properties_t create_image_properties_from_video_frame(GstVideoFrame *v
             if (i == 1 || i == 2)
                 channel_size /= 2;
             dsp_data_plane_t plane_data = {
-                .ptr = channel_data,
-                .line_stride = channel_stride,
-                .plane_size = channel_size,
+                .userptr = channel_data,
+                .bytesperline = channel_stride,
+                .bytesused = channel_size,
             };
             a420_planes[i] = plane_data;
         }

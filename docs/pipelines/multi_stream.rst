@@ -8,10 +8,10 @@ Multi Stream Pipeline Structure
 
 This page provides a drill-down into the template of our multi stream pipelines with a focus on explaining the ``GStreamer`` pipeline.
 
-Example pipeline
+Example Pipeline
 ----------------
 
-Firstly, we will create the sources pipelines
+The first stage is to create the pipeline sources.
 
 .. code-block:: sh
 
@@ -45,7 +45,7 @@ Each source is a sub-pipeline
            $video_sink_element name=hailo_display sync=false \
            $sources
 
-Then we can combine them together
+They can then be combined together
 
 
 * ``funnel`` takes multiple input sinks and outputs one source. an N-to-1 funnel that attaches a streamid to each stream, can later be used to demux back into separate streams. this lets you queue frames from multiple streams to send to the hailo device one at a time.

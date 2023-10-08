@@ -17,7 +17,7 @@ This element supports the following results:
 Parameters
 ^^^^^^^^^^
 
-As a member of the GstBaseTransform hierarchy, the hailooverlay element supports qos (\ `Quality of Service <https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/qos.html?gi-language=c>`_\ ). Although qos typically tries to garuantee some level of performance, it can lead to frames dropping. For this reason it is ``advised to always set qos=false`` to avoid either tensors being dropped or not drawn.
+As a member of the GstBaseTransform hierarchy, the hailooverlay element supports qos (\ `Quality of Service <https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/qos.html?gi-language=c>`_\ ). Although qos typically tries to guarantee some level of performance, it can lead to frames dropping. For this reason it is advised to always set ``qos=false`` to avoid either tensors being dropped or not drawn.
 
 Hierarchy
 ---------

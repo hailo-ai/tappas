@@ -1,7 +1,7 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <iostream>
-
+#include <cxxopts.hpp>
 #include "apps_common.hpp"
 
 #define BIG_FRAMERATE (30)
@@ -92,7 +92,7 @@ static GstFlowReturn appsink_new_sample(GstAppSink * appsink, gpointer callback_
  * @return A string containing the gstreamer pipeline.
  * @note prints the return value to the stdout.
  */
-std::string create_pipeline_string()
+std::string create_pipeline_string(std::string codec)
 {
     std::string pipeline = "";
 
@@ -100,11 +100,11 @@ std::string create_pipeline_string()
                "video/x-raw,format=NV12,width=1920,height=1080,framerate=30/1 ! "
                "videorate name=videorate ! capsfilter name=videofilter caps=video/x-raw,framerate=30/1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "hailoh265enc name=enco ! h265parse config-interval=-1 ! tee name=t t. ! "
+               "hailo" + codec + "enc name=enco ! " + codec + "parse config-interval=-1 ! tee name=t t. ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "fpsdisplaysink name=display_sink text-overlay=false video-sink=\"appsink name=hailo_sink\" sync=true t. ! "
+               "fpsdisplaysink name=display_sink text-overlay=false video-sink=\"appsink name=hailo_sink\" sync=true signal-fps-measurements=true t. ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "rtph265pay ! application/x-rtp, media=(string)video, encoding-name=(string)H265 ! "
+               "rtp" + codec + "pay ! "
                "udpsink host=10.0.0.2 port=5000 sync=true name=udp_sink";
                                            
     std::cout << "Pipeline:" << std::endl;
@@ -117,9 +117,10 @@ std::string create_pipeline_string()
  * Set the Appsink callbacks
  *
  * @param[in] pipeline        The pipeline as a GstElement.
+ * @param[in] print_fps       To print FPS or not.
  * @note Sets the new_sample and propose_allocation callbacks, without callback user data (NULL).
  */
-void set_callbacks(GstElement *pipeline)
+void set_callbacks(GstElement *pipeline, bool print_fps)
 {
     GstAppSinkCallbacks callbacks={NULL};
 
@@ -128,6 +129,11 @@ void set_callbacks(GstElement *pipeline)
     callbacks.new_sample = appsink_new_sample;
 
     gst_app_sink_set_callbacks(GST_APP_SINK(appsink), &callbacks, NULL, NULL);
+
+    if (print_fps)
+    {
+        g_signal_connect(display_sink, "fps-measurements", G_CALLBACK(fps_measurements_callback), NULL);
+    }
 }
 
 /**
@@ -150,12 +156,35 @@ int main(int argc, char *argv[])
 {
     std::string src_pipeline_string;
     GstFlowReturn ret;
+    add_sigint_handler();
+    std::string codec;
+    bool print_fps = false;
+
+    // Parse user arguments
+    cxxopts::Options options = build_arg_parser();
+    auto result = options.parse(argc, argv);
+    std::vector<ArgumentType> argument_handling_results = handle_arguments(result, options, codec);
+
+    for (ArgumentType argument: argument_handling_results)
+    {
+        switch (argument) {
+            case ArgumentType::Help:
+                return 0;
+            case ArgumentType::Codec:
+                break;
+            case ArgumentType::PrintFPS:
+                print_fps = true;
+                break;
+            case ArgumentType::Error:
+                return 1;
+        }
+    }
 
     gst_init(&argc, &argv);
 
-    std::string pipeline_string = create_pipeline_string();
+    std::string pipeline_string = create_pipeline_string(codec);
     GstElement *pipeline = gst_parse_launch(pipeline_string.c_str(), NULL);
-    set_callbacks(pipeline);
+    set_callbacks(pipeline, print_fps);
     set_probes(pipeline);
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 

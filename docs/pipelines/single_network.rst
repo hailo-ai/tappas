@@ -10,7 +10,7 @@ This page provides a drill-down into the template of our single network pipeline
 
 .. _Example pipeline:
 
-Example pipeline
+Example Pipeline
 ----------------
 
 .. code-block:: sh
@@ -27,7 +27,7 @@ Example pipeline
        videoconvert ! \
        fpsdisplaysink video-sink=xvimagesink name=hailo_display sync=true text-overlay=false
 
-Let's explain this pipeline section by section:
+The pipeline functionality will be explained section by section:
 
 .. code-block::
 
@@ -70,7 +70,7 @@ Performs the inference on the Hailo-8 device.
 
 Apply the final convert to let GStreamer utilize the format required by the ``fpsdisplaysink`` element
 
-Example pipeline with resolution preservation
+Example Pipeline with Resolution Preservation
 ---------------------------------------------
 
 Using this template the source resolution would be preserved, this is an extension to our `Example pipeline`_
@@ -97,7 +97,7 @@ An example for pipelines who preserve the original resolution:
        videoconvert ! \
        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false
 
-Example pipeline single network with tiling
+Example Pipeline Single Network with Tiling
 -------------------------------------------
 
 

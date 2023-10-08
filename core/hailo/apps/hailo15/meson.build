@@ -29,3 +29,4 @@ lpr_ocrsink_lib = shared_library('lpr_ocrsink',
 )
 
 subdir('encoder_applications')
+subdir('vision_preproc_applications')

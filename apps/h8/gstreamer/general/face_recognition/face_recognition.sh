@@ -24,14 +24,22 @@ function init_variables() {
     readonly FACE_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/scrfd.json"
     readonly FUNCTION_NAME="scrfd_10g"
 
-    hef_path=$DEFAULT_HEF_PATH
+    detection_network="scrfd_10g"
+
+    detection_hef=$DEFAULT_HEF_PATH
+    detection_post=$FUNCTION_NAME
+    recognition_hef=$RECOGNITION_HEF_PATH
+    recognition_post="arcface_rgb"
+
+    video_format="RGB"
+
     input_source="$RESOURCES_DIR/face_recognition.mp4"
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
     additional_parameters=""
     print_gst_launch_only=false
     vdevice_key=1
-    function_name=$FUNCTION_NAME
-    local_gallery_file="$RESOURCES_DIR/gallery/face_recognition_local_gallery.json"
+    local_gallery_file="$RESOURCES_DIR/gallery/face_recognition_local_gallery_rgba.json"
+
 }
 
 function print_usage() {
@@ -42,6 +50,7 @@ function print_usage() {
     echo "  --show-fps                      Printing fps"
     echo "  -i INPUT --input INPUT          Set the input source (default $input_source)"
     echo "  --network NETWORK               Set network to use. choose from [scrfd_10g, scrfd_2.5g], default is scrfd_10g"
+    echo "  --format FORMAT                 Choose video format from [RGB, NV12], default is RGB"
     echo "  --print-gst-launch              Print the ready gst-launch command without running it"
     exit 0
 }
@@ -70,10 +79,23 @@ function parse_args() {
             shift
         elif [ $1 == "--network" ]; then
             if [ $2 == "scrfd_2.5g" ]; then
+                detection_network="scrfd_2.5g"
                 hef_path="$RESOURCES_DIR/scrfd_2.5g.hef"
-                function_name="scrfd_2_5g"
+                detection_post="scrfd_2_5g"
             elif [ $2 != "scrfd_10g" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
+                print_usage
+                exit 1
+            fi
+            shift
+        elif [ $1 == "--format" ]; then
+            if [ $2 == "NV12" ]; then
+                video_format="NV12"
+                local_gallery_file="$RESOURCES_DIR/gallery/face_recognition_local_gallery_nv12.json"
+            elif [ $2 == "RGB" ]; then
+                video_format="RGB"
+            else
+                echo "Received invalid format: $2. See expected arguments below:"
                 print_usage
                 exit 1
             fi
@@ -87,9 +109,35 @@ function parse_args() {
     done
 }
 
+function set_networks() {
+    # Face Recognition
+    if [ "$video_format" == "RGB" ]; then
+        recognition_hef="$RESOURCES_DIR/arcface_mobilefacenet_v1.hef"
+    else
+        recognition_hef="$RESOURCES_DIR/arcface_mobilefacenet_nv12.hef"
+    fi
+    
+    # Face Detection and Landmarking
+    if [ "$video_format" == "RGB" ] && [ $detection_network == "scrfd_10g" ]; then
+        hef_path="$RESOURCES_DIR/scrfd_10g.hef"
+        recognition_post="arcface_rgb"
+    elif [ "$video_format" == "RGB" ] && [ $detection_network == "scrfd_2.5g" ]; then
+        hef_path="$RESOURCES_DIR/scrfd_2.5g.hef"
+        recognition_post="arcface_rgb"
+    elif [ "$video_format" == "NV12" ] && [ $detection_network == "scrfd_10g" ]; then
+        hef_path="$RESOURCES_DIR/scrfd_10g_nv12.hef"
+        recognition_post="arcface_nv12"
+    # video_format == NV12 && network == scrfd_2.5g
+    else 
+        echo "ERROR: The network scrfd_2.5g does not work with NV12 format, change the format or the network"
+        exit 1
+    fi
+}
+
 function main() {
     init_variables $@
     parse_args $@
+    set_networks $@
 
     # If the video provided is from a camera
     if [[ $input_source =~ "/dev/video" ]]; then
@@ -102,19 +150,23 @@ function main() {
 
     RECOGNITION_PIPELINE="hailocropper so-path=$CROPPER_SO function-name=face_recognition internal-offset=true name=cropper2 \
         hailoaggregator name=agg2 \
-        cropper2. ! queue name=bypess2_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! agg2. \
-        cropper2. ! queue name=pre_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailofilter so-path=$FACE_ALIGN_SO name=face_align_hailofilter use-gst-buffer=true qos=false ! \
-        queue name=detector_pos_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$RECOGNITION_HEF_PATH scheduling-algorithm=1 vdevice-key=$vdevice_key ! \
-        queue name=recognition_post_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailofilter so-path=$RECOGNITION_POST_SO name=face_recognition_hailofilter qos=false ! \
-        queue name=recognition_pre_agg_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        agg2. agg2. "
+        cropper2. ! \
+            queue name=bypess2_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        agg2. \
+        cropper2. ! \
+            queue name=pre_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+            hailofilter so-path=$FACE_ALIGN_SO name=face_align_hailofilter use-gst-buffer=true qos=false ! \
+            queue name=detector_pos_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+            hailonet hef-path=$recognition_hef scheduling-algorithm=1 vdevice-key=$vdevice_key ! \
+            queue name=recognition_post_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+            hailofilter function-name=$recognition_post so-path=$RECOGNITION_POST_SO name=face_recognition_hailofilter qos=false ! \
+            queue name=recognition_pre_agg_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        agg2. \
+        agg2. "
 
     FACE_DETECTION_PIPELINE="hailonet hef-path=$hef_path scheduling-algorithm=1 vdevice-key=$vdevice_key ! \
         queue name=detector_post_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailofilter so-path=$POSTPROCESS_SO name=face_detection_hailofilter qos=false config-path=$FACE_JSON_CONFIG_PATH function_name=$function_name"
+        hailofilter so-path=$POSTPROCESS_SO name=face_detection_hailofilter qos=false config-path=$FACE_JSON_CONFIG_PATH function_name=$detection_post"
 
     FACE_TRACKER="hailotracker name=hailo_face_tracker class-id=-1 kalman-dist-thr=0.7 iou-thr=0.8 init-iou-thr=0.9 \
                     keep-new-frames=2 keep-tracked-frames=6 keep-lost-frames=8 keep-past-metadata=true qos=false"

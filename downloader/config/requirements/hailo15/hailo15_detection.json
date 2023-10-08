@@ -1,0 +1,10 @@
+{
+  "path": "apps/h15/gstreamer/detection/resources",
+  "requirements": [
+    {
+      "bucket": "tappas",
+      "source": "hailo15/hefs/yolov5m_wo_spp_60p_nv12.hef",
+      "destination": "yolov5m_wo_spp_60p_nv12.hef"
+    }
+  ]
+}

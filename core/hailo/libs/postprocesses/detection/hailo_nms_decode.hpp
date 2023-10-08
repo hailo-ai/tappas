@@ -5,7 +5,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
-
+#include <cstring>
+#include "hailo/hailort.h"
 #include "hailo_objects.hpp"
 #include "common/structures.hpp"
 #include "common/nms.hpp"
@@ -103,51 +104,43 @@ public:
         ymin = 0.551805 xmin = 0.389635 ymax = 0.741805 xmax = 0.561974 score = 0.95
         */
 
-        //_nms_output_tensor - pointer to the output tensor's buffer of the network.
-        std::vector<HailoDetection> _objects;
         if (!_nms_output_tensor)
-            return _objects;
+            return std::vector<HailoDetection>{};
 
+        std::vector<HailoDetection> _objects;
         _objects.reserve(_max_boxes);
-        uint8_t *src_ptr = _nms_output_tensor->data();
-        uint32_t actual_frame_size = 0;
-
-        uint32_t num_of_classes = _vstream_info.nms_shape.number_of_classes;
         uint32_t max_bboxes_per_class = _vstream_info.nms_shape.max_bboxes_per_class;
-
-        for (uint32_t class_index = 1; class_index <= num_of_classes; class_index++)
+        uint32_t num_of_classes = _vstream_info.nms_shape.number_of_classes;
+        size_t buffer_offset = 0;
+        uint8_t *buffer = _nms_output_tensor->data();
+        for (size_t class_id = 0; class_id < num_of_classes; class_id++)
         {
-            T bbox_count = *reinterpret_cast<const T *>(src_ptr + actual_frame_size);
+            float32_t bbox_count = 0;
+            memcpy(&bbox_count, buffer + buffer_offset, sizeof(bbox_count));
+            buffer_offset += sizeof(bbox_count);
 
+            if (bbox_count == 0) // No detections
+                continue;
             if (bbox_count > max_bboxes_per_class)
-                throw std::runtime_error(("Runtime error - Got more than the maximum bboxes per class in the nms buffer"));
+                throw std::runtime_error("Runtime error - Got more than the maximum bboxes per class in the nms buffer");
 
-            if (bbox_count > 0)
+            for (size_t bbox_index = 0; bbox_index < static_cast<uint32_t>(bbox_count); bbox_index++)
             {
-                uint8_t *class_ptr = src_ptr + actual_frame_size + sizeof(bbox_count);
-                // iterate over the boxes and parse each box to common::hailo_bbox_t
-                for (uint8_t box_index = 0; box_index < bbox_count; box_index++)
+                if (std::is_same<T, uint16_t>::value)
                 {
-                    BBoxType *bbox_struct = (BBoxType *)(class_ptr + (box_index * sizeof(BBoxType)));
-
-                    if (std::is_same<T, uint16_t>::value)
-                    {
-                        // output type (T) is uint16, so we need to do dequantization before parsing
-                        common::hailo_bbox_float32_t dequant_bbox = dequantize_hailo_bbox(bbox_struct);
-                        parse_bbox_to_detection_object(dequant_bbox, class_index, _objects);
-                    }
-                    else
-                    {
-                        parse_bbox_to_detection_object(*bbox_struct, class_index, _objects);
-                    }
+                    // output type (T) is uint16, so we need to do dequantization before parsing
+                    hailo_bbox_float32_t *bbox = (hailo_bbox_float32_t *)(&buffer[buffer_offset]);
+                    parse_bbox_to_detection_object(*bbox, class_id + 1, _objects);
+                    buffer_offset += sizeof(hailo_bbox_float32_t);
+                }
+                else
+                {
+                    BBoxType *bbox_struct = (BBoxType *)(&buffer[buffer_offset]);
+                    parse_bbox_to_detection_object(*bbox_struct, class_id + 1, _objects);
+                    buffer_offset += sizeof(BBoxType);
                 }
             }
-
-            // calculate the frame size of the class - sums up the size of the output during iteration
-            T class_frame_size = static_cast<T>(sizeof(bbox_count) + bbox_count * sizeof(BBoxType));
-            actual_frame_size += class_frame_size;
         }
-
         return _objects;
     }
 };

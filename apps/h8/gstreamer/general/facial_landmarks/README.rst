@@ -25,8 +25,9 @@ Run
 
 .. code-block:: sh
 
-   cd $TAPPAS_WORKSPACE/apps/h8/gstreamer/general/face_landmarks/
-   ./face_landmarks.sh
+   cd $TAPPAS_WORKSPACE/apps/h8/gstreamer/general/facial_landmarks/
+   ./facial_landmarks.sh
+
 
 The output should look like:
 
@@ -44,7 +45,7 @@ Model
 
 * ``tddfa_mobilenet_v1`` in resolution of 120X120X3 - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/tddfa_mobilenet_v1.yaml
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
 This app is based on our `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_

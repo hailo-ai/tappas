@@ -18,7 +18,7 @@ The element can be described by the following steps:
 DSP and Encoder require physically contiguous buffers.
 It is recommended to make sure that a buffer is contiguous in memory, 
 before being sent to an element that uses DSP- it is essential to avoid memcopies. (Like in  `HailoCropper <hailo_cropper.rst>`_).
-In Encoder - contiguous memory is mandatory. (`HailoH265Enc <hailo_h265enc.rst>`_ element).
+In Encoder - contiguous memory is mandatory. (see Media Library documentation for more information).
 
 As an example, file source allocates non-contiguous buffers, meaning a hailoupload is required to use ``hailoh265enc``:
 

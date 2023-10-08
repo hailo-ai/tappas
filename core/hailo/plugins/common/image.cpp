@@ -82,29 +82,22 @@ void resize_yuy2(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolati
     resized_y_channels_2_split.release();
 }
 
-void resize_nv12(cv::Mat &cropped_image, cv::Mat &resized_image, int interpolation)
+void resize_nv12(std::vector<cv::Mat> &cropped_image_vec, std::vector<cv::Mat> &resized_image_vec, int interpolation)
 {
-    // Split the nv12 mat into Y and UV mats
-    uint width = cropped_image.cols;
-    uint height = cropped_image.rows;
-    cv::Mat y_mat = cv::Mat(height * 2 / 3, width, CV_8UC1, (char *)cropped_image.data, cropped_image.step);
-    cv::Mat uv_mat = cv::Mat(height / 3, width / 2, CV_8UC2, (char *)cropped_image.data + ((height * 2 / 3) * width), cropped_image.step);
+    uint resize_width_y = resized_image_vec[0].cols;
+    uint resize_height_y = resized_image_vec[0].rows;
 
-    // Resize the U and V channels
-    uint resize_width = resized_image.cols;
-    uint resize_height = resized_image.rows;
+    uint resize_width_uv = resized_image_vec[1].cols;
+    uint resize_height_uv = resized_image_vec[1].rows;
 
-    cv::Mat resized_y_channel = cv::Mat(resize_height * 2 / 3, resize_width, CV_8UC1, (char *)resized_image.data, resize_width);
-    cv::Mat resized_uv_channels = cv::Mat(resize_height / 3, resize_width / 2, CV_8UC2, (char *)resized_image.data + ((resize_height * 2 / 3) * resize_width), resize_width);
-    cv::resize(y_mat, resized_y_channel, cv::Size(resize_width, resize_height * 2 / 3), 0, 0, interpolation);
-    cv::resize(uv_mat, resized_uv_channels, cv::Size(resize_width / 2, resize_height / 3), 0, 0, interpolation);
+    cv::resize(cropped_image_vec[0], resized_image_vec[0], cv::Size(resize_width_y, resize_height_y), 0, 0, interpolation);
+    cv::resize(cropped_image_vec[1], resized_image_vec[1], cv::Size(resize_width_uv, resize_height_uv), 0, 0, interpolation);
 }
 
 HailoBBox resize_letterbox_rgb(cv::Mat &cropped_image, cv::Mat &resized_image, cv::Scalar color, int interpolation)
 {
     cv::Mat tmp;
-    float ratio = std::min(float(resized_image.rows) / cropped_image.rows,
-                           float(resized_image.cols) / cropped_image.cols);
+    float ratio = std::min(float(resized_image.rows) / cropped_image.rows, float(resized_image.cols) / cropped_image.cols);
     int new_width = std::round(cropped_image.cols * ratio);
     int new_height = std::round(cropped_image.rows * ratio);
 
@@ -129,7 +122,7 @@ HailoBBox resize_letterbox_rgb(cv::Mat &cropped_image, cv::Mat &resized_image, c
     return letterboxed_scale;
 }
 
-HailoBBox resize_letterbox_nv12(cv::Mat &cropped_image, cv::Mat &resized_image, cv::Scalar color, int interpolation)
+HailoBBox resize_letterbox_nv12(std::vector<cv::Mat> &cropped_image_vec, std::vector<cv::Mat> &resized_image_vec, cv::Scalar color, int interpolation)
 {
     // Convert the color to YUV pixel format
     uint y = RGB2Y(color[0], color[1], color[2]);
@@ -137,22 +130,9 @@ HailoBBox resize_letterbox_nv12(cv::Mat &cropped_image, cv::Mat &resized_image, 
     uint v = RGB2V(color[0], color[1], color[2]);
     cv::Scalar nv12_color(y, u, v);
 
-    uint width = cropped_image.cols;
-    uint height = cropped_image.rows;
-
-    uint resize_width = resized_image.cols;
-    uint resize_height = resized_image.rows;
-
-    // Split the image into Y and UV channels
-    cv::Mat y_mat = cv::Mat(height * 2 / 3, width, CV_8UC1, (char *)cropped_image.data, cropped_image.step);
-    cv::Mat resized_y_channel = cv::Mat(resize_height * 2 / 3, resize_width, CV_8UC1, (char *)resized_image.data, resize_width);
-
-    cv::Mat uv_mat = cv::Mat(height / 3, width / 2, CV_8UC2, (char *)cropped_image.data + ((height * 2 / 3) * width), cropped_image.step);
-    cv::Mat resized_uv_channel = cv::Mat(resize_height / 3, resize_width / 2, CV_8UC2, (char *)resized_image.data + ((resize_height * 2 / 3) * resize_width), resize_width);
-
     // Perform the letterbox resize on the Y and UV channels separately
-    HailoBBox letterboxed_scale = resize_letterbox_rgb(y_mat, resized_y_channel, nv12_color, interpolation);
-    resize_letterbox_rgb(uv_mat, resized_uv_channel, nv12_color, interpolation);
+    HailoBBox letterboxed_scale = resize_letterbox_rgb(cropped_image_vec[0], resized_image_vec[0], nv12_color, interpolation);
+    resize_letterbox_rgb(cropped_image_vec[1], resized_image_vec[1], nv12_color, interpolation);
 
     return letterboxed_scale;
 }
@@ -161,7 +141,12 @@ std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *inf
 {
     std::shared_ptr<HailoMat> hmat = nullptr;
     GstVideoFrame frame;
+#ifdef IMX6_TARGET
+    bool success = gst_video_frame_map(&frame, info, buffer, GstMapFlags(GST_MAP_READ | GST_MAP_WRITE));
+#else
     bool success = gst_video_frame_map(&frame, info, buffer, GstMapFlags(GST_MAP_READ));
+#endif
+
     if (!success)
     {
         gst_video_frame_unmap(&frame);
@@ -206,14 +191,14 @@ std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *inf
     case GST_VIDEO_FORMAT_NV12:
     {
         hmat = std::make_shared<HailoNV12Mat>(plane0_data,
-                                            GST_VIDEO_INFO_HEIGHT(info),
-                                            GST_VIDEO_INFO_WIDTH(info),
-                                            GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
-                                            GST_VIDEO_INFO_PLANE_STRIDE(info, 1),
-                                            line_thickness,
-                                            font_thickness,
-                                            plane0_data,
-                                            GST_VIDEO_FRAME_PLANE_DATA(&frame, 1));
+                                              GST_VIDEO_INFO_HEIGHT(info),
+                                              GST_VIDEO_INFO_WIDTH(info),
+                                              GST_VIDEO_INFO_PLANE_STRIDE(info, 0),
+                                              GST_VIDEO_INFO_PLANE_STRIDE(info, 1),
+                                              line_thickness,
+                                              font_thickness,
+                                              plane0_data,
+                                              GST_VIDEO_FRAME_PLANE_DATA(&frame, 1));
         break;
     }
 

@@ -1,13 +1,13 @@
-Running Tappas on Rockchip
+Running TAPPAS on Rockchip
 ==========================
 
 Overview
 --------
 
-Tappas is supported on Rockchip, using Ubuntu 20.04 and Debian.
+TAPPAS is supported on Rockchip, using Ubuntu 20.04 and Debian.
 In addition to Debian, TAPPAS also supports Ubuntu 20.04 on Rockchip, but we recommend that you use Debian instead of Ubuntu since the hardware accelerators work better under Debian.
 For our examples we have used the Firefly ITX-3588J with their Debian image from their download page.
-Most of the examples attached show the types of applications that can be run using Tappas.
+Most of the examples attached show the types of applications that can be run using TAPPAS.
 The Multi-stream Detection examples shows how to use the MPP elements for decode/encode to get the best performance.
 
 This guide will focus on installing TAPPAS on Debian based on Firefly implementation.
@@ -49,21 +49,21 @@ After the installation has finished the next three steps may be required on cert
 
 .. code-block:: sh
 
-    # create the next file
+    # Create the next file
     sudo vim /etc/ld.so.conf.d/hailo_tappas.conf
 
-    # add these lines
+    # Add these lines
         # tappas plugins library location
         /opt/hailo/tappas/lib/aarch64-linux-gnu/
 
-    # refresh the ldconfig
+    # Refresh the ldconfig
     sudo ldconfig
 
 
 Enabling RGA HW Accelerators
 ----------------------------
 
-The RGA stands for Raster 2d Graphic Acceleration.
+The term RGA stands for Raster 2d Graphic Acceleration.
 It accelerates 2D graphics operations, such as point/line drawing, image scaling, rotation, BitBLT, alpha blending and image blur/sharpness.
 After installing TAPPAS and HailoRT, it is recommended to enable the RGA HW accelerators in order to achieve the best performance.
 
@@ -80,6 +80,6 @@ After installing TAPPAS and HailoRT, it is recommended to enable the RGA HW acce
     sudo reboot
 
 
-Run Tappas Applications
+Run TAPPAS Applications
 -----------------------
 To read further on this subject and obtain more details about each application enter `This section <../../apps/h8/gstreamer/rockchip/README.rst>`_

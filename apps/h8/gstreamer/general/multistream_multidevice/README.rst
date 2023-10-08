@@ -1,5 +1,5 @@
 
-Multi-Stream RTSP object detection and pose estimation Pipeline
+Multi-Stream RTSP Object Detection and Pose Estimation Pipeline
 ===============================================================
 
 Overview
@@ -11,7 +11,7 @@ This pipeline also demonstrates using two hailo8 devices in parallel.
 All the streams are processed in parallel through the decode and scale phases, and enter the Hailo devices frame by frame.
 **Each** hailo device is in charge of one inference task (one for yolov5 and the other for centerpose)
 
-Afterwards postprocess and drawing phases add the classified object and bounding boxes to each frame. \
+Afterwards the post-process and drawing phases add the classified object and bounding boxes to each frame. \
 The last step is to match each frame back to its respective stream and output all of them to the display.
 
 Read more about RTSP: `RTSP <../../../../../docs/terminology.rst#real-time-streaming-protocol-rtsp>`_
@@ -39,7 +39,7 @@ Preparations
    readonly SRC_1="rtsp://<ip address>/?h264x=4 user-id=<username> user-pw=<password>"
    etc..
 
-Run the pipeline
+Run the Pipeline
 ----------------
 
 .. code-block:: sh
@@ -72,28 +72,28 @@ Configuration
 The yolo post process parameters can be configured by a json file located in $TAPPAS_WORKSPACE/apps/h8/gstreamer/general/multistream_multidevice/resources/configs/yolov5.json
 
 
-Overview of the pipeline
+Overview of the Pipeline
 ------------------------
 
 These apps are based on our `multi stream pipeline template <../../../../../docs/pipelines/multi_stream.rst>`_
 
-How to use Retraining to replace models
+Using Retraining to replace models
 ---------------------------------------
 
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
-You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
+Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
 that are trained on your own dataset:
 
 - ``yolov5m``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)
+    - Update ``resources/configs/yolov5.json`` with the new post-processing parameters (NMS)
 - ``centerpose``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/centerpose>`_
@@ -101,4 +101,4 @@ that are trained on your own dataset:
 
     - Update HEF_PATH on the .sh file
     - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
-       with your new paremeters, then recompile to create ``libcenterpose_post.so``
+       with the new parameters, then recompile to create ``libcenterpose_post.so``

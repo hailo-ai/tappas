@@ -28,6 +28,12 @@ function init_variables() {
     sync_pipeline=false
     device_id_prop=""
 
+    hailonet_props="output-format-type=HAILO_FORMAT_TYPE_FLOAT32"
+    nms_score_threshold=0.3 
+    nms_iou_threshold=0.45
+
+    thresholds_str="nms-score-threshold=${nms_score_threshold} nms-iou-threshold=${nms_iou_threshold} output-format-type=HAILO_FORMAT_TYPE_FLOAT32"
+
     camera_framerate="40/1"
     camera_input_width=640
     camera_input_height=640
@@ -67,6 +73,7 @@ function parse_args() {
                 network_name="mobilenet_ssd"
                 hef_path="$RESOURCES_DIR/ssd_mobilenet_v1.hef"
                 postprocess_so="$POSTPROCESS_DIR/libmobilenet_ssd_post.so"
+                thresholds_str=""
             elif [ $2 != "yolov5" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
@@ -138,7 +145,7 @@ fi
 PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     $source_element ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size ! \
+    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size $hailonet_props $thresholds_str ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \

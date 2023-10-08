@@ -53,7 +53,7 @@ xt::xarray<float> dot_product_axis_2(xt::xarray<float, xt::layout_type::row_majo
 }
 
 /*
- * @brief Decode the mask coefficients of yolact\ yolov5seg results into a format that makes sense
+ * @brief Decode the mask coefficients of yolov5seg results into a format that makes sense
  * and add it to the detected instance for future calculation of the final mask
  *
  * @param objects vector of the detected instances

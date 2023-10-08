@@ -90,7 +90,7 @@ that are trained on your own dataset:
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
     
-    - For best compatibility and performance with TAPPAS, use ``yolov5m_wo_spp_yuv.yaml`` for the compilation
+    - For optimum compatibility and performance with TAPPAS, use ``yolov5m_wo_spp_yuv.yaml`` for the compilation
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file

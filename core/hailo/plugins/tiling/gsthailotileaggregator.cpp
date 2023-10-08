@@ -210,7 +210,8 @@ gst_hailotileaggregator_post_aggregation(GstHailoAggregator *hailoaggregator, Ha
     auto caps_st = gst_caps_get_structure(caps, 0);
     gst_structure_get_int(caps_st, "width", &frame_width);
     gst_structure_get_int(caps_st, "height", &frame_height);
-
+    if(hailo_roi == nullptr)
+        return;
     auto tiles = hailo_common::get_hailo_tiles(hailo_roi);
     if (tiles[0]->get_mode() == MULTI_SCALE && hailotileaggregator->remove_large_landscape)
         remove_large_landscape(hailo_roi, frame_width, frame_height);

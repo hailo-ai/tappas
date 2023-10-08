@@ -1,5 +1,5 @@
 
-iMX6 GStreamer based applications
+iMX6 GStreamer Based Applications
 =================================
 
 #. `Classification <classification/README.rst>`_ - Classification application.

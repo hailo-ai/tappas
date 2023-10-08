@@ -2,17 +2,17 @@
   "path": "apps/h8/gstreamer/general/detection/resources",
   "requirements": [
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/yolov5m_wo_spp_60p.hef",
       "destination": "yolov5m_wo_spp_60p.hef"
     },
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/yolov4_leaky.hef",
       "destination": "yolov4_leaky.hef"
     },
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/yolov3.hef",
       "destination": "yolov3.hef"
     },

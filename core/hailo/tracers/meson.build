@@ -18,6 +18,7 @@ gst_tracer_sources = [
 	'gstscheduletime.cpp',
 	'gstframerate.cpp',
 	'gstqueuelevel.cpp',
+	'gstbufferdrop.cpp',
 	'gstnumerator.cpp',
 	'gstdetections.cpp',
 	'gstbitrate.cpp',

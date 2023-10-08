@@ -20,9 +20,9 @@ Once the zip is downloaded, extract the folder with:
 
    tar -xf hailo_sw_suite_2023_01.tar.gz
 
-| You have three options for installing the ``Suite``\ : ``Docker`` installation, ``Manual`` installation, and a ``Self Extractable`` installation.
-| You can find instructions for all install flows, along with their required pre-requisites and sanity checks, `here in the Hailo Developer Zone <https://hailo.ai/developer-zone/documentation/dataflow-compiler/latest/?sp_referrer=suite/suite_install.html>`_.
+| There are three options for installing the ``Suite``\ : ``Docker`` installation, ``Manual`` installation, and a ``Self Extractable`` installation.
+| The instructions can be found for all installation flows, along with their required pre-requisites and sanity checks,  `in the Hailo Developer Zone <https://hailo.ai/developer-zone/documentation/dataflow-compiler/latest/?sp_referrer=suite/suite_install.html>`_.
 | 
-| And that's all you need! ``TAPPAS`` is included in the ``SW Suite``\ , so by installing the ``Suite`` you should now have the corresponding version of ``TAPPAS`` installed inside.
+| This is all that is required to start the installation.  ``TAPPAS`` is included in the ``SW Suite``\ , so by installing the ``Suite`` you should now have the corresponding version of ``TAPPAS`` installed inside.
 |
-| Notice also ``TAPPAS`` system requirements as documented in the Required Packages section `Here <manual-install.rst>`_.
+| Note that the ``TAPPAS`` system requirements are documented in the Required Packages section `Here <manual-install.rst>`_.

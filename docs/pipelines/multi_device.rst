@@ -1,5 +1,5 @@
 
-Single Network Multi-device Pipeline Structure
+Single Network Multi-Device Pipeline Structure
 ==============================================
 
 
@@ -8,7 +8,7 @@ Single Network Multi-device Pipeline Structure
 
 This page provides a drill-down into the template of our multi-device pipelines with a focus on explaining the ``GStreamer`` pipeline.
 
-Example pipeline
+Example Pipeline
 ----------------
 
 .. code-block:: sh
@@ -27,4 +27,4 @@ Example pipeline
        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=$sync_pipeline text-overlay=false
 
 This pipeline is based on-top of our `single network pipeline <single_network.rst>`_.
-The number of physical devices to utilize is set via the ``hailonet`` device-count property (defaults to 4 in this app)
+The number of physical devices to utilize is set via the ``hailonet`` device-count property (The default is 4 in this app)

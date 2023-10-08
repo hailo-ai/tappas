@@ -48,8 +48,8 @@ Model
 
 * ``centerpose_regnetx_1.6gf_fpn``: https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/centerpose_regnetx_1.6gf_fpn.yaml
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
 This app is based on our `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_
 
@@ -69,4 +69,4 @@ that are trained on your own dataset:
 
     - Replace HEF_PATH on the .sh file
     - Update `centerpose.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/pose_estimation/centerpose.cpp#L417>`_
-      with your new paremeters, then recompile to create ``libcenterpose_post.so``
+      with your new parameters, then recompile to create ``libcenterpose_post.so``

@@ -63,7 +63,7 @@ function init_variables() {
     vdevice_key=1
     clean_local_gallery_file=false
     function_name=$FUNCTION_NAME
-    local_gallery_file="$RESOURCES_DIR/gallery/face_recognition_local_gallery.json"
+    local_gallery_file="$RESOURCES_DIR/gallery/face_recognition_local_gallery_rgba.json"
 }
 
 function print_usage() {
@@ -114,6 +114,7 @@ function parse_args() {
         elif [ $1 == "--format" ]; then
             if [ $2 == "NV12" ]; then
                 video_format="NV12"
+                local_gallery_file="$RESOURCES_DIR/gallery/face_recognition_local_gallery_nv12.json"
             elif [ $2 == "RGB" ]; then
                 video_format="RGB"
             else
@@ -142,15 +143,19 @@ function main() {
 
     RECOGNITION_PIPELINE="hailocropper so-path=$CROPPER_SO function-name=face_recognition internal-offset=true name=cropper2 \
         hailoaggregator name=agg2 \
-        cropper2. ! queue name=bypess2_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! agg2. \
-        cropper2. ! queue name=pre_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailofilter so-path=$FACE_ALIGN_SO name=face_align_hailofilter use-gst-buffer=true qos=false ! \
-        queue name=detector_pos_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$RECOGNITION_HEF_PATH scheduling-algorithm=1 vdevice-key=$vdevice_key ! \
-        queue name=recognition_post_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailofilter so-path=$RECOGNITION_POST_SO name=face_recognition_hailofilter function-name=$RECOGNITION_FUNCTION_NAME qos=false ! \
-        queue name=recognition_pre_agg_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        agg2. agg2. "
+        cropper2. ! \
+            queue name=bypess2_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        agg2. \
+        cropper2. ! \
+            queue name=pre_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+            hailofilter so-path=$FACE_ALIGN_SO name=face_align_hailofilter use-gst-buffer=true qos=false ! \
+            queue name=detector_pos_face_align_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+            hailonet hef-path=$RECOGNITION_HEF_PATH scheduling-algorithm=1 vdevice-key=$vdevice_key ! \
+            queue name=recognition_post_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+            hailofilter so-path=$RECOGNITION_POST_SO name=face_recognition_hailofilter function-name=$RECOGNITION_FUNCTION_NAME qos=false ! \
+            queue name=recognition_pre_agg_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+        agg2. \
+        agg2. "
 
     FACE_DETECTION_PIPELINE="hailonet hef-path=$hef_path scheduling-algorithm=1 vdevice-key=$vdevice_key ! \
         queue name=detector_post_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

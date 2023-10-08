@@ -1,5 +1,5 @@
 
-iMX8 GStreamer based applications
+iMX8 GStreamer Based Applications
 =================================
 
 .. warning:: The Kirkstone applications portfolio is reduced on i.MX8-based devices, since the Kirkstone branch does not support OpenGL.

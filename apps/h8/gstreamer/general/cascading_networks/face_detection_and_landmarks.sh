@@ -14,12 +14,15 @@ function init_variables() {
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes"
     readonly CROPING_ALGORITHMS_DIR="$POSTPROCESS_DIR/cropping_algorithms"
     readonly DEFAULT_DETECTION_POSTPROCESS_SO="$POSTPROCESS_DIR/libface_detection_post.so"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/joined_lightface_slim_tddfa_mobilenet_v1.hef"
+    readonly DEFAULT_DETECTION_HEF_PATH="$RESOURCES_DIR/lightface_slim.hef"
+    readonly DEFAULT_LANDMARKS_HEF_PATH="$RESOURCES_DIR/tddfa_mobilenet_v1.hef"
     readonly DEFAULT_LANDMARKS_POSTPROCESS_SO="$POSTPROCESS_DIR/libfacial_landmarks_post.so"
     readonly DEFAULT_CROP_SO="$CROPING_ALGORITHMS_DIR/lib3ddfa.so"
     readonly DEFAULT_VDEVICE_KEY="1"
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
+    detection_hef_path=$DEFAULT_DETECTION_HEF_PATH
+    landmarks_hef_path=$DEFAULT_LANDMARKS_HEF_PATH
     hef_path=$DEFAULT_HEF_PATH
     detection_postprocess_so=$DEFAULT_DETECTION_POSTPROCESS_SO
     landmarks_postprocess_so=$DEFAULT_LANDMARKS_POSTPROCESS_SO
@@ -120,15 +123,13 @@ fi
 
 FACE_DETECTION_PIPELINE="videoscale qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-    hailonet net-name=joined_lightface_slim_tddfa_mobilenet_v1/lightface_slim \
-    hef-path=$hef_path is-active=true scheduling-algorithm=0 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hailonet hef-path=$detection_hef_path scheduling-algorithm=1 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$detection_postprocess_so function-name=lightface qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"
 
 FACIAL_LANDMARKS_PIPELINE="queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-    hailonet net-name=joined_lightface_slim_tddfa_mobilenet_v1/tddfa_mobilenet_v1 \
-    hef-path=$hef_path is-active=true scheduling-algorithm=0 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hailonet hef-path=$landmarks_hef_path scheduling-algorithm=1 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=facial_landmarks_merged so-path=$landmarks_postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"

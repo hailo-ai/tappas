@@ -117,7 +117,7 @@ function main() {
         qtdemux ! vaapidecodebin ! video/x-raw, format=$DECODER_FORMAT ! videoconvert qos=false ! \
         videoscale qos=false ! video/x-raw, pixel-aspect-ratio=1/1 ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$hef_path device-count=$device_count scheduling-algorithm=0 is-active=true ! \
+        hailonet hef-path=$hef_path device-count=$device_count scheduling-algorithm=0 is-active=true nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailofilter function-name=$network_name so-path=$postprocess_so qos=false ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

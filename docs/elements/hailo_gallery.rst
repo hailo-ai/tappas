@@ -4,7 +4,7 @@ Hailo Gallery
 Overview
 --------
 
-HailoGallery is an element which enables the user to save and compare embeddings(HailoMatrix) that represents recogintion, in order to track objects across multiple streams.
+HailoGallery is an element which enables the user to save and compare embeddings (HailoMatrix) that represents recogintion, in order to track objects across multiple streams.
 It is also enables saving and loading these embeddings into a local JSON file (database like), in order to track pre-saved objects.
 
 Parameters

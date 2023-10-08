@@ -1,9 +1,8 @@
 # Project Declaration
 
 project('gst-hailo-tools', 'c', 'cpp',
-        version : '3.25.0',
-        default_options : [ 'warning_level=1',
-                            'buildtype=debugoptimized',
+        version : '3.26.0',
+        default_options : [ 'buildtype=release',
                             'c_std=c11', 'cpp_std=c++17']
        )
 

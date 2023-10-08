@@ -1,4 +1,8 @@
 /**
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
+/**
  * SECTION:gstdetections
  * @short_description: A tracing module that prints detections info at every sink pad.
  *

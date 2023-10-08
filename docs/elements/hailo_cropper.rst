@@ -6,10 +6,10 @@ Overview
 --------
 
 ``HailoCropper`` is an element providing cropping functionality, designed for application with cascading networks, meaning doing one task based on a previous task. It has 1 sink and 2 sources.
-``HailoCropper`` receives a frame on its sink pad, then invokes it's ``prepare_crops`` method that returns the vector of crop reigions of interest (crop_roi), For each crop_roi it creats a cropped image (representing it's x, y, width, height in the full frame). The cropped images are then sent to the second src.
+``HailoCropper`` receives a frame on its sink pad, then invokes it's ``prepare_crops`` method that returns the vector of crop regions of interest (crop_roi), For each crop_roi it creates a cropped image (representing it's x, y, width, height in the full frame). The cropped images are then sent to the second src.
 From the first src we push the original frame that the detections were cropped from.
 
-By default, ``HailoCropper`` receives a video frame that has detections (means a previous ``HailoNet`` + ``HailoFilter`` ran) on it's sikpad. For each detection it creats a cropped image (using a specific algorithm to create a scaled image with the same aspect ratio).
+By default, ``HailoCropper`` receives a video frame that has detections (means a previous ``HailoNet`` + ``HailoFilter`` ran) on it's sinkpad. For each detection it creates a cropped image (using a specific algorithm to create a scaled image with the same aspect ratio).
 This is used by the cascading networks app `Face Landmarks based on Face Detection <../../apps/h8/gstreamer/general/cascading_networks/README.rst>`_.
 
 Derived classes can override the default ``prepare_crops`` behaviour and decide where to crop and how many times.
@@ -80,7 +80,7 @@ The DSP is used by default on the Hailo-15 machine, and can be disabled by setti
 When disabled OpenCV will be used (on the CPU) to perform the resize and crop operations.
 
 HailoCropper holds a buffer pool (GstBufferPool) that manages the buffers, used by the DSP.
-The bufferpool is responsible for allocating and freeing the buffers when the reference count of a buffer reaches 0.
+The buffer pool is responsible for allocating and freeing the buffers when the reference count of a buffer reaches 0.
 Buffer pool size (maximum buffers that can be allocated simultaneously in the pool) can be controlled using the ``pool-size`` property.
 
 It is recommended to make sure that a buffer is contiguous in memory, before being sent to the DSP.

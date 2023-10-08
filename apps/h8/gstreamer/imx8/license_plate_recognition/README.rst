@@ -47,8 +47,8 @@ How the application works
 
 This app uses HailoRT Model Scheduler, read more about HailoRT Model Scheduler GStreamer integration at `HailoNet  <../../../../../docs/elements/hailo_net.rst>`_
 
-How to use Retraining to replace models
----------------------------------------
+Using Retraining to Replace Models
+----------------------------------
 
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
@@ -70,7 +70,7 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update ``configs/yolov4_licence_plate.json`` with your new post-processing parameters (NMS)
+    - Update ``configs/yolov4_license_plate.json`` with your new post-processing parameters (NMS)
 - ``lprnet``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_models/license_plate_recognition/docs/TRAINING_GUIDE.rst>`_
@@ -79,4 +79,4 @@ that are trained on your own dataset:
 
     - Update HEF_PATH on the .sh file
     - Update `ocr_postprocess.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/ocr/ocr_postprocess.cpp#L20>`_
-      with your new paremeters, then recompile to create ``libocr_post.so``
+      with your new parameters, then recompile to create ``libocr_post.so``

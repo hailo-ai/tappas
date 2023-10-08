@@ -1,14 +1,14 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <iostream>
-
+#include <cxxopts.hpp>
 #include "apps_common.hpp"
 
 #define BITRATE_FOR_VBR (1000000)
 #define TOL_MOVING_BITRATE_FOR_VBR (2000)
 #define PICTURE_RC_OFF (0)
 #define PICTURE_RC_ON (1)
-#define BITRATE_FOR_CBR (40000000)
+#define BITRATE_FOR_CBR (25000000)
 #define TOL_MOVING_BITRATE_FOR_CBR (0)
 
 static int counter=0;
@@ -47,6 +47,7 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         }
     }
 
+    gst_object_unref(encoder_element);
     return GST_PAD_PROBE_OK;
 }
 
@@ -83,7 +84,7 @@ static GstFlowReturn appsink_new_sample(GstAppSink * appsink, gpointer callback_
  * @return A string containing the gstreamer pipeline.
  * @note prints the return value to the stdout.
  */
-std::string create_pipeline_string()
+std::string create_pipeline_string(std::string codec)
 {
     std::string pipeline = "";
     std::string encoder_arguments;
@@ -97,9 +98,10 @@ std::string create_pipeline_string()
     pipeline = "v4l2src name=src_element num-buffers=900 device=/dev/video0 io-mode=mmap ! "
                "video/x-raw,format=NV12,width=1920,height=1080, framerate=30/1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "hailoh265enc name=enco " + encoder_arguments + " ! h265parse config-interval=-1 ! "
+               "hailo" + codec + "enc name=enco " + encoder_arguments + " ! " + codec + "parse config-interval=-1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "video/x-h265,framerate=30/1 ! appsink wait-on-eos=false name=hailo_sink";
+               "video/x-" + codec + ",framerate=30/1 ! "
+               "fpsdisplaysink name=display_sink text-overlay=false video-sink=\"appsink name=hailo_sink\" sync=true signal-fps-measurements=true";
                                            
     std::cout << "Pipeline:" << std::endl;
     std::cout << "gst-launch-1.0 " << pipeline << std::endl;
@@ -111,9 +113,10 @@ std::string create_pipeline_string()
  * Set the Appsink callbacks
  *
  * @param[in] pipeline        The pipeline as a GstElement.
+ * @param[in] print_fps       To print FPS or not.
  * @note Sets the new_sample and propose_allocation callbacks, without callback user data (NULL).
  */
-void set_callbacks(GstElement *pipeline)
+void set_callbacks(GstElement *pipeline, bool print_fps)
 {
     GstAppSinkCallbacks callbacks={NULL};
 
@@ -121,6 +124,13 @@ void set_callbacks(GstElement *pipeline)
     callbacks.new_sample = appsink_new_sample;
 
     gst_app_sink_set_callbacks(GST_APP_SINK(appsink), &callbacks, NULL, NULL);
+    gst_object_unref(appsink);
+
+    if (print_fps)
+    {
+        GstElement *display_sink = gst_bin_get_by_name(GST_BIN(pipeline), "display_sink");
+        g_signal_connect(display_sink, "fps-measurements", G_CALLBACK(fps_measurements_callback), NULL);
+    }
 }
 
 /**
@@ -137,18 +147,43 @@ void set_probes(GstElement *pipeline)
     GstPad *pad_encoder = gst_element_get_static_pad(encoder, "sink");
     // set probes
     gst_pad_add_probe(pad_encoder, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback)encoder_probe_callback, pipeline, NULL);
+    // free resources
+    gst_object_unref(encoder);
 }
 
 int main(int argc, char *argv[])
 {
     std::string src_pipeline_string;
     GstFlowReturn ret;
+    add_sigint_handler();
+    std::string codec;
+    bool print_fps = false;
+
+    // Parse user arguments
+    cxxopts::Options options = build_arg_parser();
+    auto result = options.parse(argc, argv);
+    std::vector<ArgumentType> argument_handling_results = handle_arguments(result, options, codec);
+
+    for (ArgumentType argument: argument_handling_results)
+    {
+        switch (argument) {
+            case ArgumentType::Help:
+                return 0;
+            case ArgumentType::Codec:
+                break;
+            case ArgumentType::PrintFPS:
+                print_fps = true;
+                break;
+            case ArgumentType::Error:
+                return 1;
+        }
+    }
 
     gst_init(&argc, &argv);
 
-    std::string pipeline_string = create_pipeline_string();
+    std::string pipeline_string = create_pipeline_string(codec);
     GstElement *pipeline = gst_parse_launch(pipeline_string.c_str(), NULL);
-    set_callbacks(pipeline);
+    set_callbacks(pipeline, print_fps);
     set_probes(pipeline);
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
@@ -156,8 +191,8 @@ int main(int argc, char *argv[])
 
     // Free resources
     gst_element_set_state(pipeline, GST_STATE_NULL);
-    gst_deinit();
     gst_object_unref(pipeline);
+    gst_deinit();
 
     return ret;
 }

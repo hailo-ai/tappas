@@ -1,19 +1,19 @@
 
-Manual installation
+Manual Installation
 ===================
 
-The manual installation of TAPPAS requires preparations, our recommended method is to begin with ``Hailo SW Suite`` or ``Pre-built Docker image``.
-In this guide we instruct how to install the required components manually.
+The manual installation of TAPPAS requires preparation, Hailo's recommended method is to begin with ``Hailo SW Suite`` or ``Pre-built Docker image``.
+This guide will instruct how to install the required components manually.
 
 .. note::
     Only Ubuntu 20.04 and 22.04 are supported
 
 
-Hailort installation
+Hailort Installation
 --------------------
 
-First you will need to install `HailoRT <https://github.com/hailo-ai/hailort>`_ + `HailoRT PCIe driver <https://github.com/hailo-ai/hailort-drivers>`_\ , follow HailoRT installation guide for further instructions.
-And then `Make sure that HailoRT works <./verify_hailoRT.rst>`_
+First `HailoRT <https://github.com/hailo-ai/hailort>`_ + `HailoRT PCIe driver <https://github.com/hailo-ai/hailort-drivers>`_\ , needs to be installed. Follow the HailoRT installation guide for further instructions.
+After the installation, `confirm that HailoRT is working correctly <./verify_hailoRT.rst>`_.
 
 Preparations
 ------------
@@ -41,7 +41,7 @@ Non-x86
        unzip tappas_VERSION_linux_installer.zip
 
 #. 
-   change directory to TAPPAS, make directory named ``hailort`` and clone ``HailoRT`` sources
+   Change the directory to TAPPAS, and create a directory named ``hailort`` and clone ``HailoRT`` sources
 
    .. code-block:: sh
 
@@ -52,16 +52,12 @@ Non-x86
 Required Packages
 -----------------
 
-Install the following APT packages:
+The following APT packages need to be installed, using the command below:
 
 
 * ffmpeg
 * x11-utils
-* python3 (pip and setuptools)
-
-.. warning::
-    Python 3.6 will be deprecated in TAPPAS future version
-
+* python3 (pip and setuptools).
 * python3-virtualenv
 * python-gi-dev
 * libgirepository1.0-dev
@@ -87,7 +83,7 @@ In case any requirements are missing, a requirements table will be printed when 
 
 .. _OpenCV4 installation:
 
-OpenCV installation
+OpenCV Installation
 -------------------
 
 .. code-block:: sh
@@ -122,7 +118,7 @@ OpenCV installation
 
 .. _GStreamer installation:
 
-GStreamer installation
+GStreamer Installation
 ----------------------
 
 Run the following command to install GStreamer:
@@ -135,7 +131,7 @@ Please refer to: `GStreamer offical installation guide <https://gstreamer.freede
 
 .. _PyGobject installation:
 
-PyGobject installation
+PyGobject Installation
 ----------------------
 
 Run the following command to install PyGobject:
@@ -148,7 +144,7 @@ Please refer to: `PyGobject offical installation guide <https://pygobject.readth
 
 .. _TAPPAS installation section:
 
-TAPPAS installation
+TAPPAS Installation
 -------------------
 
 On most platforms (such as x86-based platforms), run:
@@ -157,7 +153,7 @@ On most platforms (such as x86-based platforms), run:
 
     ./install.sh --skip-hailort
 
-And then, `Make sure that HailoRT works <./verify_hailoRT.rst>`_
+and then, `Make sure that HailoRT works <./verify_hailoRT.rst>`_
 
 Raspberry Pi 4 has its own set of example applications, so the installation command on this platform is slightly different:
 
@@ -165,7 +161,7 @@ Raspberry Pi 4 has its own set of example applications, so the installation comm
 
     ./install.sh --skip-hailort --target-platform rpi
 
-And then, `Go back to Raspberry Pi section <./raspberry-pi-install.rst>`_
+and then, `return to the Raspberry Pi section <./raspberry-pi-install.rst>`_
 
 On Rockchip, run: 
 
@@ -173,21 +169,12 @@ On Rockchip, run:
 
     ./install.sh --skip-hailort --target-platform rockchip
 
-And then, `Go back to Rockchip section <./rockchip.rst>`_
-
-On Rockchip, run: 
-
-.. code-block:: sh
-
-    ./install.sh --skip-hailort --target-platform rockchip
-
-And then, `Go back to Rockchip section <./rockchip.rst>`_
-
+and then, `return to the Rockchip section <./rockchip.rst>`_.
 
 Upgrade TAPPAS
 --------------
 
-To Upgrade TAPPAS, first clean GStreamer cache
+To Upgrade TAPPAS, first clean the GStreamer cache
 
 .. code-block:: sh
     

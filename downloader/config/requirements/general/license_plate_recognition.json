@@ -2,17 +2,17 @@
   "path": "apps/h8/gstreamer/general/license_plate_recognition/resources",
   "requirements": [
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/tiny_yolov4_license_plates.hef",
       "destination": "tiny_yolov4_license_plates.hef"
     },
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/lprnet.hef",
       "destination": "lprnet.hef"
     },
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/yolov5m_vehicles.hef",
       "destination": "yolov5m_vehicles.hef"
     },

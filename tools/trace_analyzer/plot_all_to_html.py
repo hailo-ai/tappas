@@ -1,10 +1,98 @@
 import argparse
 import pandas as pd
 import plotly.express as px
+import subprocess
+import re
 from pathlib import Path
 
 XTICKS = 40
 YTICKS = 20
+
+DOT_TO_SVG_COMMAND_TEMPLATE = 'dot {dot_path} -Tsvg > {output_name}'
+DOT_TEMPLATE = '''
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<div id="container" style="height: 300px; margin: 2.5%; background-color: #f9f9f9; border: 1px solid #ccc; padding: 10px">
+<svg id="demo-svg" xmlns="http://www.w3.org/2000/svg" style="display: inline; width: 100%; min-width: inherit; max-width: inherit; height: 100%; min-height: inherit; max-height: inherit; " viewBox="0 0 900 900" version="1.1">
+{svg_content}
+</svg>
+
+<script>
+    // Don't use window.onLoad like this in production, because it can only listen to one function.
+    window.onload = function() {{
+    // Expose to window namespase for testing purposes
+    window.zoomTiger = svgPanZoom('#demo-svg', {{
+        zoomEnabled: true,
+        controlIconsEnabled: true,
+        fit: true,
+        center: true,
+        // viewportSelector: document.getElementById('demo-svg').querySelector('#g4') // this option will make library to misbehave. Viewport should have no transform attribute
+    }});
+
+        }};
+</script>
+</div>
+'''
+
+GST_LAUNCH_TEMPLATE = '''
+<style>
+    .code-container {{
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #f9f9f9;
+        margin: 2.5%;
+        position: relative;
+        max-height: 150px;
+        overflow: auto;
+    }}
+    .copy-button {{
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background-color: #ddd;
+        border: none;
+        color: #333;
+        padding: 5px 10px;
+        cursor: pointer;
+    }}
+    .copy-button.clicked {{
+        background-color: #007bff;
+        color: #fff;
+    }}
+    .code-section {{
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }}
+</style>
+
+<div class="code-container">
+    <pre>
+<code class="code-section">gst-launch-1.0 {launch_pipeline}</code>
+    </pre>
+    <button class="copy-button">Copy</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {{
+        const copyButtons = document.querySelectorAll('.copy-button');
+        copyButtons.forEach(button => {{
+            button.addEventListener('click', function() {{
+                const codeBlock = this.parentElement.querySelector('code');
+                const tempInput = document.createElement('textarea');
+                tempInput.value = codeBlock.textContent;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+
+                button.classList.add('clicked');
+                setTimeout(function() {{
+                    button.classList.remove('clicked');
+                }}, 250);
+            }});
+        }});
+    }});
+</script>
+'''
 
 
 def plot_queuelevel(queuelevel_log):
@@ -22,6 +110,23 @@ def plot_queuelevel(queuelevel_log):
     fig.update_layout(title_text="Queue Level")
     fig.update_xaxes(title_text="Time (s)", nticks=XTICKS)
     fig.update_yaxes(title_text="Queue Level (buffers)", nticks=YTICKS)
+    return fig
+
+def plot_bufferdrop(bufferdrop_log):
+    df = pd.read_csv(bufferdrop_log, sep=' ', header=None)
+    df = df.iloc[:, [0, 7, 8]]  # only relevant columns
+    df.columns = ['s_time', 'element', 's_buffer_drop']  # rename columns
+    # clean data
+    df['element'] = df['element'].apply(lambda s: s.replace("name=(string)", ""))
+    df['s_buffer_drop'] = df['s_buffer_drop'].apply(lambda s: s.replace(
+        "buffers_drop=(uint)", "")).apply(lambda s: s.replace(";", ""))
+    df['buffer_drop'] = pd.to_numeric(
+        df['s_buffer_drop'])  # convert to numeric format
+    df['time'] = pd.to_datetime(df['s_time'])  # convert to datetime format
+    fig = px.line(df, x="time", y="buffer_drop", color="element")
+    fig.update_layout(title_text="Buffer Drop")
+    fig.update_xaxes(title_text="Time (s)", nticks=XTICKS)
+    fig.update_yaxes(title_text="Buffer Drop (buffers)", nticks=YTICKS)
     return fig
 
 
@@ -104,12 +209,14 @@ def plot_interlatency(interlatency_log):
         lambda s: s.replace("to_pad=(string)", ""))
     df['s_proctime'] = df['s_proctime'].apply(lambda s: s.replace(
         "time=(string)", "")).apply(lambda s: s.replace(";", ""))
-    df['proctime'] = pd.to_datetime(df['s_proctime'])
+    df['timedelta'] = pd.to_timedelta(df['s_proctime'])
+    df['interlatency'] = df['timedelta'].dt.total_seconds() * 1000
     df['time'] = pd.to_datetime(df['s_time'])
-    fig = px.line(df, x="time", y="proctime", color="destination_pad")
+    fig = px.line(df, x="time", y="interlatency", color="destination_pad")
     fig.update_layout(title_text="Interlatency")
-    fig.update_xaxes(title_text="Time (s)", nticks=XTICKS)
-    fig.update_yaxes(title_text="Time (s)", nticks=YTICKS)
+    fig.update_xaxes(title_text="Time", nticks=XTICKS)
+    fig.update_yaxes(title_text="Time (ms)", nticks=YTICKS)
+
     return fig
 
 
@@ -122,13 +229,14 @@ def plot_proctime(proctime_log):
         lambda s: s.replace("element=(string)", ""))
     df['s_proctime'] = df['s_proctime'].apply(lambda s: s.replace(
         "time=(string)", "")).apply(lambda s: s.replace(";", ""))
-    df['proctime'] = pd.to_datetime(df['s_proctime'])
+    df['timedelta'] = pd.to_timedelta(df['s_proctime'])
+    df['proctime'] = df['timedelta'].dt.total_seconds() * 1000
     df['time'] = pd.to_datetime(df['s_time'])
     fig = px.line(df, x="time", y="proctime", color="element")
     fig.update_xaxes(nticks=XTICKS)
     fig.update_layout(title_text="Processing Time")
     fig.update_xaxes(title_text="Time (s)", nticks=XTICKS)
-    fig.update_yaxes(title_text="Processing Time (s)", nticks=YTICKS)
+    fig.update_yaxes(title_text="Processing Time (ms)", nticks=YTICKS)
     return fig
 
 
@@ -141,14 +249,55 @@ def plot_scheduletime(scheduletime_log):
         lambda s: s.replace("pad=(string)", ""))
     df['s_scheduletime'] = df['s_scheduletime'].apply(lambda s: s.replace(
         "time=(string)", "")).apply(lambda s: s.replace(";", ""))
-    df['scheduletime'] = pd.to_datetime(df['s_scheduletime'])
+    df['timedelta'] = pd.to_timedelta(df['s_scheduletime'])
+    df['scheduletime'] = df['timedelta'].dt.total_seconds() * 1000
     df['time'] = pd.to_datetime(df['s_time'])
     fig = px.line(df, x="time", y="scheduletime", color="pad")
     fig.update_xaxes(nticks=XTICKS)
     fig.update_layout(title_text="Schedule Time")
     fig.update_xaxes(title_text="Time (s)", nticks=XTICKS)
-    fig.update_yaxes(title_text="Schedule Time(s)", nticks=YTICKS)
+    fig.update_yaxes(title_text="Schedule Time (ms)", nticks=YTICKS)
     return fig
+
+
+def plot_interactive_svg(html_file, dot_path):
+    output_name = Path(f'{dot_path.parent / dot_path.stem}.svg')
+    dot_to_svg_command = DOT_TO_SVG_COMMAND_TEMPLATE.format(dot_path=dot_path, output_name=output_name)
+
+    subprocess.run(dot_to_svg_command, shell=True, check=True)
+
+    if not output_name.exists():
+        raise FileNotFoundError(f"Expected to find {output_name}")
+
+    file_content = Path(output_name).read_text()
+    pattern = r'<g id="graph0".*?</svg>'
+    match = re.search(pattern, file_content, re.DOTALL)
+
+    if not match:
+        raise ValueError(f"Got invalid file {dot_path}")
+
+    svg_content = match.group()
+    svg_content = svg_content.replace('</svg>', '')
+    svg_content_formatted = DOT_TEMPLATE.format(svg_content=svg_content)
+
+    html_file.write(svg_content_formatted)
+
+
+def plot_copyable_gst_launch(html_file, gst_launch_string):
+    gst_launch_formatted = GST_LAUNCH_TEMPLATE.format(launch_pipeline=gst_launch_string)
+    html_file.write(gst_launch_formatted)
+
+
+def plot_svg_and_pipeline(html_file, traces_dir, exclude_svg=False):
+    dot_files = list(Path(traces_dir).rglob('*.dot'))
+    gst_launch_log = Path(f"{traces_dir}/pipeline.log")
+
+    if gst_launch_log.exists():
+        plot_copyable_gst_launch(html_file=html_file, gst_launch_string=gst_launch_log.read_text())
+
+    # If the user included graph tracer and only one dot file found (we are expecting one)
+    if not exclude_svg and len(dot_files) == 1:
+        plot_interactive_svg(html_file, dot_files[0])
 
 
 def main():
@@ -161,15 +310,24 @@ def main():
         'interlatency.log': plot_interlatency,
         'proctime.log': plot_proctime,
         'scheduletime.log': plot_scheduletime,
+        'bufferdrop.log': plot_bufferdrop,
     }
 
     parser = argparse.ArgumentParser(description='Plot traces')
     parser.add_argument('-p', '--path', type=str, help='Path to traces dir')
+    parser.add_argument('--exclude-svg', action='store_true', help='Do not include the svg in the HTML output')
     args = parser.parse_args()
     traces_dir = args.path
+    exclude_svg = args.exclude_svg
 
     trace_log_files = list(Path(traces_dir).rglob('*.log'))
-    with open(f"{traces_dir}/graphs.html", 'a') as f:
+
+    html_output_path = Path(f"{traces_dir}/graphs.html")
+    html_output_path.unlink(missing_ok=True)
+
+    with html_output_path.open(mode='w') as f:
+        plot_svg_and_pipeline(html_file=f, traces_dir=traces_dir, exclude_svg=exclude_svg)
+
         for trace_log_file in trace_log_files:
             if trace_log_file.name in tracer_to_plotter.keys():
                 f.write(tracer_to_plotter[trace_log_file.name](

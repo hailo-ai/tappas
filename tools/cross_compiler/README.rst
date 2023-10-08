@@ -94,11 +94,11 @@ Copy the ``toolchain.tar.gz`` to the container using ``docker cp``
 Components
 ----------
 
-Tappas
+TAPPAS
 ^^^^^^^^^^^^^
 
-This script cross-compiles ``Tappas`` components.
-This script first unpack and installs the toolchain (if not already installed), and then cross-compiles Tappas core/.
+This script cross-compiles ``TAPPAS`` components.
+This script first unpack and installs the toolchain (if not already installed), and then cross-compiles TAPPAS core/.
 
 Flags
 ~~~~~

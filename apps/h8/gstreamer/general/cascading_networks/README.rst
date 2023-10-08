@@ -47,8 +47,8 @@ Joined together:
 * ``lightface_slim`` in resolution of 320X240X3 - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/lightface_slim.yaml
 * ``tddfa_mobilenet_v1`` in resolution of 120X120X3 - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/tddfa_mobilenet_v1.yaml
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
 This app is based on our `cascaded networks pipeline template <../../../../../docs/pipelines/cascaded_nets.rst>`_
 
@@ -99,7 +99,7 @@ Joined together:
 * 'yolov5m_wo_spp_60p' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
 * 'mspn_regnetx_800mf' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/mspn_regnetx_800mf.yaml
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
 This app is based on our `cascaded networks pipeline template <../../../../../docs/pipelines/cascaded_nets.rst>`_

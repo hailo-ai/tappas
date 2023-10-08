@@ -117,9 +117,9 @@ std::vector<HailoROIPtr> create_crops(std::shared_ptr<HailoMat> image, HailoROIP
             else
             {
                 auto bbox = detection->get_bbox();
-                float quality = quality_estimation(image->get_mat(), bbox);
+                float quality = quality_estimation(image->get_matrices()[0], bbox);
                 float ratio = (bbox.height() * image->height()) / (bbox.width() * image->width());
-                if (ratio > MIN_RATIO && ratio < MAX_RATIO && 
+                if (ratio > MIN_RATIO && ratio < MAX_RATIO &&
                     bbox.height() > MIN_HEIGHT && bbox.height() < MAX_HEIGHT &&
                     bbox.xmin() > MIN_X && bbox.xmax() < MAX_X && quality > MIN_QUALITY)
                 {

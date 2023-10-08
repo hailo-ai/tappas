@@ -11,8 +11,8 @@ It provides an entry point for a python module that the user writes, inside of w
 Parameters
 ^^^^^^^^^^
 
-The two paramaters that define the function to call are ``module`` and ``function`` for the module path and function name respectively.
-In addition, as a member of the GstVideoFilter hierarchy, the hailofilter element supports qos (\ `Quality of Service <https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/qos.html?gi-language=c>`_\ ). Although qos typically tries to garuantee some level of performance, it can lead to frames dropping. For this reason it is ``advised to always set qos=false`` to avoid either tensors being dropped or not drawn.
+The two parameters that define the function to call are ``module`` and ``function`` for the module path and function name respectively.
+In addition, as a member of the GstVideoFilter hierarchy, the hailofilter element supports qos (\ `Quality of Service <https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/qos.html?gi-language=c>`_\ ). Although qos typically tries to guarantee some level of performance, it can lead to frames dropping. For this reason it is advised to always set ``qos=false`` to avoid either tensors being dropped or not drawn.
 
 Hierarchy
 ---------

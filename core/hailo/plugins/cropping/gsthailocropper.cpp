@@ -67,7 +67,7 @@ static void gst_hailocropper_get_property(GObject *object,
 static std::vector<HailoROIPtr> gst_hailocropper_prepare_crops(GstHailoBaseCropper *hailocropper,
                                                                GstBuffer *buf);
 static GstStateChangeReturn gst_hailocropper_change_state(GstElement *element, GstStateChange transition);
-void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format);
+void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, std::vector<cv::Mat> &cropped_image_vec, std::vector<cv::Mat> &resized_image_vec, HailoROIPtr roi, GstVideoFormat image_format);
 
 static void
 gst_hailocropper_class_init(GstHailoCropperClass *klass)
@@ -171,16 +171,16 @@ gst_hailocropper_get_property(GObject *object, guint prop_id,
     }
 }
 
-void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, cv::Mat &cropped_image, cv::Mat &resized_image, HailoROIPtr roi, GstVideoFormat image_format)
+void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, std::vector<cv::Mat> &cropped_image_vec, std::vector<cv::Mat> &resized_image_vec, HailoROIPtr roi, GstVideoFormat image_format)
 {
     GstHailoCropper *hailocropper = GST_HAILO_CROPPER(basecropper);
     if (hailocropper->use_letterbox)
     {
-        resize_letterbox(hailocropper->method, cropped_image, resized_image, roi, image_format);
+        resize_letterbox(hailocropper->method, cropped_image_vec, resized_image_vec, roi, image_format);
     }
     else
     {
-        resize_normal(hailocropper->method, cropped_image, resized_image, image_format);
+        resize_normal(hailocropper->method, cropped_image_vec, resized_image_vec, image_format);
     }
 }
 

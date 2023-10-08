@@ -4,8 +4,7 @@ Classification Pipeline
 Classification
 --------------
 
-The purpose of ``classification.sh`` is to demonstrate classification on one video file source.
-This is done by running a ``single-stream object classification pipeline`` on top of GStreamer using the Hailo-8 device.
+The purpose of ``classification.sh`` is to demonstrate classification on one video file source, by running a ``single-stream object classification pipeline`` on top of GStreamer using the Hailo-8 device.
 
 .. raw:: html
   
@@ -46,7 +45,7 @@ Run
   <div align="center"><img src="readme_resources/pipeline_run.gif" width="600px" height="500px"/></div>
 
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
 This app is based on our `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_

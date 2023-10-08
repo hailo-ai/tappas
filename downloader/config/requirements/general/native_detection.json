@@ -2,7 +2,7 @@
   "path": "apps/h8/native/detection/",
   "requirements": [
     {
-      "bucket": "tappas",
+      "bucket": "model_zoo",
       "source": "general/hefs/yolov5m_wo_spp_60p.hef",
       "destination": "yolov5m_wo_spp_60p.hef"
     },

@@ -2,27 +2,27 @@
 Compiling Your Code
 ===================
 
-When building the ``TAPPAS`` `Docker <../installation/docker-install.rst>`_ (or `installing natively <../installation/manual-install.rst>`_\ ), all of the ``TAPPAS`` source files are compiled and ready to use. If however you want to add your own additions (\ `for example, a new postprocess <write-your-own-postprocess.rst>`_\ ) or make other changes, then you will need to recompile the sources. This guide covers the build system used in ``TAPPAS`` and how you can compile your project.
+When building the ``TAPPAS`` `Docker <../installation/docker-install.rst>`_ (or `installing natively <../installation/manual-install.rst>`_\ ), all of the ``TAPPAS`` source files are compiled and ready to use. If however you want to add your own additions (\ `for example, a new postprocess <write-your-own-postprocess.rst>`_\ ) or make other changes, it will be necessary to recompile the sources. This guide covers the build system used in ``TAPPAS`` and how to compile the project.
 
 The Meson Build System
 ----------------------
 
-`Meson <https://mesonbuild.com/>`_ is an open source build system that puts an emphasis on speed and ease of use. `GStreamer uses meson <https://gstreamer.freedesktop.org/documentation/installing/building-from-source-using-meson.html?gi-language=c>`_ for all subprojects to generate build instructions to be executed by `ninja <https://ninja-build.org/>`_\ , another build system focused soley on speed that requires a higher level build system (ie: meson) to generate its input files. \
-Like GStreamer, ``TAPPAS`` also uses meson, and compiling new projects requires adjusting the ``meson.build`` files.
+`Meson <https://mesonbuild.com/>`_ is an open source build system that places the emphasis on speed and ease of use. `GStreamer uses meson <https://gstreamer.freedesktop.org/documentation/installing/building-from-source-using-meson.html?gi-language=c>`_ for all sub-projects to generate build instructions to be executed by `ninja <https://ninja-build.org/>`_\ , another build system focuses entirely on a speed that requires a higher level build system (ie: meson) to generate its input files. \
+Similar to GStreamer, ``TAPPAS`` also uses Meson, and compiling new projects requires the adjustment of the ``meson.build`` files.
 
 How to Compile
 --------------
 
-| To help streamline this process we have gone ahead and provided a script that handles most of the work. You can find this script at `scripts/gstreamer/install_hailo_gstreamer.sh <../../scripts/gstreamer/install_hailo_gstreamer.sh>`_.
+| To help streamline this process the TAPPAS Framework have provided a script that handles most of the work. The script can be found at `scripts/gstreamer/install_hailo_gstreamer.sh <../../scripts/gstreamer/install_hailo_gstreamer.sh>`_.
 | The following arguments are available:  
 
 
 * | ``--build-dir``   Path to the build directory. Defaults to ``core/hailo``.
 * | ``--build-mode`` Build mode, debug/release, default is release.
 * | ``--skip-hailort``  Skip compiling HailoRT. 
-* | ``--python-version`` specify what Python version to use.
+* | ``--python-version`` Specify which Python version to use.
 * | ``--compile-libgsthailo`` Compile libgsthailo instead of copying it from the release.
-  | From the Tappas home directory folder you can run:
+  | From the TAPPAS home directory folder you can run:
 
 .. code-block:: sh
 

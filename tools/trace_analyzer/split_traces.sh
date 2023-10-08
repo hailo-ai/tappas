@@ -13,5 +13,5 @@ do
         continue
     fi
     
-    cat $GST_DEBUG_FILE | awk '!/gsttracer.c|gsttracerrecord.c/' | grep $trace | tr -s ' ' > $split_traces_dir/$trace.log
+    cat $GST_DEBUG_FILE | awk '!/gsttracer.c|GST_PIPELINE|gsttracerrecord.c/' | grep $trace | tr -s ' ' > $split_traces_dir/$trace.log
 done

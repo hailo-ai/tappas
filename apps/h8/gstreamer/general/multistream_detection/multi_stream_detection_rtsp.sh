@@ -116,7 +116,7 @@ function main() {
     pipeline="$gst_top_command gst-launch-1.0 \
          funnel name=fun ! \
          queue name=hailo_pre_infer_q_0 leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-         hailonet hef-path=$HEF_PATH ! \
+         hailonet hef-path=$HEF_PATH nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
          queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
          hailofilter so-path=$POSTPROCESS_SO qos=false ! \
          queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

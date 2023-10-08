@@ -9,7 +9,6 @@
 
 #include "detection_app.hpp"
 
-
 hailo_status create_feature(hailo_output_vstream vstream,
                             std::shared_ptr<FeatureData> &feature)
 {
@@ -96,7 +95,7 @@ hailo_status write_image(HailoRGBMat &image, HailoROIPtr roi)
 
     // convert back to BGR
     cv::Mat write_mat;
-    cv::cvtColor(image.get_mat(), write_mat, cv::COLOR_RGB2BGR);
+    cv::cvtColor(image.get_matrices()[0], write_mat, cv::COLOR_RGB2BGR);
 
     // write to file
     auto write_status = cv::imwrite("output_images/" + file_name + ".bmp", write_mat);
@@ -149,7 +148,7 @@ hailo_status write_all(hailo_input_vstream input_vstream, std::vector<HailoRGBMa
 {
     for (auto &input_image : input_images)
     {
-        auto image_mat = input_image.get_mat();
+        auto image_mat = input_image.get_matrices()[0];
         hailo_status status = hailo_vstream_write_raw_buffer(input_vstream, image_mat.data, image_mat.total() * image_mat.elemSize());
         if (HAILO_SUCCESS != status)
         {
@@ -291,6 +290,14 @@ hailo_status infer(std::vector<HailoRGBMat> &input_images)
 
     status = hailo_create_output_vstreams(network_group, output_vstream_params, output_vstreams_size, output_vstreams);
     REQUIRE_SUCCESS(status, l_release_input_vstream, "Failed creating output virtual streams");
+
+    for (size_t i = 0; i < output_vstreams_size; i++)
+    {
+        status = hailo_vstream_set_nms_iou_threshold(output_vstreams[i], IOU_THRESHOLD);
+        REQUIRE_SUCCESS(status, l_release_output_vstream, "Failed setting iou threshold for output virtual streams");
+        status = hailo_vstream_set_nms_score_threshold(output_vstreams[i], DETECTION_THRESHOLD);
+        REQUIRE_SUCCESS(status, l_release_output_vstream, "Failed setting detection threshold for output virtual streams");
+    }
 
     status = hailo_activate_network_group(network_group, NULL, &activated_network_group);
     REQUIRE_SUCCESS(status, l_release_output_vstream, "Failed activating network group");

@@ -17,7 +17,6 @@ function init_variables() {
     network_name=$DEFAULT_NETWORK_NAME
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
-    network_name=$DEFAULT_NETWORK_NAME
     sync_pipeline=false
 
     print_gst_launch_only=false

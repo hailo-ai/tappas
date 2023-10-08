@@ -31,8 +31,6 @@ function print_usage() {
     echo ""
     echo "Options:"
     echo "  -h --help               Show this help"
-    echo "  --network NETWORK       Set network to use. choose from [yolov5seg, yolact_20_classes, yolact1_6gf, yolact800mf],"
-    echo "                          default network is yolov5seg"
     echo "  -i INPUT --input INPUT  Set the video source (default $video_source)"
     echo "  --show-fps              Print fps"
     echo "  --print-gst-launch      Print the ready gst-launch command without running it"
@@ -53,29 +51,6 @@ function parse_args() {
     while test $# -gt 0; do
         if [ "$1" = "--print-gst-launch" ]; then
             print_gst_launch_only=true
-        elif [ "$1" = "--network" ]; then
-            if [ "$2" = "yolov5seg" ]; then
-                network_name="yolov5seg"
-                postprocess_so="$POSTPROCESS_DIR/libyolov5seg_post.so"
-                hef_path="$RESOURCES_DIR/yolov5n_seg.hef"
-            elif [ "$2" = "yolact800mf" ]; then
-                network_name="yolact800mf"
-                postprocess_so="$POSTPROCESS_DIR/libyolact_post.so"
-                hef_path="$RESOURCES_DIR/yolact_regnetx_800mf.hef"
-            elif [ "$2" = "yolact1_6gf" ]; then
-                network_name="yolact1_6gf"
-                postprocess_so="$POSTPROCESS_DIR/libyolact_post.so"
-                hef_path="$RESOURCES_DIR/yolact_regnetx_1.6gf.hef"
-            elif [ "$2" = "yolact_20_classes" ]; then
-                network_name="yolact_20_classes"
-                postprocess_so="$POSTPROCESS_DIR/libyolact_post.so"
-                hef_path="$RESOURCES_DIR/yolact_regnetx_800mf_fpn_20classes.hef"
-            else
-                echo "Received invalid network: $2. See expected arguments below here:"
-                print_usage
-                exit 1
-            fi
-            shift
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
             additional_parameters="-v | grep hailo_display"

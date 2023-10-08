@@ -2,9 +2,9 @@
 Benchmark Tool
 ==============
 
-The benchmark tool is a new script that can help you figure out what are your computer's limitations when trying to build an application using Tappas baseline.
-With this tool you can measure the FPS of different pipelines according to a variety of parameters.
-The pipeline that will run will be without any neural network and is able to demonstrate the performence your computer is able to provide under your conditions.
+The benchmark tool is a new script that can help the user identify their platform's limitations when trying to build an application using TAPPAS baseline.
+This tool can be used to measure the FPS of different pipelines according to a variety of parameters.
+The pipeline that will run will be without any neural network and is able to demonstrate the performance the platform is able to provide under the defined conditions.
 
 
 Benchmark Usage
@@ -19,8 +19,8 @@ Options:
   --max-num-of-sources NUM            Setting number of sources to given input (Default is 4)
   --num-of-buffers NUM                Number of buffers for each stream (Default is 500)
 
-  --use-vaapi                         Whther to use vaapi decodeing or not (Default is no vaapi)
-  --use-display                       Whther to use display or not (Default is no display)
+  --use-vaapi                         Whether to use vaapi decoding or not (Default is no vaapi)
+  --use-display                       Whether to use display or not (Default is no display)
 
   --format FORMAT                     Required format
   --display-resolution RESOLUTION     Scale width and height of each stream in WxH mode (e.g. 640x480)
@@ -29,19 +29,19 @@ Options:
 Usage Notes
 -----------
 
-#. The format should be written according to the gstreamer conventions, e.g. RGBA instead of rgba.
+#. The format should be written according to the GStreamer conventions, e.g. RGBA instead of rgba.
 #. If the min and max number of sources are the same only 1 pipeline will run, otherwise several pipelines will be running consecutively.
-#. If you want to use VA-API make sure you download VA-API via our `VA-API Install Manual <../../apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
+#. If you want to use VA-API make sure you download VA-API via from the link `VA-API Install Manual <../../apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
 
 
 Videos For Benchmark Tool
 -------------------------
 
-Before using the benchmark tool you must prepare videos for it to run. The videos must be mp4 videos.
-We prepared a `script <../../tools/benchmark/create_soft_links.sh>`_
-The script takes one video and create as many soft links to this video as you request, numbered from 0 to n-1 for the benchmark tool.
-When you are giving the prefix after --video-prefix-path in the benchmark tool, give a path with the name of the videos until the numbering.
-Example: If my videos are at /tmp/tappas/ and their names are tap0.mp4 to tap15.mp4, the prefix will be "/tmp/tappas/tap".
+Before using the benchmark tool videos must be prepared for it to run. The videos must be in format mp4 .
+A working script has been prepared `script <../../tools/benchmark/create_soft_links.sh>`_
+which takes one video and creates as many soft links to this video as the user requires, numbered from 0 to n-1 for the benchmark tool.
+When providing the prefix after --video-prefix-path in the benchmark tool, write a path with the name of the videos until the numbering.
+Example: If the videos are located at /tmp/tappas/ and their names are tap0.mp4 to tap15.mp4, the prefix will be "/tmp/tappas/tap".
 
 
 

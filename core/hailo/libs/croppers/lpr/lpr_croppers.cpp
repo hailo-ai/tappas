@@ -50,7 +50,7 @@ float quality_estimation(std::shared_ptr<HailoMat> hailo_mat, const HailoBBox &r
 
     // If it is not too small then we can make the crop
     HailoROIPtr crop_roi = std::make_shared<HailoROI>(HailoBBox(cropped_xmin, cropped_ymin, cropped_width_n, cropped_height_n));
-    cv::Mat cropped_image = hailo_mat->crop(crop_roi);
+    std::vector<cv::Mat> cropped_image_vec = hailo_mat->crop(crop_roi);
 
     // Convert image to BGR
     cv::Mat bgr_image;
@@ -58,17 +58,22 @@ float quality_estimation(std::shared_ptr<HailoMat> hailo_mat, const HailoBBox &r
     {
     case HAILO_MAT_YUY2:
     {
+        cv::Mat cropped_image = cropped_image_vec[0];
         cv::Mat yuy2_image = cv::Mat(cropped_image.rows, cropped_image.cols * 2, CV_8UC2, (char *)cropped_image.data, cropped_image.step);
         cv::cvtColor(yuy2_image, bgr_image, cv::COLOR_YUV2BGR_YUY2);
         break;
     }
     case HAILO_MAT_NV12:
     {
-        cv::cvtColor(cropped_image, bgr_image, cv::COLOR_YUV2BGR_NV12);
+        cv::Mat full_mat = cv::Mat(cropped_image_vec[0].rows + cropped_image_vec[1].rows, cropped_image_vec[0].cols, CV_8UC1);
+        memcpy(full_mat.data, cropped_image_vec[0].data, cropped_image_vec[0].rows * cropped_image_vec[0].cols);
+        memcpy(full_mat.data + cropped_image_vec[0].rows * cropped_image_vec[0].cols, cropped_image_vec[1].data, cropped_image_vec[1].rows * cropped_image_vec[1].cols);
+        cv::cvtColor(full_mat, bgr_image, cv::COLOR_YUV2BGR_NV12);
+
         break;
     }
     default:
-        bgr_image = cropped_image;
+        bgr_image = cropped_image_vec[0];
         break;
     }
 
@@ -94,7 +99,6 @@ float quality_estimation(std::shared_ptr<HailoMat> hailo_mat, const HailoBBox &r
     cv::Scalar mean, stddev;
     cv::meanStdDev(laplacian_image, mean, stddev, cv::Mat());
     float variance = stddev.val[0] * stddev.val[0];
-
     return variance;
 }
 

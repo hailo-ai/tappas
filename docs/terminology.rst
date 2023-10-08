@@ -31,13 +31,13 @@ GStreamer Elements
 
 
 * 
-  **Elements** - have one specific function for processing/ generating / consuming data. By chaining together several such elements, you create a pipeline that can do a specific task.​
+  **Elements** - have one specific function for processing/ generating / consuming data. By chaining together several such elements, a pipeline can be created to perform a specific task.​
 
 * 
-  **Pads** - are an element's input and output, where you can connect other elements. A pad can be viewed as a “plug” or “port” on an element where links may be made with other elements, and through which data can flow to or from those elements. Data types are negotiated between pads using a process called caps negotiation. Data types are described by GstCaps.​
+  **Pads** - are an element's input and output, which can connect to other elements. A pad can be viewed as a “plug” or “port” on an element where links may be made with other elements, and through which data can flow to or from those elements. Data types are negotiated between pads using a process called Caps Negotiation. Data types are described by GstCaps.​
 
 * 
-  **Bin** - A bin is a container for a collection of elements. Since bins are subclasses of elements themselves, you can mostly control a bin as if it were an element, thereby abstracting away a lot of complexity for your application. A pipeline is a top-level bin. It provides a bus for the application and manages the synchronization for its children.
+  **Bin** - A bin is a container for a collection of elements. Since bins are subclasses of elements themselves, a bin can be mostly controlled as if it was an element, thereby subtracting away a lot of complexity from the user's application. A pipeline is a top-level bin. It provides a bus for the application and manages the synchronization for its children.
 
 
 .. image:: resources/gstreamer_pipe.png

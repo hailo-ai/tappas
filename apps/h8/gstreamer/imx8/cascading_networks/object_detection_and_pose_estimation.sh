@@ -107,7 +107,7 @@ fi
 
 OBJECT_DETECTION_PIPELINE="videoscale qos=false ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$detection_hef_path scheduling-algorithm=1 scheduler-threshold=5 \
+    hailonet hef-path=$detection_hef_path scheduling-algorithm=1 scheduler-threshold=5 nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 \
     scheduler-timeout-ms=100 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailofilter name=detection so-path=$detection_postprocess_so qos=false function-name=yolov5 ! \

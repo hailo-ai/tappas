@@ -29,6 +29,11 @@ gst_hailo_dsp_buffer_pool_dispose(GObject *object)
     GstHailoDspBufferPool *pool = GST_HAILO_DSP_BUFFER_POOL(object);
     GST_INFO_OBJECT(pool, "Hailo DSP buffer pool dispose");
     // Release DSP device
+    if (pool->config)
+    {
+        gst_structure_free(pool->config);
+        pool->config = NULL;
+    }
     dsp_status result = release_device();
     if (result != DSP_SUCCESS)
     {
@@ -53,6 +58,7 @@ gst_hailo_dsp_buffer_pool_new(guint padding)
 {
     GstHailoDspBufferPool *pool = GST_HAILO_DSP_BUFFER_POOL(g_object_new(GST_TYPE_HAILO_DSP_BUFFER_POOL, NULL));
     pool->padding = padding;
+    pool->config = NULL;
     return GST_BUFFER_POOL_CAST(pool);
 }
 
@@ -60,11 +66,14 @@ static GstFlowReturn
 gst_hailo_dsp_buffer_pool_alloc_buffer(GstBufferPool *pool, GstBuffer **output_buffer_ptr, GstBufferPoolAcquireParams *params)
 {
     GstHailoDspBufferPool *hailo_dsp_pool = GST_HAILO_DSP_BUFFER_POOL(pool);
+    guint buffer_size=0;
 
     // Get the size of a buffer from the config of the pool
-    GstStructure *config = gst_buffer_pool_get_config(pool);
-    guint buffer_size = 0;
-    gst_buffer_pool_config_get_params(config, NULL, &buffer_size, NULL, NULL);
+    if (!hailo_dsp_pool->config)
+    {
+        hailo_dsp_pool->config = gst_buffer_pool_get_config(pool);
+    }
+    gst_buffer_pool_config_get_params(hailo_dsp_pool->config, NULL, &buffer_size, NULL, NULL);
 
     // Validate the size of the buffer
     if (buffer_size == 0)

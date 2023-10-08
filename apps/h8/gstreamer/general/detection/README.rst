@@ -21,7 +21,7 @@ Options
 * ``--input`` is an optional flag, a path to the video displayed (default is detection.mp4).
 * ``--show-fps``  is an optional flag that enables printing FPS on screen.
 * ``--print-gst-launch`` is a flag that prints the ready gst-launch command without running it.
-* ``--print-device-stats`` Print the power and temperature measured on the Hailo device.
+* ``--print-device-stats`` prints the power and temperature measured on the Hailo device.
 
 Configuration
 -------------
@@ -46,7 +46,7 @@ Run
    cd $TAPPAS_WORKSPACE/apps/h8/gstreamer/general/detection
    ./detection.sh
 
-The output should look like:
+The output should display as:
 
 
 .. image:: readme_resources/detection_run.png
@@ -54,24 +54,24 @@ The output should look like:
    :height: 500px
 
 
-How does it work?
------------------
+Method of Operation
+-------------------
 
 This app is based on our `single network pipeline template <../../../../../docs/pipelines/single_network.rst>`_
 
-How to use Retraining to replace models
+How to Use Retraining to Replace Models
 ---------------------------------------
 
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
-You can use Retraining Dockers (available on Hailo Model Zoo), to replace the following models with ones
-that are trained on your own dataset:
+Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
+that are trained on the users own dataset:
 
 - ``yolov5m``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
@@ -80,7 +80,7 @@ that are trained on your own dataset:
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov4>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
@@ -89,7 +89,7 @@ that are trained on your own dataset:
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov3>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
@@ -98,19 +98,19 @@ that are trained on your own dataset:
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/ssd>`_
 
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
     - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
-      with your new paremeters, then recompile to create ``libmobilenet_ssd_post.so``
+      with your new parameters, then recompile to create ``libmobilenet_ssd_post.so``
 - ``nanodet_repvgg``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/nanodet>`_
     
-    - For best compatibility and performance with TAPPAS, use for compilation the corresponsing YAML file from above.
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
     - Update `nanodet.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/nanodet.cpp#L221>`_
-      with your new paremeters, then recompile to create ``libnanodet_post.so``
+      with your new parameters, then recompile to create ``libnanodet_post.so``

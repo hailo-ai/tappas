@@ -19,6 +19,7 @@ struct _GstHailoDspBufferPool
 {
   GstBufferPool parent;
   guint padding;
+  GstStructure *config;
 };
 
 struct _GstHailoDspBufferPoolClass
