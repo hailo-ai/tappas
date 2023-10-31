@@ -1,38 +1,46 @@
 {
-    "staticImage": [
+    "image": [
         {
+            "id": "example_image1",
             "image_path": "/home/root/apps/detection/resources/configs/osd_hailo_static_image.png",
             "width": 0.2,
             "height": 0.13,
             "x": 0.75,
-            "y": 0.05
+            "y": 0.05,
+            "z-index": 2
         }
     ],
-    "dateTime":  [
+    "dateTime": [
         {
+            "id": "example_datetime1",
             "font_size": 2,
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
+            "rgb": [255, 255, 255],
             "x": 0.02,
-            "y": 0.9
+            "y": 0.9,
+            "z-index": 1
         }
     ],
-    "staticText": [
+    "text": [
         {
+            "id": "example_text1",
             "label": "4k stream",
             "font_size": 2,
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
+            "rgb": [255, 255, 255],
             "x": 0.88,
-            "y": 0.9
+            "y": 0.9,
+            "z-index": 1
         },
         {
+            "id": "example_text2",
             "label": "stream 0",
             "font_size": 2,
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
+            "rgb": [255, 255, 255],
             "x": 0.05,
-            "y": 0.05
+            "y": 0.05,
+            "z-index": 2
         }
     ]
 }

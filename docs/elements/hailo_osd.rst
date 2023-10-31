@@ -17,44 +17,52 @@ Parameters
 
 | The hailoosd element provides default behavior on what telemetry to draw.
 | The user can customize the overlay contents via json through the **config-path** property. This property accepts the path to a json that follows the following schema: 
-| Any number of entries can be added to the **"staticImage"**, **"staticText"**, and **"dateTime"** arrays in the json. 
+| Any number of entries can be added to the **"image"**, **"text"**, and **"dateTime"** arrays in the json. 
 
 .. code-block::
 
   {
-      "staticImage": [
+      "image": [
           {
+              "id": "image_id",
               "image_path": "/path/to/image",
               "width": 0.2,
               "height": 0.13,
               "x": 0.76,
-              "y": 0.05
+              "y": 0.05,
+              "z-index": 1
           }
       ],
       "dateTime":  [
           {
+              "id": "datetime_id",
               "font_size": 2,
               "line_thickness": 3,
               "rgb": [0, 0, 255],
               "x": 0.1,
-              "y": 0.7
+              "y": 0.7,
+              "z-index": 3
           }
       ],
-      "staticText": [
+      "text": [
           {
+              "id": "text1_id",
               "label": "example text 1",
               "font_size": 2,
               "line_thickness": 3,
               "rgb": [255, 0, 0],
               "x": 0.7,
-              "y": 0.8
+              "y": 0.8,
+              "z-index": 1
           },
           {
+              "id": "text2_id",
               "label": "example text 2",
               "font_size": 2,
               "line_thickness": 3,
               "x": 0.05,
-              "y": 0.1
+              "y": 0.1,
+              "z-index": 1
           }
       ]
   }

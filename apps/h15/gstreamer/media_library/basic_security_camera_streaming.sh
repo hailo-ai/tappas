@@ -158,6 +158,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 \
     queue leaky=downstream max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailovisionpreproc config-file-path=$vision_config_file_path name=preproc \
     preproc. ! $FOUR_K_TO_ENCODER_BRANCH \
+    preproc. ! $FOUR_K_BRANCH \
     preproc. ! $FHD_BRANCH \
     preproc. ! $HD_BRANCH \
     preproc. ! $SD_BRANCH \
