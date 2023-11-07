@@ -25,7 +25,7 @@
         {
             "id": "example_text1",
             "label": "fhd stream",
-            "font_size": 2,
+            "font_size": 45,
             "line_thickness": 3,
             "rgb": [255, 255, 255],
             "x": 0.7,
@@ -35,7 +35,7 @@
         {
             "id": "example_text2",
             "label": "stream 1",
-            "font_size": 2,
+            "font_size": 45,
             "line_thickness": 3,
             "rgb": [255, 255, 255],
             "x": 0.05,
