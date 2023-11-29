@@ -12,6 +12,7 @@
     "output_video": {
         "method": "INTERPOLATION_TYPE_BILINEAR",
         "format": "IMAGE_FORMAT_NV12",
+        "grayscale": false,
         "resolutions": [
             {
                 "width": 3840,

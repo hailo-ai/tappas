@@ -6,18 +6,19 @@
             "width": 3840,
             "height": 2160,
             "framerate": 30,
-            "pool_max_buffers": 8
+            "pool_max_buffers": 5
         }
     },
     "output_video": {
         "method": "INTERPOLATION_TYPE_BILINEAR",
         "format": "IMAGE_FORMAT_NV12",
+        "grayscale": false,
         "resolutions": [
             {
                 "width": 3840,
                 "height": 2160,
                 "framerate": 30,
-                "pool_max_buffers": 20
+                "pool_max_buffers": 15
             },
             {
                 "width": 3840,

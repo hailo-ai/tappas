@@ -93,7 +93,7 @@ function create_pipeline() {
     FPS_DISP="fpsdisplaysink name=hailo_display text-overlay=false sync=true video-sink=fakesink"
 
     UDP_SINK="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-              rtph264pay ! 'application/x-rtp, media=(string)video, encoding-name=(string)H264' ! \
+              rtph264pay config-interval=1 ! 'application/x-rtp, media=(string)video, encoding-name=(string)H264' ! \
               udpsink host=10.0.0.2 sync=true"
 
     FOUR_K_BRANCH="tee name=4k_tee \

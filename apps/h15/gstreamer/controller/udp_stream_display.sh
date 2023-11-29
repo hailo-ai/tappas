@@ -68,6 +68,7 @@ parse_args $@
 
 PIPELINE="gst-launch-1.0 \
     udpsrc port=$port address=$address ! application/x-rtp,encoding-name=${encoder^^} ! \
+    queue ${queue_params_non_leaky} ! rtpjitterbuffer mode=0 !  \
     queue ${queue_params_non_leaky} ! rtp${encoder}depay !  \
     queue ${queue_params_non_leaky} ! ${encoder}parse ! avdec_${encoder} ! \
     queue ${queue_params_leaky} ! \
