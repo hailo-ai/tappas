@@ -11,6 +11,9 @@ tappas_includedir=${tappas_installation_dir}/include
 tappas_hailometa_includedir=${tappas_includedir}/gsthailometa
 tappas_postproc_includedir=${tappas_workspace}/core/hailo/libs/postprocesses
 tappas_general_includedir=${tappas_workspace}/core/hailo/general
+tappas_mat_includedir=${tappas_workspace}/core/hailo/plugins/common
+tappas_tracking_includedir=${tappas_workspace}/core/hailo/tracking
+
 
 
 cxxopts_includedir=${tappas_sources}/cxxopts/include
@@ -26,12 +29,15 @@ Requires: opencv4 gstreamer-1.0
 Name: hailo_tappas
 Version:
 Description: Hailo Tappas
-Libs: -L${tappas_libdir} -lgsthailometa
+Libs: -L${tappas_libdir} -lgsthailometa -lhailo_tracker -lhailo_gst_image -lhailo_cv_singleton
+
 Cflags: -I${includedir} \
         -I${tappas_includedir} \
         -I${tappas_hailometa_includedir} \
         -I${tappas_postproc_includedir} \
         -I${tappas_general_includedir} \
+        -I${tappas_mat_includedir} \
+        -I${tappas_tracking_includedir} \
         -I${cxxopts_includedir} \
         -I${pybind11_includedir} \
         -I${rapidjson_includedir} \

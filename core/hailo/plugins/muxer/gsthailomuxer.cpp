@@ -395,7 +395,7 @@ gst_hailomuxer_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
 static void gst_hailomuxer_handle_sub_frame_roi(HailoROIPtr main_buffer_roi, HailoROIPtr sub_buffer_roi)
 {
     // Copy all hailo objects from buffer2_roi to buffer1_roi
-    if (sub_buffer_roi)
+    if (sub_buffer_roi && (sub_buffer_roi != main_buffer_roi ))
     {
         for (auto obj : sub_buffer_roi->get_objects())
         {

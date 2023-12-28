@@ -48,9 +48,10 @@ std::string create_pipeline_string(std::string codec)
 
     pipeline = "v4l2src name=src_element num-buffers=300 device=/dev/video0 io-mode=mmap ! "
                "video/x-raw,format=NV12,width=1920,height=1080, framerate=30/1 ! "
-               "queue name=q0 leaky=downstream max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+               "queue name=q0 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "hailo" + codec + "enc name=enco ! "
                "" + codec + "parse config-interval=-1 ! video/x-" + codec + ",framerate=30/1 ! "
+               "queue name=q1 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "fpsdisplaysink name=display_sink text-overlay=false video-sink=\"filesink location=force_keyframe.hevc name=hailo_sink\" sync=true signal-fps-measurements=true";
 
                                            

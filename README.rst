@@ -7,7 +7,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.15.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.16.0-green
    :target: https://github.com/hailo-ai/hailort
    :alt: HailoRT
    :height: 20
@@ -69,7 +69,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.15.
+    This version is compatible with HailoRT v4.16.
 
 
 Installation
@@ -419,6 +419,49 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 
 Changelog
 ----------
+
+**v3.27.0 (January 2024)**
+
+* Updated the Hailo-15 applications to use the updated Media Library implementation:
+
+  * Basic Security Camera (streaming)
+  * Detection
+  * Single Stream OSD (On-Screen Display)
+
+* Added a folder for external host scripts and added the UDP Stream Display script
+
+.. note:: TAPPAS supports both Hailo-15 and Hailo-8. Temporarily, in this version, only the
+  following Hailo-8 based example applications are supported:
+
+    * Detection
+
+      * yolov5
+      * yolov4
+      * yolov3
+      * mobilenet_ssd
+
+    * Multi-Stream Detection
+
+      * Multi-Stream Detection
+      * MultiStream Detection with Stream Multiplexer
+
+    * License Plate Recognition
+
+  These applications are supported under the general folder (x86-based platforms).
+
+
+**v3.26.2 (December 2023)**
+
+* Aligned to Hailo-15 Vision Processor Software Package 2023-10.2
+* Add grayscale support for Media Library Front-end
+* Various bug fixes for Hailo-15 pipelines
+
+**v3.26.1 (November 2023)**
+
+* Aligned to Hailo-15 Vision Processor Software Package 2023-10.1
+* Updated OSD configuration to support new dynamic features and adjust to the updated Media Library implementation
+* Added a script for displaying UDP streams
+* Basic security camera (Media Library implementation) now support 5 outputs
 
 **v3.26.0 (October 2023)**
 

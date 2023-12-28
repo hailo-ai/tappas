@@ -6,8 +6,8 @@
 #include <cxxopts.hpp>
 #include "apps_common.hpp"
 
-const char* CONFIG_FILE_1 = "/home/root/apps/media_library/resources/configs/vision_config1.json";
-const char* CONFIG_FILE_2 = "/home/root/apps/media_library/resources/configs/vision_config2.json";
+const char* CONFIG_FILE_1 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config1.json";
+const char* CONFIG_FILE_2 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config2.json";
 const static uint cycle_frames_a=200;
 const static uint cycle_frames_b=400;
 

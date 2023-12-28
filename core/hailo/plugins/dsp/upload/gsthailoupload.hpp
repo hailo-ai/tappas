@@ -23,7 +23,8 @@ typedef struct _GstHailoUploadClass GstHailoUploadClass;
 
 struct _GstHailoUpload {
   GstHailoDspBaseTransform parent;
-  // add any additional instance variables here
+  int dma_memcpy_fd;
+  gboolean use_gpdma;
 };
 
 struct _GstHailoUploadClass {

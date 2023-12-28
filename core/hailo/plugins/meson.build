@@ -40,6 +40,7 @@ plugin_sources = [
     'export/export_file/gsthailoexportfile.cpp',
     'export/export_zmq/gsthailoexportzmq.cpp',
     'import/import_zmq/gsthailoimportzmq.cpp',
+    'common/gsthailonvalve.cpp',
 ]
 
 # equivalent to - dl_dep = dependency('dl')

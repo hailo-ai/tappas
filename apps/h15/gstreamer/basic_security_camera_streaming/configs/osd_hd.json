@@ -1,38 +1,68 @@
 {
-    "staticImage": [
+    "image": [
         {
+            "id": "example_image1",
             "image_path": "/home/root/apps/detection/resources/configs/osd_hailo_static_image.png",
             "width": 0.2,
             "height": 0.13,
-            "x": 0.75,
-            "y": 0.05
+            "x": 0.78,
+            "y": 0.02,
+            "z-index": 2,
+            "angle": 0,
+            "rotation_policy": "TOP_LEFT"
         }
     ],
-    "dateTime":  [
+    "dateTime": [
         {
+            "id": "example_datetime1",
             "font_size": 2,
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
+            "rgb": [
+                255,
+                255,
+                255
+            ],
             "x": 0.02,
-            "y": 0.9
+            "y": 0.9,
+            "z-index": 1,
+            "angle": 0,
+            "rotation_policy": "TOP_LEFT"
         }
     ],
-    "staticText": [
+    "text": [
         {
+            "id": "example_text1",
             "label": "hd stream",
-            "font_size": 2,
+            "font_size": 35,
+            "font_path": "/usr/share/fonts/ttf/LiberationMono-Regular.ttf",
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
-            "x": 0.7,
-            "y": 0.9
+            "rgb": [
+                255,
+                255,
+                255
+            ],
+            "x": 0.82,
+            "y": 0.82,
+            "z-index": 1,
+            "angle": 30,
+            "rotation_policy": "TOP_LEFT"
         },
         {
+            "id": "example_text2",
             "label": "stream 2",
-            "font_size": 2,
+            "font_size": 35,
+            "font_path": "/usr/share/fonts/ttf/LiberationMono-Regular.ttf",
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
-            "x": 0.05,
-            "y": 0.05
+            "rgb": [
+                255,
+                255,
+                255
+            ],
+            "x": 0.0,
+            "y": 0.0,
+            "z-index": 2,
+            "angle": 90,
+            "rotation_policy": "TOP_LEFT"
         }
     ]
 }

@@ -1,38 +1,68 @@
 {
-    "staticImage": [
+    "image": [
         {
+            "id": "example_image",
             "image_path": "/home/root/apps/detection/resources/configs/osd_hailo_static_image.png",
             "width": 0.2,
             "height": 0.13,
             "x": 0.76,
-            "y": 0.05
+            "y": 0.05,
+            "z-index": 1,
+            "angle": 0,
+            "rotation_policy": "TOP_LEFT"
         }
     ],
-    "dateTime":  [
+    "dateTime": [
         {
+            "id": "example_datetime1",
             "font_size": 2,
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
+            "rgb": [
+                255,
+                255,
+                255
+            ],
             "x": 0.1,
-            "y": 0.7
+            "y": 0.7,
+            "z-index": 1,
+            "angle": 0,
+            "rotation_policy": "TOP_LEFT"
         }
     ],
-    "staticText": [
+    "text": [
         {
+            "id": "example_text1",
             "label": "company name",
-            "font_size": 2,
+            "font_size": 70,
+            "font_path": "/usr/share/fonts/ttf/LiberationMono-Regular.ttf",
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
+            "rgb": [
+                255,
+                255,
+                255
+            ],
             "x": 0.7,
-            "y": 0.8
+            "y": 0.8,
+            "z-index": 1,
+            "angle": 0,
+            "rotation_policy": "TOP_LEFT"
         },
         {
+            "id": "example_text2",
             "label": "camera name",
-            "font_size": 2,
+            "font_size": 70,
+            "font_path": "/usr/share/fonts/ttf/LiberationMono-Regular.ttf",
             "line_thickness": 3,
-	        "rgb": [255, 255, 255],
+            "rgb": [
+                255,
+                255,
+                255
+            ],
             "x": 0.05,
-            "y": 0.1
+            "y": 0.1,
+            "z-index": 2,
+            "angle": 0,
+            "rotation_policy": "TOP_LEFT"
         }
     ]
 }

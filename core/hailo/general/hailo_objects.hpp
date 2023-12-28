@@ -609,7 +609,7 @@ public:
     // Copy constructor
     HailoDetection(const HailoDetection &other) : HailoROI(other),
                                                   m_confidence(assure_normal(other.m_confidence)),
-                                                  m_label(std::move(other.m_label)),
+                                                  m_label(other.m_label),
                                                   m_class_id(other.m_class_id){};
     virtual ~HailoDetection() = default;
 

@@ -1,7 +1,7 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
-* Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
-**/
+ * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
+ **/
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -27,6 +27,7 @@
 #include "import/import_zmq/gsthailoimportzmq.hpp"
 #include "gray_scale/gsthailonv12togray.hpp"
 #include "gray_scale/gsthailograytonv12.hpp"
+#include "common/gsthailonvalve.hpp"
 #ifdef HAILO15_TARGET
 #include "dsp/upload/gsthailoupload.hpp"
 #include "dsp/upload2/gsthailoupload2.hpp"
@@ -50,14 +51,15 @@ plugin_init(GstPlugin *plugin)
     gst_element_register(plugin, "hailogallery", GST_RANK_PRIMARY, GST_TYPE_HAILO_GALLERY);
     gst_element_register(plugin, "hailoexportfile", GST_RANK_PRIMARY, GST_TYPE_HAILO_EXPORT_FILE);
     gst_element_register(plugin, "hailoexportzmq", GST_RANK_PRIMARY, GST_TYPE_HAILO_EXPORT_ZMQ);
+    gst_element_register(plugin, "hailonvalve", GST_RANK_PRIMARY, GST_TYPE_HAILO_NVALVE);
     gst_element_register(plugin, "hailoimportzmq", GST_RANK_PRIMARY, GST_TYPE_HAILO_IMPORT_ZMQ);
     gst_element_register(plugin, "hailonv12togray", GST_RANK_PRIMARY, GST_TYPE_HAILO_NV12_TO_GRAY);
     gst_element_register(plugin, "hailograytonv12", GST_RANK_PRIMARY, GST_TYPE_HAILO_GRAY_TO_NV12);
-    #ifdef HAILO15_TARGET
+#ifdef HAILO15_TARGET
     gst_element_register(plugin, "hailoupload", GST_RANK_PRIMARY, GST_TYPE_HAILO_UPLOAD);
     gst_element_register(plugin, "hailoupload2", GST_RANK_PRIMARY, GST_TYPE_HAILO_UPLOAD2);
     gst_element_register(plugin, "hailovideoscale", GST_RANK_PRIMARY, GST_TYPE_HAILO_VIDEOSCALE);
-    #endif
+#endif
     gst_hailo_meta_get_info();
     gst_hailo_meta_api_get_type();
     gst_hailo_cropping_meta_get_info();

@@ -11,6 +11,7 @@ function init_variables() {
     readonly DEFAULT_VIDEO_SOURCE="/dev/video0"
     readonly DEFAULT_HEF_PATH="${RESOURCES_DIR}/yolov5m_wo_spp_60p_nv12.hef"
     readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
+    readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/frontend_config.json"
     readonly DEFAULT_UDP_PORT=5000
     readonly DEFAULT_UDP_HOST_IP="10.0.0.2"
     readonly DEFAULT_FRAMERATE="30/1"
@@ -21,9 +22,10 @@ function init_variables() {
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
     json_config_path=$DEFAULT_JSON_CONFIG_PATH
+    frontend_config_file_path=$DEFAULT_FRONTEND_CONFIG_FILE_PATH
     udp_port=$DEFAULT_UDP_PORT
     udp_host_ip=$DEFAULT_UDP_HOST_IP
-    sync_pipeline=true
+    sync_pipeline=false
 
     framerate=$DEFAULT_FRAMERATE
     max_buffers_size=5
@@ -84,8 +86,11 @@ parse_args $@
 UDP_SINK="udpsink host=$udp_host_ip port=$udp_port"
 
 PIPELINE="gst-launch-1.0 \
-    v4l2src device=$input_source io-mode=mmap ! video/x-raw,format=NV12,width=1920,height=1080, framerate=$framerate ! \
+    v4l2src device=$input_source io-mode=mmap ! video/x-raw,format=NV12,width=3840,height=2160, framerate=$framerate ! \
     queue leaky=downstream max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
+    hailofrontend config-file-path=$frontend_config_file_path name=frontend \
+    frontend. ! \
+    queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name config-path=$json_config_path so-path=$postprocess_so qos=false ! \
@@ -96,12 +101,12 @@ PIPELINE="gst-launch-1.0 \
     video/x-h264,framerate=$framerate ! \
     tee name=udp_tee \
     udp_tee. ! \
-    queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    rtph264pay ! 'application/x-rtp, media=(string)video, encoding-name=(string)H264' ! \
-    $UDP_SINK name=udp_sink sync=$sync_pipeline \
+        queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
+        rtph264pay ! 'application/x-rtp, media=(string)video, encoding-name=(string)H264' ! \
+        $UDP_SINK name=udp_sink sync=$sync_pipeline \
     udp_tee. ! \
-    queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    fpsdisplaysink video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
+        queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
+        fpsdisplaysink video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
     ${additional_parameters}"
 
 echo "Running $network_name"
