@@ -1,9 +1,8 @@
 #include <gst/gst.h>
 #include <gst/video/video.h>
 #include <iostream>
-#include "dsp/gsthailodspbasetransform.hpp"
 #include "dsp/gsthailovideoscale.hpp"
-#include "dsp/gsthailodsp.h"
+#include "gsthailodsp.h"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_videoscale_debug);
 #define GST_CAT_DEFAULT gst_hailo_videoscale_debug

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dsp/gsthailodspbasetransform.hpp"
+#include "gsthailodspbasetransform.hpp"
 #include <gst/gst.h>
 
 G_BEGIN_DECLS

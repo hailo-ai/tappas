@@ -15,7 +15,7 @@
     "dewarp": {
         "enabled": true,
         "color_interpolation": "INTERPOLATION_TYPE_BILINEAR",
-        "sensor_calib_path": "/home/root/apps/basic_security_camera_streaming/resources/configs/cam_intrinsics.txt",
+        "sensor_calib_path": "/home/root/apps/resources/cam_intrinsics.txt",
         "camera_type": "CAMERA_TYPE_PINHOLE",
         "camera_fov": 100.0
     },

@@ -154,6 +154,7 @@ gst_hailonvalve_chain(GstPad *pad, GstObject *parent, GstBuffer *buffer)
         if (hailonvalve->count >= hailonvalve->n_frames)
             hailonvalve->drop = FALSE;
     }
+    GST_BUFFER_OFFSET(buffer) -= hailonvalve->count;
 
     if (g_atomic_int_get(&hailonvalve->drop))
     {

@@ -29,7 +29,6 @@
 #include "gray_scale/gsthailograytonv12.hpp"
 #include "common/gsthailonvalve.hpp"
 #ifdef HAILO15_TARGET
-#include "dsp/upload/gsthailoupload.hpp"
 #include "dsp/upload2/gsthailoupload2.hpp"
 #include "dsp/gsthailovideoscale.hpp"
 #endif
@@ -56,7 +55,6 @@ plugin_init(GstPlugin *plugin)
     gst_element_register(plugin, "hailonv12togray", GST_RANK_PRIMARY, GST_TYPE_HAILO_NV12_TO_GRAY);
     gst_element_register(plugin, "hailograytonv12", GST_RANK_PRIMARY, GST_TYPE_HAILO_GRAY_TO_NV12);
 #ifdef HAILO15_TARGET
-    gst_element_register(plugin, "hailoupload", GST_RANK_PRIMARY, GST_TYPE_HAILO_UPLOAD);
     gst_element_register(plugin, "hailoupload2", GST_RANK_PRIMARY, GST_TYPE_HAILO_UPLOAD2);
     gst_element_register(plugin, "hailovideoscale", GST_RANK_PRIMARY, GST_TYPE_HAILO_VIDEOSCALE);
 #endif

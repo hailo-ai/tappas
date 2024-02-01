@@ -7,7 +7,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.16.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.16.1-green
    :target: https://github.com/hailo-ai/hailort
    :alt: HailoRT
    :height: 20
@@ -419,6 +419,12 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 
 Changelog
 ----------
+
+**v3.27.1 (February 2024)**
+
+* Added a new Hailo-15 external host application that saves udp stream to file 
+* Aligned to Hailo-15 Vision Processor Software Package 2024-01.1
+
 
 **v3.27.0 (January 2024)**
 

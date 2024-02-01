@@ -19,8 +19,8 @@
 #include "hailo_common.hpp"
 #include "gst_hailo_meta.hpp"
 #ifdef HAILO15_TARGET
-#include "dsp/gsthailodsp.h"
-#include "dsp/gsthailodspbufferpoolutils.hpp"
+#include "gsthailodsp.h"
+#include "gsthailodspbufferpoolutils.hpp"
 #endif
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_basecropper_debug);
