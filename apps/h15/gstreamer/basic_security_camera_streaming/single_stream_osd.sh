@@ -91,7 +91,7 @@ BASE_PIPELINE="v4l2src device=$input_source io-mode=mmap $property_num_buffers !
     hailofrontend config-file-path=$frontend_config_file_path name=frontend \
     frontend. ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailoosd config-path=$json_config_path ! \
+    hailoosd config-file-path=$json_config_path ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 "
 
 if [ "$use_hailojpeg" = true ]; then

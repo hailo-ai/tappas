@@ -7,7 +7,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.16.1-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.16.2-green
    :target: https://github.com/hailo-ai/hailort
    :alt: HailoRT
    :height: 20
@@ -420,11 +420,19 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 Changelog
 ----------
 
+**v3.27.2 (March 2024)**
+
+* Aligned to Hailo-15 Vision Processor Software Package 2024-01.2
+* Added a new example application - Frontend Update
+* Updated the Hailo-15 applications to support AI de-fog and AI de-noise features
+* Updated the hailo OSD API
+* Detection application now works with an updated hailonet element
+* Various bugs fixes
+
 **v3.27.1 (February 2024)**
 
-* Added a new Hailo-15 external host application that saves udp stream to file 
 * Aligned to Hailo-15 Vision Processor Software Package 2024-01.1
-
+* Added a new Hailo-15 external host application that saves udp stream to file 
 
 **v3.27.0 (January 2024)**
 
@@ -454,7 +462,6 @@ Changelog
     * License Plate Recognition
 
   These applications are supported under the general folder (x86-based platforms).
-
 
 **v3.26.2 (December 2023)**
 

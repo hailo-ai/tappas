@@ -55,6 +55,8 @@ struct _GstHailoRoundRobin
     GstPad *srcpad;
     size_t current_pad_num;
     GstHailoRoundRobinMode mode;
+    uint num_of_sink_pads;
+    std::unique_ptr<std::shared_mutex> num_of_pads_mutex;
     uint retries_num;
     uint queue_size;
     uint wait_time;

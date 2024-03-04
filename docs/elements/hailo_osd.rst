@@ -16,7 +16,7 @@ Parameters
 ^^^^^^^^^^
 
 | The hailoosd element provides default behavior on what telemetry to draw.
-| The user can customize the overlay contents via json through the **config-path** property. This property accepts the path to a json that follows the following schema: 
+| The user can customize the overlay contents via json through the **config-file-path** property. This property accepts the path to a json that follows the following schema: 
 | Any number of entries can be added to the **"image"**, **"text"**, and **"dateTime"** arrays in the json. 
 
 .. code-block::
@@ -108,7 +108,7 @@ Hierarchy
       Pad Template: 'src'
 
   Element Properties:
-    config-path         : json config file path
+    config-file-path         : json config file path
                           flags: readable, writable, changeable only in NULL or READY state
                           String. Default: "NULL"
     name                : The name of the object

@@ -107,8 +107,8 @@ function create_pipeline() {
               udpsink host=10.0.0.2 sync=$sync_pipeline"
 
     FOUR_K_TO_ENCODER_BRANCH="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-                            hailoosd config-path=$json_config_path_4k ! \
-                            queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
+                            hailoosd config-file-path=$json_config_path_4k ! \
+                            queue leaky=downstream max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! \
                             hailoh264enc bitrate=$FOUR_K_BITRATE hrd=false ! \
                             video/x-h264 ! \
                             tee name=fourk_enc_tee \
@@ -126,8 +126,8 @@ function create_pipeline() {
                 $FPS_DISP name=hailo_display_fhd "
 
     HD_BRANCH="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-               hailoosd config-path=$json_config_path_hd ! \
-               queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
+               hailoosd config-file-path=$json_config_path_hd ! \
+               queue leaky=downstream max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! \
                hailoh264enc bitrate=$HD_BITRATE $encoding_hrd ! \
                video/x-h264 ! \
                 tee name=hd_tee \
@@ -138,8 +138,8 @@ function create_pipeline() {
                     $FPS_DISP name=hailo_display_hd_enc "
 
     SD_BRANCH="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-               hailoosd config-path=$json_config_path_sd ! \
-               queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
+               hailoosd config-file-path=$json_config_path_sd ! \
+               queue leaky=downstream max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! \
                hailoh264enc bitrate=$SD_BITRATE $encoding_hrd ! \
                video/x-h264 ! \
                 tee name=sd_tee \

@@ -6,18 +6,18 @@
 #include <cxxopts.hpp>
 #include "apps_common.hpp"
 
-const char* CONFIG_FILE_1 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config1.json";
-const char* CONFIG_FILE_2 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config2.json";
-const static uint cycle_frames_a=200;
-const static uint cycle_frames_b=400;
+const char *CONFIG_FILE_1 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config1.json";
+const char *CONFIG_FILE_2 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config2.json";
+const static uint cycle_frames_a = 200;
+const static uint cycle_frames_b = 400;
 
-static uint counter=0;
+static uint counter = 0;
 
 std::string config_1 = "";
 std::string config_2 = "";
 
 /**
- * vision preproc's probe callback
+ * frontend's probe callback
  *
  * @param[in] pad               The sinkpad of the encoder.
  * @param[in] info              Info about the probe
@@ -25,28 +25,30 @@ std::string config_2 = "";
  * @return GST_PAD_PROBE_OK
  * @note Example only - Switches between "CONFIG_1" and "CONFIG_2" every 200 frames, user_data is the pipeline.
  */
-static GstPadProbeReturn preproc_probe_callback(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
+static GstPadProbeReturn probe_callback(GstPad *pad, GstPadProbeInfo *info, gpointer user_data)
 {
     GstElement *pipeline = GST_ELEMENT(user_data);
-    GstElement *preproc_element = gst_bin_get_by_name(GST_BIN(pipeline), "preproc");
+    GstElement *element = gst_bin_get_by_name(GST_BIN(pipeline), "frontend");
 
     counter++;
 
-    if (counter % cycle_frames_a == 0) {
-        if (counter % cycle_frames_b != 0) {
-	        // Changing to configuration 2
-            GST_INFO("Changing vision_preproc to config 2");
-            g_object_set(preproc_element, "config-string", config_2.c_str(), NULL);
+    if (counter % cycle_frames_a == 0)
+    {
+        if (counter % cycle_frames_b != 0)
+        {
+            // Changing to configuration 2
+            GST_INFO("Changing frontend to config 2");
+            g_object_set(element, "config-string", config_2.c_str(), NULL);
         }
         else
         {
             // Changing to configuration 1
-            GST_INFO("Changing vision_preproc to config 1");
-            g_object_set(preproc_element, "config-string", config_1.c_str(), NULL);
+            GST_INFO("Changing frontend to config 1");
+            g_object_set(element, "config-string", config_1.c_str(), NULL);
         }
     }
 
-    gst_object_unref(preproc_element);
+    gst_object_unref(element);
     return GST_PAD_PROBE_OK;
 }
 
@@ -58,7 +60,7 @@ static GstPadProbeReturn preproc_probe_callback(GstPad *pad, GstPadProbeInfo *in
  * @return GST_FLOW_OK
  * @note Example only - only mapping the buffer to a GstMapInfo, than unmapping.
  */
-static GstFlowReturn appsink_new_sample(GstAppSink * appsink, gpointer callback_data)
+static GstFlowReturn appsink_new_sample(GstAppSink *appsink, gpointer callback_data)
 {
     GstSample *sample;
     GstBuffer *buffer;
@@ -71,7 +73,7 @@ static GstFlowReturn appsink_new_sample(GstAppSink * appsink, gpointer callback_
     GST_INFO_OBJECT(appsink, "Got Buffer from appsink: %p", mapinfo.data);
     // Do Logic
 
-    gst_buffer_unmap(buffer,&mapinfo);
+    gst_buffer_unmap(buffer, &mapinfo);
     gst_sample_unref(sample);
 
     return GST_FLOW_OK;
@@ -87,33 +89,33 @@ std::string create_pipeline_string(std::string codec, std::string config_string)
 {
     std::string pipeline = "";
 
-    pipeline = "v4l2src name=src_element num-buffers=900 device=/dev/video0 io-mode=mmap ! "
+    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=mmap ! "
                "video/x-raw, width=3840, height=2160, framerate=30/1, format=NV12 ! "
-               "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "hailovisionpreproc config-string='" + config_string + "' name=preproc "
-               "preproc. ! "
-                    "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                    "hailoh264enc bitrate=25000000 hrd=false ! video/x-h264 ! "
-                    "tee name=stream1_tee "
-                    "stream1_tee. ! "
-                        "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                        "rtph264pay ! application/x-rtp, media=(string)video, encoding-name=(string)H264 ! "
-                        "udpsink host=10.0.0.2 sync=false port=5000 "
-                    "stream1_tee. ! "
-                        "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                        "fpsdisplaysink name=display_sink1 text-overlay=false video-sink=\"appsink name=hailo_sink1\" sync=true signal-fps-measurements=true "
-               "preproc. ! "
-                    "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                    "hailoh264enc bitrate=25000000 hrd=false ! video/x-h264 ! "
-                    "tee name=stream2_tee "
-                    "stream2_tee. ! "
-                        "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                        "rtph264pay ! application/x-rtp, media=(string)video, encoding-name=(string)H264 ! "
-                        "udpsink host=10.0.0.2 sync=false port=5002 "
-                    "stream2_tee. ! "
-                        "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                        "fpsdisplaysink name=display_sink2 text-overlay=false video-sink=\"appsink name=hailo_sink2\" sync=true signal-fps-measurements=true";
-
+               "queue leaky=no max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! "
+               "hailofrontend config-string='" +
+               config_string + "' name=frontend "
+                               "frontend. ! "
+                               "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+                               "hailoh264enc bitrate=10000000 hrd=false ! video/x-h264 ! "
+                               "tee name=stream1_tee "
+                               "stream1_tee. ! "
+                               "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+                               "rtph264pay ! application/x-rtp, media=(string)video, encoding-name=(string)H264 ! "
+                               "udpsink host=10.0.0.2 sync=false port=5000 "
+                               "stream1_tee. ! "
+                               "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+                               "fpsdisplaysink name=display_sink1 text-overlay=false video-sink=\"appsink max-buffers=1 name=hailo_sink1\" sync=true signal-fps-measurements=true "
+                               "frontend. ! "
+                               "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+                               "hailoh264enc bitrate=10000000 hrd=false ! video/x-h264 ! "
+                               "tee name=stream2_tee "
+                               "stream2_tee. ! "
+                               "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+                               "rtph264pay ! application/x-rtp, media=(string)video, encoding-name=(string)H264 ! "
+                               "udpsink host=10.0.0.2 sync=false port=5002 "
+                               "stream2_tee. ! "
+                               "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+                               "fpsdisplaysink name=display_sink2 text-overlay=false video-sink=\"appsink max-buffers=1 name=hailo_sink2\" sync=true signal-fps-measurements=true";
     return pipeline;
 }
 
@@ -126,15 +128,14 @@ std::string create_pipeline_string(std::string codec, std::string config_string)
  */
 void set_callbacks(GstElement *pipeline, bool print_fps)
 {
-    GstAppSinkCallbacks callbacks={NULL};
+    GstAppSinkCallbacks callbacks = {NULL};
     callbacks.new_sample = appsink_new_sample;
-
-    // Callback fro stream 1
+    // Callback for stream 1
     GstElement *appsink1 = gst_bin_get_by_name(GST_BIN(pipeline), "hailo_sink1");
     gst_app_sink_set_callbacks(GST_APP_SINK(appsink1), &callbacks, NULL, NULL);
     gst_object_unref(appsink1);
 
-    // Callback fro stream 2
+    // Callback for stream 2
     GstElement *appsink2 = gst_bin_get_by_name(GST_BIN(pipeline), "hailo_sink2");
     gst_app_sink_set_callbacks(GST_APP_SINK(appsink2), &callbacks, NULL, NULL);
     gst_object_unref(appsink2);
@@ -162,13 +163,13 @@ void set_callbacks(GstElement *pipeline, bool print_fps)
 void set_probes(GstElement *pipeline)
 {
     // extract elements from pipeline
-    GstElement *preproc = gst_bin_get_by_name(GST_BIN(pipeline), "preproc");
+    GstElement *frontend = gst_bin_get_by_name(GST_BIN(pipeline), "frontend");
     // extract pads from elements
-    GstPad *pad_preproc = gst_element_get_static_pad(preproc, "sink");
+    GstPad *pad_frontend = gst_element_get_static_pad(frontend, "sink");
     // set probes
-    gst_pad_add_probe(pad_preproc, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback)preproc_probe_callback, pipeline, NULL);
+    gst_pad_add_probe(pad_frontend, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback)probe_callback, pipeline, NULL);
     // free resources
-    gst_object_unref(preproc);
+    gst_object_unref(frontend);
 }
 
 std::string read_string_from_file(const char *file_path)
@@ -176,7 +177,7 @@ std::string read_string_from_file(const char *file_path)
     std::ifstream file_to_read;
     file_to_read.open(file_path);
     if (!file_to_read.is_open())
-      throw std::runtime_error("config path is not valid");
+        throw std::runtime_error("config path is not valid");
     std::string file_string((std::istreambuf_iterator<char>(file_to_read)), std::istreambuf_iterator<char>());
     file_to_read.close();
     std::cout << "Read config from file: " << file_path << std::endl;
@@ -196,18 +197,19 @@ int main(int argc, char *argv[])
     auto result = options.parse(argc, argv);
     std::vector<ArgumentType> argument_handling_results = handle_arguments(result, options, codec);
 
-    for (ArgumentType argument: argument_handling_results)
+    for (ArgumentType argument : argument_handling_results)
     {
-        switch (argument) {
-            case ArgumentType::Help:
-                return 0;
-            case ArgumentType::Codec:
-                break;
-            case ArgumentType::PrintFPS:
-                print_fps = true;
-                break;
-            case ArgumentType::Error:
-                return 1;
+        switch (argument)
+        {
+        case ArgumentType::Help:
+            return 0;
+        case ArgumentType::Codec:
+            break;
+        case ArgumentType::PrintFPS:
+            print_fps = true;
+            break;
+        case ArgumentType::Error:
+            return 1;
         }
     }
 

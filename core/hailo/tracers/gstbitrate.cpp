@@ -167,6 +167,9 @@ static void
 do_pad_push_buffer_pre (GstBitrateTracer * self, guint64 ts, GstPad * pad,
     GstBuffer * buffer)
 {
+  if (!GST_IS_BUFFER(buffer)) {
+      return;
+  }
   gsize bytes;
 
   bytes = gst_buffer_get_size (buffer);
