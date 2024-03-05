@@ -77,19 +77,11 @@ In order to generate a Yocto toolchain, use this following command
    # Generate the Toolchain
    bitbake -c do_populate_sdk <image name>
 
-Compress the toolchain to tar.gz
+Copy the ``toolchain`` directory to the container using ``docker cp``
 
 .. code-block:: sh
 
-   cd <BUILD_DIR>/tmp/deploy/sdk
-   touch toolchain.tar.gz
-   tar -czf toolchain.tar.gz --exclude=toolchain.tar.gz .
-
-Copy the ``toolchain.tar.gz`` to the container using ``docker cp``
-
-.. code-block:: sh
-
-   docker cp toolchain.tar.gz hailo_tappas_container:/local/workspace/tappas
+   docker cp toolchain hailo_tappas_container:/local/workspace/tappas
 
 Components
 ----------
@@ -105,41 +97,42 @@ Flags
 
 .. code-block:: sh
 
-   $ ./cross_compile_gsthailotools.py --help
-   usage: cross_compile_gsthailotools.py [-h]
-                                         [--yocto-distribution YOCTO_DISTRIBUTION]
-                                         [--remove-cache]
-                                         {aarch64,armv7l} {imx6,imx8,hailo15} {debug,release}
-                                         toolchain_tar_path
+   $ ./cross_compile_tappas.py --help
+    usage: cross_compile_tappas.py [-h] [--remote-machine-ip REMOTE_MACHINE_IP] [--build-lib {all,apps,plugins,libs,tracers}] [--clean-build-dir]
+                               [--install-to-rootfs]
+                               {aarch64,armv7l,armv7lhf,armv8a} {imx6,imx8,hailo15} {debug,release} toolchain_dir_path
 
-   Cross-compile gst-hailo.
+    Cross-compile TAPPAS
 
-   positional arguments:
-     {aarch64,armv7l}      Arch to compile to
-     {imx6,imx8,hailo15}   Target platform to compile to
-     {debug,release}       Build and compilation type
-     toolchain_tar_path    Toolchain TAR path
+    positional arguments:
+    {aarch64,armv7l,armv7lhf,armv8a}
+                            Arch to compile to
+    {imx6,imx8,hailo15}   Target platform to compile to
+    {debug,release}       Build and compilation type
+    toolchain_dir_path    Toolchain directory path
 
-   optional arguments:
-     -h, --help            show this help message and exit
-     --yocto-distribution YOCTO_DISTRIBUTION
-                           The name of the Yocto distribution to use (default poky)
-     --remove-cache        Delete previous build cache (default false)
+    optional arguments:
+    -h, --help            show this help message and exit
+    --remote-machine-ip REMOTE_MACHINE_IP
+                            remote machine ip
+    --build-lib {all,apps,plugins,libs,tracers}
+                            Build a specific tappas lib target (default all)
+    --clean-build-dir     Delete previous build cache (default false)
+    --install-to-rootfs   Install to rootfs (default false)
+
 
 Example
 ~~~~~~~
 
 Run the compilation script
 
-
-
 .. note::
-    In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain.tar.gz
+    In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain
 
 
 .. code-block:: sh
 
-   $ ./cross_compile_gsthailotools.py aarch64 imx8 debug toolchain
+   $ ./cross_compile_tappas.py aarch64 imx8 debug toolchain
    INFO:./cross_compile_gsthailotools.py:Building hailofilter plugin and post processes
    INFO:./cross_compile_gsthailotools.py:Running Meson build.
    INFO:./cross_compile_gsthailotools.py:Running Ninja command.

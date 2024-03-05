@@ -9,7 +9,7 @@ function init_variables() {
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_post.so"
     readonly DEFAULT_NETWORK_NAME="yolov5"
     readonly DEFAULT_VIDEO_SOURCE="/dev/video0"
-    readonly DEFAULT_HEF_PATH="${RESOURCES_DIR}/yolov5m_wo_spp_60p_nv12.hef"
+    readonly DEFAULT_HEF_PATH="${RESOURCES_DIR}/yolov5m_wo_spp_60p_nv12_fhd.hef"
     readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
     readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/frontend_config.json"
     readonly DEFAULT_UDP_PORT=5000
@@ -91,7 +91,7 @@ PIPELINE="gst-launch-1.0 \
     hailofrontend config-file-path=$frontend_config_file_path name=frontend \
     frontend. ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path ! \
+    hailonet2 hef-path=$hef_path scheduling-algorithm=1 vdevice-group-id=device0 ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name config-path=$json_config_path so-path=$postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \

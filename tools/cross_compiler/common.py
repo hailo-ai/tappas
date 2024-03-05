@@ -1,10 +1,19 @@
 import contextlib
+import json
 import logging
 import os
+import shlex
+import shutil
 import subprocess
-import tarfile
+import sys
+import time
+from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
+from typing import List
+
+
+FOLDER_NAME = Path(__file__).resolve().parent
 
 
 class Arch(Enum):
@@ -16,6 +25,7 @@ class Arch(Enum):
     def __str__(self):
         return self.value
 
+
 class Target(Enum):
     IMX6 = 'imx6'
     IMX8 = 'imx8'
@@ -23,6 +33,19 @@ class Target(Enum):
 
     def __str__(self):
         return self.value
+
+
+def find_symlinks(target_file: Path) -> List[Path]:
+    symlink_list = []
+
+    directory = target_file.parent
+
+    for path in directory.rglob('*'):
+        if path.is_symlink() and path.resolve() == target_file.resolve():
+            symlink_list.append(path.relative_to(directory))
+
+    return symlink_list
+
 
 @contextlib.contextmanager
 def working_directory(target_directory):
@@ -34,67 +57,24 @@ def working_directory(target_directory):
         os.chdir(current_directory)
 
 
-def run_subprocess(command_line, logger, check_output=True, cwd=None, shell=False, update_env=None):
-    if update_env is None:
-        update_env = {}
+def progress_bar(it, prefix="", size=60, out=sys.stdout):
+    # Taken from: https://stackoverflow.com/a/34482761
+    count = len(it)
+    start = time.time()
 
-    current_env = os.environ.copy()
-    for key, value in update_env.items():
-        current_env[key] = value
-    if shell:
-        output = subprocess.run(command_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=current_env,
-                                shell=True)
-    else:
-        output = subprocess.run(command_line.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd,
-                                env=current_env, shell=False)
-    if check_output:
-        check_subprocess_output(output, logger)
+    def show(j):
+        x = int(size*j/count)
+        remaining = ((time.time() - start) / j) * (count - j)
 
+        mins, sec = divmod(remaining, 60)
+        time_str = f"{int(mins):02}:{sec:05.2f}"
 
-def check_subprocess_output(subprocess_output, logger):
-    cmd = " ".join(subprocess_output.args)
-    return_code = subprocess_output.returncode
-    subprocess_stdout = subprocess_output.stdout.decode()
-    subprocess_stderr = subprocess_output.stderr.decode()
+        print(f"{prefix}[{u'█'*x}{('.'*(size-x))}] {j}/{count} Est wait {time_str}", end='\r', file=out, flush=True)
 
-    log_message = "CMD <{}> RETURNED <{}>.\n".format(cmd, return_code)
-
-    if subprocess_stdout:
-        log_message += '{}STDOUT was:\n{}\n'.format(log_message, subprocess_stdout)
-    if subprocess_stderr:
-        log_message += '{}STDERR was:\n{}\n'.format(log_message, subprocess_stderr)
-    if return_code == 0:
-        try:
-            logger.debug(log_message)
-        except Exception:
-            logger.warning("An error occurred when trying to logging the output date")
-            logger.debug("Encoded log message:\n{}".format(log_message.encode('utf-8')))
-    else:
-        try:
-            logger.error("An error occurred when running a sub-process: {}".format(log_message))
-        except Exception:
-            logger.error("An error occurred when trying to logging the output date")
-            logger.error("Encoded log message:\n{}".format(log_message.encode('utf-8')))
-        raise subprocess.CalledProcessError(return_code, cmd, subprocess_stdout, subprocess_stderr)
-
-
-def extract_and_install_toolchain(tar_path, dir_to_install_toolchain_in, logger):
-    logger.info('extracting toolchain')
-    tar_dir = os.path.dirname(tar_path)
-
-    with tarfile.open(tar_path, "r:gz") as tar_file:
-        toolchain_installers = [tar_path.parent / Path(member.name) for member in tar_file.getmembers() if
-                                '.sh' in member.name]
-
-        if len(toolchain_installers) == 0:
-            raise FileNotFoundError("No toolchain installer found")
-
-        tar_file.extractall(path=tar_dir)
-
-    logger.info('installing toolchain')
-    for toolchain_installer in toolchain_installers:
-        logger.info("installing {}".format(toolchain_installer))
-        run_subprocess("{} -d {} -y".format(toolchain_installer, dir_to_install_toolchain_in), logger=logger)
+    for i, item in enumerate(it):
+        yield item
+        show(i+1)
+    print("\n", flush=True, file=out)
 
 
 class ShellRunner:
@@ -120,22 +100,20 @@ class ShellRunner:
         if type(shell_cmd) is list:
             shell_cmd = self._convert_pathlib_instance_to_str(shell_cmd)
 
-        if not print_output:
-            p = subprocess.run(shell_cmd, cwd=cwd, shell=shell, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, stdin=subprocess.PIPE,
-                            env=env, timeout=timeout)
+        output_method = None if print_output else subprocess.PIPE
 
+        p = subprocess.run(shell_cmd, cwd=cwd, shell=shell, env=env, timeout=timeout,
+                           stdout=output_method, stderr=output_method, stdin=output_method)
+
+        if not print_output:
             p.stdout = p.stdout.decode()
             p.stderr = p.stderr.decode()
-
             self._log_subprocess(p)
-            if not ignore_errors:
-                p.check_returncode()
-            return p
-        else:
-            # p = subprocess.Popen(shell_cmd, cwd=cwd, shell=shell, env=env)
-            p = subprocess.run(shell_cmd, cwd=cwd, env=env, timeout=timeout)
-            return p
+
+        if not ignore_errors:
+            p.check_returncode()
+
+        return p
 
     def _convert_pathlib_instance_to_str(self, arr):
         """
@@ -176,3 +154,143 @@ def install_compilers_apt_packages(arch):
         apt_packages = [f'g++-{arch.value}-linux-gnu', f'gcc-{arch.value}-linux-gnu']
 
     runner.run(shell_cmd=f'sudo apt-get install -y {" ".join(apt_packages)}', shell=True)
+
+
+class MesonInstaller(ABC):
+    def __init__(self, arch, build_type, toolchain_dir_path, src_build_dir, remote_machine_ip=None, clean_build_dir=False,
+                 install_to_toolchain_rootfs=False):
+        self._arch = arch
+        self._build_type = build_type
+        self._clean_build_dir = clean_build_dir
+        self._install_to_toolchain_rootfs = install_to_toolchain_rootfs
+        self._remote_machine_ip = remote_machine_ip
+        self._deploy_to_remote_machine = self._remote_machine_ip is not None
+        self._src_build_dir = src_build_dir
+
+        self._logger = logging.getLogger(__file__)
+        self._runner = ShellRunner()
+
+        self._output_build_dir = FOLDER_NAME / f'{self._arch.value}-gsthailotools-build-{self._build_type}'
+        self._toolchain_dir_path = Path(toolchain_dir_path).absolute().resolve()
+        self._toolchain_rootfs_base_path = self._toolchain_dir_path / "sysroots" / f"{self._arch.value}-poky-linux"
+
+        self._install_toolchain()
+
+    @abstractmethod
+    def get_meson_build_command(self):
+        pass
+
+    def _install_toolchain(self):
+        if (self._toolchain_dir_path / "sysroots").is_dir():
+            self._logger.info('Toolchain has been already unpacked and installed successfully. Skipping')
+            return
+
+        self._logger.info('Starting the installation of the toolchain')
+
+        toolchain_installers = [self._toolchain_dir_path / Path(member.name)
+                                for member in self._toolchain_dir_path.glob('*.sh')]
+
+        for toolchain_installer in toolchain_installers:
+            self._logger.info("installing {}".format(toolchain_installer))
+
+            if "LD_LIBRARY_PATH" in os.environ:
+                raise EnvironmentError("LD_LIBRARY_PATH is set, The SDK will not operate correctly, exiting")
+
+            install_toolchain_command = f"{toolchain_installer} -d {self._toolchain_dir_path} -y"
+            self._runner.run(shell_cmd=install_toolchain_command, shell=True)
+
+        self._logger.info('Toolchain ready to use ({})'.format(self._toolchain_dir_path))
+
+    def run_meson_build_command(self, env=None):
+        self._logger.info("Running Meson build.")
+
+        build_cmd = self.get_meson_build_command()
+
+        self._runner.run(build_cmd, env=env, print_output=True)
+        self._logger.info('Done running Meson command')
+
+    def run_ninja_install_command(self, env=None):
+        self._logger.info("Running Ninja install command.")
+        env["DESTDIR"] = self._toolchain_rootfs_base_path
+
+        ninja_cmd = ['ninja', 'install', '-C', self._output_build_dir]
+        self._runner.run(ninja_cmd, env, print_output=True)
+        self._logger.info('Done running Ninja install')
+
+    def run_ninja_build_command(self, env=None):
+        self._logger.info("Running Ninja command.")
+
+        ninja_cmd = ['ninja', '-C', self._output_build_dir]
+        self._runner.run(ninja_cmd, env, print_output=True)
+        self._logger.info('Done running Ninja command')
+
+    def get_env_variables_from_source_file(self, file_to_source):
+        env = dict()
+
+        command = f"env --ignore-environment bash -c 'source {file_to_source} && env'"
+        process = self._runner.run(shell_cmd=command, shell=True)
+
+        for line in process.stdout.strip().split('\n'):
+            (key, _, value) = line.partition("=")
+            env[key] = value
+
+        return env
+
+    def deploy_artifacts_to_remote_machine(self):
+        meson_path_cmd = "env -i which meson"
+        meson_path = self._runner.run(shell_cmd=meson_path_cmd, shell=True).stdout.strip()
+
+        meson_introspect_cmd = f"{meson_path} introspect {self._output_build_dir} --installed"
+        meson_introspect_output = self._runner.run(shell_cmd=meson_introspect_cmd, shell=True).stdout
+
+        files_and_dest_paths = json.loads(meson_introspect_output)
+        amount_of_files_range = range(len(files_and_dest_paths.keys()))
+        progress_bar_generator = progress_bar(amount_of_files_range, "Progress: ")
+
+        for key, value in files_and_dest_paths.items():
+            if not Path(key).is_file():
+                # Introspect returns some non-existing files
+                pass
+            else:
+                destination = f"root@{self._remote_machine_ip}:{value}"
+                rsync_cmd = f"rsync -avz --update --progress {shlex.quote(key)} {shlex.quote(destination)}"
+                self._runner.run(rsync_cmd, shell=True)
+
+                # We need this section because meson introspect is buggy and returns wrong paths for symlinks
+                # Maybe once we would drop kirkstone, this one would be solved
+                for symlink_file in find_symlinks(Path(key)):
+                    symlink_destination = f"root@{self._remote_machine_ip}:{Path(value).parent / symlink_file}"
+                    symlink_rsync_cmd = f"rsync -avz --update --progress {Path(key).parent / symlink_file} {symlink_destination}"
+                    self._runner.run(symlink_rsync_cmd, shell=True)
+
+            next(progress_bar_generator)
+
+    def get_custom_environment(self):
+        env_setup_file = next(Path(self._toolchain_dir_path).glob('*environment-setup*')).absolute().resolve()
+        env_from_environ_setup = self.get_env_variables_from_source_file(env_setup_file)
+
+        return env_from_environ_setup
+
+    def build(self):
+        self._logger.info("Building gsthailotools plugins and post processes")
+        env = self.get_custom_environment()
+
+        src_dir_name = self._src_build_dir.parts[-1]
+        self._output_build_dir = self._output_build_dir / src_dir_name
+        print(f"Build dir: {self._output_build_dir}")
+
+        with working_directory(self._src_build_dir):
+            if self._output_build_dir.is_dir() and self._clean_build_dir:
+                shutil.rmtree(self._output_build_dir)
+
+            self.run_meson_build_command(env)
+            self.run_ninja_build_command(env)
+
+            if self._install_to_toolchain_rootfs:
+                self.run_ninja_install_command(env)
+            if self._deploy_to_remote_machine:
+                self.deploy_artifacts_to_remote_machine()
+
+            self._output_build_dir = self._output_build_dir.parent
+
+        self._logger.info(f"Build done. Outputs could be found in {self._output_build_dir}")

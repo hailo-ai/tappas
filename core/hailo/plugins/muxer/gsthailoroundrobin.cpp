@@ -420,6 +420,8 @@ gst_hailo_round_robin_init(GstHailoRoundRobin *hailo_round_robin)
     hailo_round_robin->srcpad = gst_pad_new_from_static_template(&src_template, "src");
     hailo_round_robin->mode = GST_HAILO_ROUND_ROBIN_MODE_BLOCKING;
     hailo_round_robin->current_pad_mutex = std::make_unique<std::shared_mutex>();
+    hailo_round_robin->num_of_sink_pads = 0;
+    hailo_round_robin->num_of_pads_mutex = std::make_unique<std::shared_mutex>();
     hailo_round_robin->counter_mutex = std::make_unique<std::shared_mutex>();
     gst_pad_use_fixed_caps(hailo_round_robin->srcpad);
     gst_element_add_pad(GST_ELEMENT(hailo_round_robin), hailo_round_robin->srcpad);
@@ -433,6 +435,7 @@ gst_hailo_round_robin_dispose(GObject *object)
     hailo_round_robin->current_pad_num = 0;
     hailo_round_robin->pad_queues.clear();
     hailo_round_robin->preroll_buffer_counter = 0;
+    hailo_round_robin->num_of_sink_pads = 0;
     hailo_round_robin->mutexes_blocking.clear();
     hailo_round_robin->mutexes_non_blocking.clear();
     hailo_round_robin->condition_vars_blocking.clear();
@@ -455,12 +458,19 @@ static GstPad *
 gst_hailo_round_robin_request_new_pad(GstElement *element, GstPadTemplate *templ,
                                       const gchar *name, const GstCaps *caps)
 {
+
     GstPad *sinkpad;
     GstHailoRoundRobin *hailo_round_robin = GST_HAILO_ROUND_ROBIN_CAST(element);
     GST_DEBUG_OBJECT(element, "requesting pad");
 
+    std::string pad_name;
+    std::shared_lock lock(*(hailo_round_robin->num_of_pads_mutex.get()));
+    pad_name = "sink_" + std::to_string(hailo_round_robin->num_of_sink_pads);
+    hailo_round_robin->num_of_sink_pads++;
+    lock.unlock();
+
     sinkpad = GST_PAD_CAST(g_object_new(GST_TYPE_HAILO_ROUND_ROBIN_PAD,
-                                        "name", name, "direction", templ->direction, "template", templ,
+                                        "name", pad_name.c_str(), "direction", templ->direction, "template", templ,
                                         NULL));
 
     // Set sink_chain and sink_event funtions for the new pad
