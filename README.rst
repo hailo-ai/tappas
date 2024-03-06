@@ -424,7 +424,6 @@ Changelog
 
 * Aligned to Hailo-15 Vision Processor Software Package 2024-01.2
 * Added a new example application - Frontend Update
-* Updated the Hailo-15 applications to support AI de-fog and AI de-noise features
 * Updated the hailo OSD API
 * Detection application now works with an updated hailonet element
 * Various bugs fixes
