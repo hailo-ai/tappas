@@ -91,7 +91,7 @@ PIPELINE="gst-launch-1.0 \
     hailofrontend config-file-path=$frontend_config_file_path name=frontend \
     frontend. ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailonet2 hef-path=$hef_path scheduling-algorithm=1 vdevice-group-id=device0 ! \
+    hailonet hef-path=$hef_path scheduling-algorithm=1 vdevice-group-id=device0 ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name config-path=$json_config_path so-path=$postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
