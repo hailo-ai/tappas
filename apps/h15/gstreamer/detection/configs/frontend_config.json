@@ -28,6 +28,16 @@
         "std_multiplier": 3.0,
         "black_corners_correction_enabled": true,
         "black_corners_threshold": 0.5,
+        "angular_dis": {
+            "enabled": false,
+            "vsm": {
+                "hoffset": 1856,
+                "voffset": 1016,
+                "width": 1920,
+                "height": 1080,
+                "max_displacement": 64
+            }
+        },
         "debug": {
             "generate_resize_grid": false,
             "fix_stabilization": false,
