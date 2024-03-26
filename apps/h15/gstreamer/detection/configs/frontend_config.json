@@ -28,6 +28,7 @@
         "std_multiplier": 3.0,
         "black_corners_correction_enabled": true,
         "black_corners_threshold": 0.5,
+        "average_luminance_threshold": 0,
         "angular_dis": {
             "enabled": false,
             "vsm": {
