@@ -100,14 +100,14 @@ Flags
    $ ./cross_compile_tappas.py --help
     usage: cross_compile_tappas.py [-h] [--remote-machine-ip REMOTE_MACHINE_IP] [--build-lib {all,apps,plugins,libs,tracers}] [--clean-build-dir]
                                [--install-to-rootfs]
-                               {aarch64,armv7l,armv7lhf,armv8a} {imx6,imx8,hailo15} {debug,release} toolchain_dir_path
+                               {aarch64,armv7l,armv7lhf,armv8a} {imx8,hailo15} {debug,release} toolchain_dir_path
 
     Cross-compile TAPPAS
 
     positional arguments:
     {aarch64,armv7l,armv7lhf,armv8a}
                             Arch to compile to
-    {imx6,imx8,hailo15}   Target platform to compile to
+    {imx8,hailo15}   Target platform to compile to
     {debug,release}       Build and compilation type
     toolchain_dir_path    Toolchain directory path
 
@@ -127,7 +127,7 @@ Example
 Run the compilation script
 
 .. note::
-    In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-zeus-aarch64-toolchain
+    In this example we assume that the toolchain is located under toolchain-raw/hailo-dartmx8m-dunfell-aarch64-toolchain
 
 
 .. code-block:: sh

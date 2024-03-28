@@ -28,5 +28,6 @@ lpr_ocrsink_lib = shared_library('lpr_ocrsink',
   install_dir: apps_install_dir + '/license_plate_recognition/resources',
 )
 
-subdir('encoder_applications')
+subdir('encoder_pipelines')
+subdir('encoder_pipelines_new_api')
 subdir('vision_preproc_applications')

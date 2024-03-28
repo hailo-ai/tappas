@@ -49,6 +49,19 @@ Non-x86
        mkdir hailort
        git clone https://github.com/hailo-ai/hailort.git hailort/sources
 
+.. note::
+  In some cases, HailoRT (which is installed via TAPPAS) is not the latest version, while the driver,
+  which was installed before HailoRT and TAPPAS - has a different version.
+  In these cases, this error will occur:
+
+    "Could not find a configuration file for package "HailoRT" that exactly
+    matches requested version."
+
+  Meaning, HailoRT library and driver installed versions are mismatched - while
+  they are required to be fully identical.
+
+  In such a case - re-install the driver version which is compatible to your installed HailoRT version.
+
 Required Packages
 -----------------
 
@@ -85,25 +98,7 @@ In case any requirements are missing, a requirements table will be printed when 
 
 OpenCV Installation
 -------------------
-To install OpenCV, run the following commands:
 
-.. code-block:: sh
-    
-    sudo apt-get install -y libopencv-dev python3-opencv
-
-To check your OpenCV version, run the following command:
-
-.. code-block:: sh
-
-    # To check the OpenCV version installed 
-    pkg-config --modversion opencv4
-
-.. tip::
-
-    If you are running on an old OS the apt-get version might be too old (You will be notified on the next steps), you can install OpenCV manually as shown below.
-
-Opencv compilation from source
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: sh
 
     # Download Opencv and unzip
@@ -223,27 +218,3 @@ The solution is to export an environment variable:
 .. code-block:: sh
 
     export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
-
-PCIe descriptor page size error
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If you encounter the following error: (actual page size might vary)
-
-.. code-block:: sh
-
-    [HailoRT] [error] CHECK_AS_EXPECTED failed - max_desc_page_size given 16384 is bigger than hw max desc page size 4096"
-
-Some hosts doesn't support certain PCIe descriptor page size.
-in order to overcome this issue add the text below to /etc/modprobe.d/hailo_pci.conf (create the file if it doesn't exist)
-
-.. code-block:: sh
-
-    options hailo_pci force_desc_page_size=4096
-    # you can do this by running the following command:
-    echo 'options hailo_pci force_desc_page_size=4096' >> /etc/modprobe.d/hailo_pci.conf
-
-Reboot the machine for this change to take effect. You can also reload the driver without rebooting by running the following commands:
-
-.. code-block:: sh
-
-    modprobe -r hailo_pci
-    modprobe hailo_pci

@@ -12,10 +12,10 @@ function init_variables() {
     readonly CROPPING_ALGORITHMS_DIR="$POSTPROCESS_DIR/cropping_algorithms"
 
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
-    readonly DEFAULT_NETWORK_NAME="yolov5"
+    readonly DEFAULT_NETWORK_NAME="yolov8m"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov8m.hef"
 
     # Cropping Algorithm Macros
     readonly WHOLE_BUFFER_CROP_SO="$CROPPING_ALGORITHMS_DIR/libwhole_buffer.so"
@@ -60,7 +60,7 @@ function print_usage() {
     echo "  -h --help                  Show this help"
     echo "  --inference-period INT     How frequently to perform inference, default is every 1 buffer (must be >= 1)."
     echo "                             NOTE: It is recommended to adjust the hailotracker element properties as suits your inference period."
-    echo "  --network NETWORK          Set network to use. choose from [yolov3, yolov4, yolov5, mobilenet_ssd, nanodet], default is yolov5"
+    echo "  --network NETWORK          Set network to use. choose from [yolov5, yolov8], default is yolov8"
     echo "  -i INPUT --input INPUT     Set the input source (default $input_source)"
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
@@ -71,33 +71,10 @@ function print_usage() {
 function parse_args() {
     while test $# -gt 0; do
         if [ $1 == "--network" ]; then
-            if [ $2 == "yolov4" ]; then
-                network_name="yolov4"
-                hef_path="$RESOURCES_DIR/yolov4_leaky.hef"
-                batch_size="4"
-                json_config_path="$RESOURCES_DIR/configs/yolov4.json"
-                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
-                thresholds_str=""
-            elif [ $2 == "yolov3" ]; then
-                network_name="yolov3"
-                hef_path="$RESOURCES_DIR/yolov3.hef"
-                batch_size="4"
-                json_config_path="$RESOURCES_DIR/configs/yolov3.json"
-                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
-                thresholds_str=""
-            elif [ $2 == "mobilenet_ssd" ]; then
-                network_name="mobilenet_ssd"
-                hef_path="$RESOURCES_DIR/ssd_mobilenet_v1.hef"
-                postprocess_so="$POSTPROCESS_DIR/libmobilenet_ssd_post.so"
-                json_config_path="null"
-                thresholds_str="output-format-type=HAILO_FORMAT_TYPE_FLOAT32"
-            elif [ $2 == "nanodet" ]; then
-                network_name="nanodet_repvgg"
-                hef_path="$RESOURCES_DIR/nanodet_repvgg.hef"
-                postprocess_so="$POSTPROCESS_DIR/libnanodet_post.so"
-                json_config_path="null"
-                thresholds_str=""
-            elif [ $2 != "yolov5" ]; then
+            if [ $2 == "yolov5" ]; then
+                network_name="yolov5"
+                hef_path="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
+            elif [ $2 != "yolov8" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
                 exit 1
@@ -158,7 +135,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     agg1. \
     cropper1. ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size $thresholds_str ! \
+        hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size $thresholds_str force-writable=true ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
         hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

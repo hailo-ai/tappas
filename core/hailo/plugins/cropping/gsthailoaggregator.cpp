@@ -249,6 +249,10 @@ gst_hailoaggregator_sink_event(GstPad *pad, GstObject *parent, GstEvent *event)
         {
             GST_OBJECT_LOCK(hailoaggregator);
             gst_hailoaggregator_update_eos(hailoaggregator, pad, true);
+            // Unlocking both condition variables in order to finish the chain function.
+            // After that the pads can be freed by the change_state of base class.
+            hailoaggregator->cv_main.notify_all();
+            hailoaggregator->cv_sub.notify_all();
             forward = gst_hailoaggregator_all_sinkpads_eos_unlocked(hailoaggregator);
             GST_OBJECT_UNLOCK(hailoaggregator);
         }
@@ -341,7 +345,7 @@ gst_hailoaggregator_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
 
     hailoaggregator->expected_frames = gst_buffer_get_hailo_cropping_meta(buf)->num_of_crops;
 
-    if (hailoaggregator->expected_frames != 0)
+    if (hailoaggregator->expected_frames != 0 && !hailoaggregator->eos_sub)
     {
         hailoaggregator->mainframe = buf;
         hailoaggregator->cv_sub.notify_one();

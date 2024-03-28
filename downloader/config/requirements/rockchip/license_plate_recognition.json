@@ -3,7 +3,7 @@
   "requirements": [
     {
       "bucket": "tappas",
-      "source": "general/hefs/tiny_yolov4_license_plates.hef",
+      "source": "rockchip/hefs/tiny_yolov4_license_plates.hef",
       "destination": "tiny_yolov4_license_plates.hef"
     },
     {

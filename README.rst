@@ -7,7 +7,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.16.2-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.17.0-green
    :target: https://github.com/hailo-ai/hailort
    :alt: HailoRT
    :height: 20
@@ -22,7 +22,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
   :width: 20
   :align: middle
 
-.. image:: ./resources/github_TAPPAS.jpg
+.. image:: ./resources/github_Tappas_Mar24.jpg
   :height: 300
   :width: 600
   :align: center
@@ -69,7 +69,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.16.
+    This version is compatible with HailoRT v4.17.
 
 
 Installation
@@ -146,68 +146,29 @@ The following table details the currently available examples.
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12 12
+   :widths: 40 12 12 12 12 12
    :align: center
 
    * - 
      - `General <apps/h8/gstreamer/general/README.rst>`_
      - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
      - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
      - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
      - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
-   * - Classification 
-     - |check_mark|
-     -  
-     -  
-     -  
-     -  
-     -  
    * - Object Detection
      - |check_mark|
      - |check_mark|
      - |check_mark|
-     - |check_mark|
      - 
      - |check_mark|
-   * - Pose Estimation
-     - |check_mark|
-     - |check_mark|
-     - 
-     - |check_mark|
-     - 
-     - 
-   * - Semantic Segmentation
-     - |check_mark|
-     - |check_mark|
-     - 
-     - |check_mark|
-     - 
-     - 
    * - Depth Estimation
      - |check_mark|
      - |check_mark|
      - |check_mark|
-     - |check_mark|
-     - 
-     - 
-   * - Face Detection
-     - |check_mark|
-     - 
-     - 
-     - |check_mark|
-     - 
-     - 
-   * - Facial landmark
-     - |check_mark|
-     - |check_mark|
-     - 
-     - 
      - 
      - 
    * - Instance segmentation
      - |check_mark|
-     - 
      - 
      - 
      - 
@@ -218,13 +179,17 @@ The following table details the currently available examples.
      - 
      - 
      - 
-     - 
    * - Object Detection Multiple Devices (Century)
      - |check_mark|
      - 
      - 
-     - 
      - |check_mark|
+     - 
+   * - Face Recognition
+     - |check_mark|
+     - 
+     - 
+     - 
      - 
 
 
@@ -246,32 +211,16 @@ The cascaded (serial) flow shows two networks running in series. This example pi
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12 12
+   :widths: 40 12 12 12 12 12
    :align: center
 
    * - 
      - `General <apps/h8/gstreamer/general/README.rst>`_
      - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
      - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
      - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
      - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
-   * - Parallel - Object Det + Depth Estimation
-     - |check_mark|
-     - 
-     - 
-     - |check_mark|
-     - 
-     - 
-   * - Parallel - Object Det + Pose Estimation
-     - |check_mark|
-     - 
-     - 
-     - 
-     - 
-     - 
    * - Cascaded - Face Detection & Landmarks
-     - |check_mark|
      - |check_mark|
      - 
      - |check_mark|
@@ -279,14 +228,12 @@ The cascaded (serial) flow shows two networks running in series. This example pi
      - 
    * - Cascaded - Person Det & Single Person Pose Estimation
      - |check_mark|
-     - 
-     - 
+     - |check_mark|
      - 
      - 
      - 
    * - Cascaded - Face Detection & Recognition
      - |check_mark|
-     - 
      - 
      - 
      - 
@@ -302,26 +249,23 @@ Multi-Stream Pipelines
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12 12
+   :widths: 40 12 12 12 12 12 
    :align: center
 
    * - 
      - `General <apps/h8/gstreamer/general/README.rst>`_
      - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
      - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
      - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
      - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
    * - Multi-stream Object Detection
      - |check_mark|
-     - 
-     - 
+     -
      - 
      - |check_mark|
      - |check_mark|
    * - Multi-stream Multi-Device Object Detection
      - |check_mark|
-     - 
      - 
      - 
      - 
@@ -338,19 +282,17 @@ Pipelines for High-Resolution Processing Via Tiling
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12 12
+   :widths: 40 12 12 12 12 12
    :align: center
 
    * - 
      - `General <apps/h8/gstreamer/general/README.rst>`_
      - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
      - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
      - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
      - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
    * - HD Object Detection
      - |check_mark|
-     - 
      - 
      - 
      - 
@@ -381,13 +323,12 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 .. list-table::
    :header-rows: 1
    :stub-columns: 1
-   :widths: 40 12 12 12 12 12 12
+   :widths: 40 12 12 12 12 12
    :align: center
 
    * - 
      - `General <apps/h8/gstreamer/general/README.rst>`_
      - `i.MX8 <apps/h8/gstreamer/imx8/README.rst>`_
-     - `i.MX6 <apps/h8/gstreamer/imx6/README.rst>`_
      - `RPi4 <apps/h8/gstreamer/raspberrypi/README.rst>`_
      - `x86 Hardware Accelerated <apps/h8/gstreamer/x86_hw_accelerated/README.rst>`_
      - `Rockchip <apps/h8/gstreamer/rockchip/README.rst>`_
@@ -396,21 +337,12 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
      - |check_mark|
      - 
      - 
-     - 
      - |check_mark|
    * - RE-ID
      - |check_mark|
      - 
      - 
-     -
      - 
-     - 
-   * - VMS
-     - 
-     - 
-     - 
-     -
-     - |check_mark|
      - 
 
 
@@ -420,12 +352,19 @@ Our VMS reference application demonstrates the use of 5 networks over multiple s
 Changelog
 ----------
 
+**v3.28.0 (April 2024)**
+
+* Tappas was updated in this version, with a revised list of supported platform and apps
+* Added ``yolov8`` (as default) to Detection application examples
+* Fixed various stability issues across apps and platforms
+* This release is aligned to Hailo-15 Vision Processor Software Package 2024-04
+
 **v3.27.2 (March 2024)**
 
 * Aligned to Hailo-15 Vision Processor Software Package 2024-01.2
 * Added a new example application - Frontend Update
 * Updated the hailo OSD API
-* Detection application now works with an updated hailonet element
+* Detection application now works with an updated ``hailonet`` element
 * Various bugs fixes
 
 **v3.27.1 (February 2024)**
@@ -449,8 +388,6 @@ Changelog
     * Detection
 
       * yolov5
-      * yolov4
-      * yolov3
       * mobilenet_ssd
 
     * Multi-Stream Detection
@@ -499,8 +436,8 @@ Changelog
 **v3.24.0 (March 2023)**
 
 * Added support for `Rockchip RK3588 <apps/h8/gstreamer/rockchip/README.rst>`_ (validated on Firefly ITX-3588J platform)
-* `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ now supports multi-device (Ubuntu 22.04 only)
-* `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ (single device) now works on Ubuntu 20.04
+* Video Management System now supports multi-device (Ubuntu 22.04 only)
+* Video Management System (single device) now works on Ubuntu 20.04
 * Added a new model to `Instance Segmentation Pipeline <apps/h8/gstreamer/general/instance_segmentation/README.rst>`_:
 
   * `yolov5seg` - which has improved performance compared to `yolact`
@@ -529,7 +466,7 @@ Changelog
     that use Video Acceleration API (VA-API) over Intel processors that support
     `Quick Sync <https://en.wikipedia.org/wiki/Intel_Quick_Sync_Video>`_:
 
-    * `Video Management System <apps/h8/gstreamer/x86_hw_accelerated/video_management_system/README.rst>`_ -
+    * Video Management System -
       a pipeline that demonstrates a VMS application which runs several streams and different tasks - Face Recognition,
       Face Attributes and Person Attributes. Currently this example pipeline is supported on Ubuntu 22.04 only
     * `Multi-stream detection <apps/h8/gstreamer/x86_hw_accelerated/multistream_detection/README.rst>`_
@@ -537,7 +474,7 @@ Changelog
 
   * Pose Estimation pipeline with two cascading networks - `Person detection and single person pose estimation <apps/h8/gstreamer/general/cascading_networks/README.rst>`_
   * `Face recognition <apps/h8/gstreamer/general/face_recognition/README.rst>`_
-  * Updated `i.MX6 Object Detection App <apps/h8/gstreamer/imx6/detection/README.rst>`_ - New network, updated the pipeline to include i.MX6 hardware acceleration
+  * Updated i.MX6 Object Detection App - New network, updated the pipeline to include i.MX6 hardware acceleration
 
 * Added new models to `Instance Segmentation Pipeline <apps/h8/gstreamer/general/instance_segmentation/README.rst>`_:
 
@@ -551,7 +488,7 @@ Changelog
 **v3.22.0 (November 2022)**
 
 * New element `hailoimportzmq` - provides an entry point for importing metadata exported by `hailoexportzmq` (HailoObjects) into the pipeline
-* Added Depth Estimation, Object Detection and Classification pipelines for `i.MX6 Pipelines <apps/h8/gstreamer/imx6/README.rst>`_ 
+* Added Depth Estimation, Object Detection and Classification pipelines for i.MX6 Pipelines
 * Changed the debugging tracers to use an internal tracing mechanism  
 
 **v3.21.0 (October 2022)**
@@ -587,7 +524,7 @@ Changelog
 
 * Added an option to control post-process parameters via a JSON configuration for the detection application
 * Added support for Raspberry Pi Raspbian OS
-* `Native Application <apps/h8/native/detection/README.rst>`_ now uses TAPPAS post-process
+* Native Application now uses TAPPAS post-process
 * LPR (License Plate Recognition) pipeline is simplified to bash only
 * New detection post-process - Nanodet
 

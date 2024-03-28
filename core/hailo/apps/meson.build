@@ -51,7 +51,7 @@ cv_singleton_dep = declare_dependency(
 # App Subdirectories
 if target_platform == 'x86' or target_platform == 'rpi' or target_platform == 'rockchip'
     subdir('x86')
-elif target_platform == 'imx8' or target_platform == 'imx6'
+elif target_platform == 'imx8'
     subdir('imx')
 elif target_platform == 'hailo15'
     subdir('hailo15')

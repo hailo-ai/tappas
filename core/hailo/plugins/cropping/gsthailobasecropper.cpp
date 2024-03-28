@@ -734,6 +734,24 @@ static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuf
         return NULL;
     }
 
+    // Check both caps have the same format:
+    // Get the structure of the caps
+    const GstStructure *in_structure = gst_caps_get_structure(incaps, 0);
+    const GstStructure *out_structure = gst_caps_get_structure(outcaps, 0);
+
+    // Get the format field from the structure
+    const gchar *in_format = gst_structure_get_string(in_structure, "format");
+    const gchar *out_format = gst_structure_get_string(out_structure, "format");
+
+    // Compare the formats
+    if (g_strcmp0(in_format, out_format) != 0) {
+        GST_ERROR_OBJECT(hailo_basecropper, "Input and output caps have different formats");
+        std::cerr << "ERROR: Hailo Cropper Input and output caps have different formats" << std::endl;
+        gst_caps_unref(incaps);
+        gst_caps_unref(outcaps);
+        return NULL;
+    }
+
     GstVideoInfo *full_image_info = gst_video_info_new();
     gst_video_info_from_caps(full_image_info, incaps);
 
@@ -975,7 +993,8 @@ void resize_normal(cv::InterpolationFlags method,
  */
 void resize_letterbox(cv::InterpolationFlags method,
                       std::vector<cv::Mat> &cropped_image_vec, std::vector<cv::Mat> &resized_image_vec,
-                      HailoROIPtr roi, GstVideoFormat image_format)
+                      HailoROIPtr roi, GstVideoFormat image_format,
+                      bool no_scaling_bbox)
 {
     switch (image_format)
     {
@@ -983,7 +1002,8 @@ void resize_letterbox(cv::InterpolationFlags method,
     {
         static const cv::Scalar color(130, 130, 130);
         HailoBBox letterboxed_scale = resize_letterbox_nv12(cropped_image_vec, resized_image_vec, color, method);
-        roi->set_scaling_bbox(letterboxed_scale);
+        if (!no_scaling_bbox)
+            roi->set_scaling_bbox(letterboxed_scale);
         break;
     }
     case GST_VIDEO_FORMAT_RGBA:
@@ -991,7 +1011,8 @@ void resize_letterbox(cv::InterpolationFlags method,
     {
         static const cv::Scalar color(114, 114, 114);
         HailoBBox letterboxed_scale = resize_letterbox_rgb(cropped_image_vec[0], resized_image_vec[0], color, method);
-        roi->set_scaling_bbox(letterboxed_scale);
+        if (!no_scaling_bbox)
+            roi->set_scaling_bbox(letterboxed_scale);
         break;
     }
     default:

@@ -16,7 +16,7 @@ Options
    ./detection.sh [--input FILL-ME]
 
 
-* ``--network``   is an optional flag that sets which network to use. Choose from [yolov3, yolov4, yolov5, mobilenet_ssd], default is yolov5.
+* ``--network``   is an optional flag that sets which network to use. Choose from [yolov5, mobilenet_ssd, nanodet, yolov8], default is yolov8.
   This will set which ``hef file`` to use, the corresponding ``hailofilter`` function, and the scaling of the frame to match the width/height input dimensions of the network.
 * ``--input`` is an optional flag, a path to the video displayed (default is detection.mp4).
 * ``--show-fps``  is an optional flag that enables printing FPS on screen.
@@ -32,11 +32,9 @@ Supported Networks
 ------------------
 
 
+* 'yolov8m' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov8m.yaml
 * 'yolov5m_wo_spp_60p' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
-* 'yolov4_leaky' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov4_leaky.yaml
-* 'yolov3_gluon' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov3_gluon.yaml
 * 'mobilenet_ssd' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/ssd_mobilenet_v1.yaml
-* 'nanodet_repvgg' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/nanodet_repvgg.yaml
 
 Run
 ---
@@ -67,6 +65,15 @@ How to Use Retraining to Replace Models
 Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
 that are trained on the users own dataset:
 
+- ``yolov8m``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov8>`_
+
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
+
 - ``yolov5m``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
@@ -75,25 +82,7 @@ that are trained on the users own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update ``resources/configs/yolov5.json`` with your new post-processing parameters (NMS)
-- ``yolov4``
-  
-  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov4>`_
 
-    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
-  - TAPPAS changes to replace model:
-
-    - Update HEF_PATH on the .sh file
-    - Update ``resources/configs/yolov4.json`` with your new post-processing parameters (NMS)
-- ``yolov3``
-  
-  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov3>`_
-
-    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
-  - TAPPAS changes to replace model:
-
-    - Update HEF_PATH on the .sh file
-    - Update ``resources/configs/yolov3.json`` with your new post-processing parameters (NMS)
 - ``mobilenet_ssd``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/ssd>`_
@@ -104,13 +93,3 @@ that are trained on the users own dataset:
     - Update HEF_PATH on the .sh file
     - Update `mobilenet_ssd.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/mobilenet_ssd.cpp#L141>`_
       with your new parameters, then recompile to create ``libmobilenet_ssd_post.so``
-- ``nanodet_repvgg``
-  
-  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/nanodet>`_
-    
-    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
-  - TAPPAS changes to replace model:
-
-    - Update HEF_PATH on the .sh file
-    - Update `nanodet.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/detection/nanodet.cpp#L221>`_
-      with your new parameters, then recompile to create ``libnanodet_post.so``

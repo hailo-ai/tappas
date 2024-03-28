@@ -16,7 +16,6 @@ class Platform(Enum):
     X86 = 'x86'
     ARM = 'arm'
     IMX8 = 'imx8'
-    IMX6 = 'imx6'
     Rockchip = 'rockchip'
     RaspberryPI = 'rpi'
     
@@ -61,7 +60,7 @@ class Downloader(ABC):
 
         for requirements_file in config.REQUIREMENTS_FILES:
             req_path = config.REQUIREMENTS_PATH / requirements_file
-            is_general_req = str(requirements_file).startswith(f'general/') and platform not in [Platform.IMX8, Platform.IMX6, Platform.Rockchip]
+            is_general_req = str(requirements_file).startswith(f'general/') and platform not in [Platform.IMX8, Platform.Rockchip]
             is_platform_req = str(requirements_file).startswith(f'{str(platform)}/')
             if platform == Platform.ANY or is_platform_req or is_general_req:
                 requirements_file_content = req_path.read_text()

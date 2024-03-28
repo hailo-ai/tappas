@@ -8,16 +8,6 @@
     },
     {
       "bucket": "tappas",
-      "source": "general/hefs/yolov4_leaky.hef",
-      "destination": "yolov4_leaky.hef"
-    },
-    {
-      "bucket": "tappas",
-      "source": "general/hefs/yolov3.hef",
-      "destination": "yolov3.hef"
-    },
-    {
-      "bucket": "model_zoo",
       "source": "general/hefs/nanodet_repvgg.hef",
       "destination": "nanodet_repvgg.hef"
     },

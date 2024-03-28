@@ -30,6 +30,7 @@ struct _GstHailoCropper
     gchar *lib_path;
     gchar *function_name;
     gboolean use_letterbox;
+    gboolean no_scaling_bbox;
     cv::InterpolationFlags method;
     void *loaded_lib;
     std::vector<HailoROIPtr> (*handler)(std::shared_ptr<HailoMat>, HailoROIPtr);

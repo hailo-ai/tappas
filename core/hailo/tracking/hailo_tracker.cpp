@@ -32,6 +32,17 @@ void HailoTracker::remove_jde_tracker(const std::string &name)
     priv->trackers.erase(name);
 }
 
+std::vector<std::string> HailoTracker::get_trackers_list()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<std::string> trackers_list;
+    for (auto &tracker : priv->trackers)
+    {
+        trackers_list.push_back(tracker.first);
+    }
+    return trackers_list;
+}
+
 void HailoTracker::add_jde_tracker(const std::string &name, HailoTrackerParams tracker_params)
 {
     std::lock_guard<std::mutex> lock(mutex_);

@@ -220,6 +220,10 @@ gst_hailomuxer_sink_event(GstPad *pad, GstObject *parent, GstEvent *event)
         if (GST_EVENT_TYPE(event) == GST_EVENT_EOS)
         {
             GST_OBJECT_LOCK(hailomuxer);
+            // Unlocking both condition variables in order to finish the chain function.
+            // After that the pads can be freed by the change_state of base class.
+            hailomuxer->cv_main.notify_all();
+            hailomuxer->cv_sub.notify_all();
             gst_hailomuxer_update_eos(hailomuxer, pad, true);
             forward = gst_hailomuxer_all_sinkpads_eos_unlocked(hailomuxer);
             GST_OBJECT_UNLOCK(hailomuxer);

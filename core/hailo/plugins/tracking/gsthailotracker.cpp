@@ -489,8 +489,11 @@ gst_hailo_tracker_transform_frame_ip(GstVideoFilter *filter, GstVideoFrame *fram
         // Get the input stream name from the stream metadata on the buffer (If there is one)
         stream_id = gst_buffer_get_hailo_stream_meta(buffer)->stream_id;
     }
-    if (hailo_roi->get_stream_id() != "")
+    else if (hailo_roi->get_stream_id() != "")
+    {
         stream_id = hailo_roi->get_stream_id();
+    }
+
     std::vector<HailoDetectionPtr> detections;
     for (auto obj : hailo_roi->get_objects_typed(HAILO_DETECTION))
     {

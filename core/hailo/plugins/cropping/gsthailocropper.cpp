@@ -32,6 +32,7 @@ enum
     PROP_PROCESS_FUNC_NAME,
     PROP_RESIZE_METHOD,
     PROP_USE_LETTERBOX,
+    PROP_NO_SCALING_BBOX
 };
 
 #define GST_TYPE_HAILOCROPPER_RESIZE_METHOD (gst_hailocropper_resize_method_get_type())
@@ -102,6 +103,10 @@ gst_hailocropper_class_init(GstHailoCropperClass *klass)
                                     g_param_spec_boolean("use-letterbox", "Use letterbox",
                                                          "If true, then this element will resize with  aspect ratio preserving. Default false.", false,
                                                          (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_NO_SCALING_BBOX,
+                                    g_param_spec_boolean("no-scaling-bbox", "No scaling bbox",
+                                                         "If true, when setting use-letterbox no scaling box will be added. Use this if the crop you are using should not modify the original bbox data. For example running face recognition on a face. Default false.", false,
+                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
     gstelement_class->change_state = GST_DEBUG_FUNCPTR(gst_hailocropper_change_state);
     basecropper_class->prepare_crops = gst_hailocropper_prepare_crops;
     basecropper_class->resize = gst_hailocropper_resize_by_method;
@@ -137,6 +142,9 @@ gst_hailocropper_set_property(GObject *object, guint prop_id,
     case PROP_USE_LETTERBOX:
         hailocropper->use_letterbox = g_value_get_boolean(value);
         break;
+    case PROP_NO_SCALING_BBOX:
+        hailocropper->no_scaling_bbox = g_value_get_boolean(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -165,6 +173,9 @@ gst_hailocropper_get_property(GObject *object, guint prop_id,
     case PROP_USE_LETTERBOX:
         g_value_set_boolean(value, hailocropper->use_letterbox);
         break;
+    case PROP_NO_SCALING_BBOX:
+        g_value_set_boolean(value, hailocropper->no_scaling_bbox);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -176,7 +187,7 @@ void gst_hailocropper_resize_by_method(GstHailoBaseCropper *basecropper, std::ve
     GstHailoCropper *hailocropper = GST_HAILO_CROPPER(basecropper);
     if (hailocropper->use_letterbox)
     {
-        resize_letterbox(hailocropper->method, cropped_image_vec, resized_image_vec, roi, image_format);
+        resize_letterbox(hailocropper->method, cropped_image_vec, resized_image_vec, roi, image_format, hailocropper->no_scaling_bbox);
     }
     else
     {

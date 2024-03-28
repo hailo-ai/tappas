@@ -102,7 +102,6 @@ HailoBBox resize_letterbox_rgb(cv::Mat &cropped_image, cv::Mat &resized_image, c
     int new_height = std::round(cropped_image.rows * ratio);
 
     cv::resize(cropped_image, tmp, cv::Size(new_width, new_height), 0, 0, interpolation);
-
     float middle_point_width = (resized_image.cols - new_width) / 2;
     float middle_point_height = (resized_image.rows - new_height) / 2;
 
@@ -112,6 +111,13 @@ HailoBBox resize_letterbox_rgb(cv::Mat &cropped_image, cv::Mat &resized_image, c
     int left = std::round(middle_point_width - 0.1);
     int right = std::round(middle_point_width + 0.1);
 
+    // Sometimes due to rounding errors the letterbox borders can be slightly off, so we need to correct it
+    // Oterwise the resized image will have different dimensions than the requested ones (+-1 pixel)
+    int cols_diff = resized_image.cols - (tmp.cols + left + right);
+    int rows_diff = resized_image.rows - (tmp.rows + top + bottom);
+    top = top + rows_diff;
+    left = left + cols_diff;
+    
     HailoBBox letterboxed_scale = HailoBBox(-(left / float(new_width)),                      // x-offset
                                             -(top / float(new_height)),                      // y-offset
                                             1.0 / (new_width / float(resized_image.cols)),   // width factor
@@ -141,11 +147,7 @@ std::shared_ptr<HailoMat> get_mat_by_format(GstBuffer *buffer, GstVideoInfo *inf
 {
     std::shared_ptr<HailoMat> hmat = nullptr;
     GstVideoFrame frame;
-#ifdef IMX6_TARGET
-    bool success = gst_video_frame_map(&frame, info, buffer, GstMapFlags(GST_MAP_READ | GST_MAP_WRITE));
-#else
     bool success = gst_video_frame_map(&frame, info, buffer, GstMapFlags(GST_MAP_READ));
-#endif
 
     if (!success)
     {

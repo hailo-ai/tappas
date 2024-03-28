@@ -11,10 +11,10 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/detection/resources"
 
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
-    readonly DEFAULT_NETWORK_NAME="yolov5"
+    readonly DEFAULT_NETWORK_NAME="yolov8m"
     readonly DEFAULT_BATCH_SIZE="1"
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/detection.mp4"
-    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov8m.hef"
 
 
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
@@ -54,7 +54,7 @@ function print_usage() {
     echo ""
     echo "Options:"
     echo "  -h --help                  Show this help"
-    echo "  --network NETWORK          Set network to use. choose from [yolov3, yolov4, yolov5, mobilenet_ssd, nanodet], default is yolov5"
+    echo "  --network NETWORK          Set network to use. choose from [yolov5, mobilenet_ssd, nanodet, yolov8], default is yolov8"
     echo "  -i INPUT --input INPUT     Set the input source (default $input_source)"
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
@@ -66,21 +66,7 @@ function print_usage() {
 function parse_args() {
     while test $# -gt 0; do
         if [ $1 == "--network" ]; then
-            if [ $2 == "yolov4" ]; then
-                network_name="yolov4"
-                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
-                hef_path="$RESOURCES_DIR/yolov4_leaky.hef"
-                batch_size="4"
-                json_config_path="$RESOURCES_DIR/configs/yolov4.json"
-                thresholds_str=""
-            elif [ $2 == "yolov3" ]; then
-                postprocess_so="$POSTPROCESS_DIR/libyolo_post.so"
-                network_name="yolov3"
-                hef_path="$RESOURCES_DIR/yolov3.hef"
-                batch_size="4"
-                json_config_path="$RESOURCES_DIR/configs/yolov3.json"
-                thresholds_str=""
-            elif [ $2 == "mobilenet_ssd" ]; then
+            if [ $2 == "mobilenet_ssd" ]; then
                 network_name="mobilenet_ssd"
                 batch_size="4"
                 hef_path="$RESOURCES_DIR/ssd_mobilenet_v1.hef"
@@ -93,7 +79,10 @@ function parse_args() {
                 postprocess_so="$POSTPROCESS_DIR/libnanodet_post.so"
                 json_config_path="null"
                 thresholds_str=""
-            elif [ $2 != "yolov5" ]; then
+            elif [ $2 == "yolov5" ]; then
+                network_name="yolov5"
+                hef_path="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
+            elif [ $2 != "yolov8" ]; then
                 echo "Received invalid network: $2. See expected arguments below:"
                 print_usage
                 exit 1

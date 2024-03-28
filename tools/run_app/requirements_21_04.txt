@@ -1,1 +1,1 @@
-argcomplete==1.12.3
+argcomplete==3.2.2

@@ -3,18 +3,13 @@
   "requirements": [
     {
       "bucket": "model_zoo",
+      "source": "general/hefs/yolov8m.hef",
+      "destination": "yolov8m.hef"
+    },
+    {
+      "bucket": "model_zoo",
       "source": "general/hefs/yolov5m_wo_spp_60p.hef",
       "destination": "yolov5m_wo_spp_60p.hef"
-    },
-    {
-      "bucket": "model_zoo",
-      "source": "general/hefs/yolov4_leaky.hef",
-      "destination": "yolov4_leaky.hef"
-    },
-    {
-      "bucket": "model_zoo",
-      "source": "general/hefs/yolov3.hef",
-      "destination": "yolov3.hef"
     },
     {
       "bucket": "model_zoo",
@@ -22,7 +17,7 @@
       "destination": "ssd_mobilenet_v1.hef"
     },
     {
-      "bucket": "model_zoo",
+      "bucket": "tappas",
       "source": "general/hefs/nanodet_repvgg.hef",
       "destination": "nanodet_repvgg.hef"
     },

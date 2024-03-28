@@ -5,6 +5,7 @@
 #include "hailo_common.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_tensors.hpp"
+#include "gst_hailo_meta.hpp"
 #include "hailo/hailort.h"
 
 #include <string>
@@ -15,6 +16,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
+#include <pygobject.h>
 
 namespace py = pybind11;
 
@@ -22,6 +24,15 @@ using namespace pybind11::literals;
 using namespace std::string_literals;
 
 using py_descriptor_t = unsigned long;
+
+static HailoROIPtr get_roi_from_buffer(py::object py_buffer) {
+    GstBuffer *buffer = GST_BUFFER(pygobject_get(py_buffer.ptr()));
+    HailoROIPtr roi = get_hailo_main_roi(buffer, true);
+    if (roi == nullptr) {
+        throw std::runtime_error("Failed to get HailoMainObject from buffer");
+    }
+    return roi->shared_from_this();
+}
 
 static HailoMainObjectPtr access_HailoMainObject_from_desc(py_descriptor_t pd)
 {
@@ -741,4 +752,6 @@ PYBIND11_MODULE(hailo, m)
           "Access HailoMainObject from low-level py descriptor");
     m.def("access_HailoROI_from_desc", &access_HailoROI_from_desc,
           "Access HailoROI from low-level py descriptor");
+    m.def("get_roi_from_buffer", &get_roi_from_buffer, "A function that processes a GstBuffer and returns HailoROI");
+
 }

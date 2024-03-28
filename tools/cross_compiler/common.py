@@ -27,7 +27,6 @@ class Arch(Enum):
 
 
 class Target(Enum):
-    IMX6 = 'imx6'
     IMX8 = 'imx8'
     HAILO15 = 'hailo15'
 

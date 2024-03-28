@@ -63,8 +63,6 @@ if get_option('target_platform') == 'hailo15'
     hailo_link_args += sysroot_arg
 elif get_option('target_platform') == 'imx8' 
     common_args += ['-DIMX8_TARGET']
-elif get_option('target_platform') == 'imx6'
-    common_args += ['-DIMX6_TARGET']
 endif
 
 ################################################
@@ -117,8 +115,8 @@ hailo_python_sources = [
 
 python_installation.extension_module('hailo',
     hailo_python_sources,
-    include_directories: hailo_general_inc,
-    dependencies : [pybind_dep],
+    include_directories: [hailo_general_inc],
+    dependencies : [pybind_dep, meta_dep, plugin_deps, pygobj_dep],
     link_language : 'cpp',
     override_options: ['cpp_rtti=true'],
     gnu_symbol_visibility : 'default',

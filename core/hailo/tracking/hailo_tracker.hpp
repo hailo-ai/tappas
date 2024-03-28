@@ -61,6 +61,7 @@ public:
     void add_jde_tracker(const std::string &name, HailoTrackerParams params);
     void add_jde_tracker(const std::string &name);
     void remove_jde_tracker(const std::string &name);
+    std::vector<std::string> get_trackers_list();
     std::vector<HailoDetectionPtr> update(const std::string &name, std::vector<HailoDetectionPtr> &inputs);
     void add_object_to_track(const std::string &name, int id, HailoObjectPtr obj);
     void remove_classifications_from_track(const std::string &name, int track_id, std::string classifier_type);
