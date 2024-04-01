@@ -147,7 +147,7 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
                      output_image_properties.width, output_image_properties.height);
 
     // Perform the resize operation on the DSP
-    dsp_status result = perform_dsp_resize(&input_image_properties, &output_image_properties, INTERPOLATION_TYPE_BILINEAR);
+    dsp_status result = perform_dsp_resize(&input_image_properties, &output_image_properties, INTERPOLATION_TYPE_BILINEAR, false);
 
     if (result != DSP_SUCCESS)
     {
