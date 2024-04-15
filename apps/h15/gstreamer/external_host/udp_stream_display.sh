@@ -73,7 +73,7 @@ PIPELINE="gst-launch-1.0 \
     queue ${queue_params_non_leaky} ! ${encoder}parse ! avdec_${encoder} ! \
     queue ${queue_params_leaky} ! \
     videoconvert n-threads=${num_cores_to_use} ! queue ${queue_params_non_leaky} ! \
-    fpsdisplaysink name=hailo_display text-overlay=false sync=false ${additional_parameters}"
+    fpsdisplaysink fps-update-interval=2000 name=hailo_display text-overlay=false sync=false ${additional_parameters}"
 
 echo ${PIPELINE}
 

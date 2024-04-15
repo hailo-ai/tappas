@@ -96,7 +96,7 @@ std::string create_pipeline_string(std::string codec)
                "hailo" + codec + "enc name=enco " + encoder_arguments + " ! " + codec + "parse config-interval=-1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "video/x-" + codec + ",framerate=30/1 ! "
-               "fpsdisplaysink name=display_sink text-overlay=false video-sink=\"appsink name=hailo_sink\" sync=true signal-fps-measurements=true";
+               "fpsdisplaysink fps-update-interval=2000 name=display_sink text-overlay=false video-sink=\"appsink name=hailo_sink\" sync=true signal-fps-measurements=true";
                                            
     std::cout << "Pipeline:" << std::endl;
     std::cout << "gst-launch-1.0 " << pipeline << std::endl;

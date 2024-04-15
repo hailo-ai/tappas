@@ -173,6 +173,21 @@ void gst_hailofilter_dispose(GObject *object)
         dlclose(hailofilter->loaded_lib);
     }
 
+    if (hailofilter->lib_path != nullptr)
+    {
+        g_free(hailofilter->lib_path);
+    }
+
+    if (hailofilter->function_name != nullptr)
+    {
+        g_free(hailofilter->function_name);
+    }
+
+    if (hailofilter->config_path != nullptr)
+    {
+        g_free(hailofilter->config_path);
+    }
+
     GST_DEBUG_OBJECT(hailofilter, "dispose");
 
     /* clean up as possible.  may be called multiple times */

@@ -104,7 +104,7 @@ std::string create_pipeline_string(std::string codec, std::string config_string)
                                "udpsink host=10.0.0.2 sync=false port=5000 "
                                "stream1_tee. ! "
                                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                               "fpsdisplaysink name=display_sink1 text-overlay=false video-sink=\"appsink max-buffers=1 name=hailo_sink1\" sync=true signal-fps-measurements=true "
+                               "fpsdisplaysink fps-update-interval=2000 name=display_sink1 text-overlay=false video-sink=\"appsink max-buffers=1 name=hailo_sink1\" sync=true signal-fps-measurements=true "
                                "frontend. ! "
                                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                                "hailoh264enc bitrate=10000000 hrd=false ! video/x-h264 ! "
@@ -115,7 +115,7 @@ std::string create_pipeline_string(std::string codec, std::string config_string)
                                "udpsink host=10.0.0.2 sync=false port=5002 "
                                "stream2_tee. ! "
                                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                               "fpsdisplaysink name=display_sink2 text-overlay=false video-sink=\"appsink max-buffers=1 name=hailo_sink2\" sync=true signal-fps-measurements=true";
+                               "fpsdisplaysink fps-update-interval=2000 name=display_sink2 text-overlay=false video-sink=\"appsink max-buffers=1 name=hailo_sink2\" sync=true signal-fps-measurements=true";
     return pipeline;
 }
 

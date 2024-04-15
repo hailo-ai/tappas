@@ -102,7 +102,7 @@ std::string create_pipeline_string(std::string codec)
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "hailo" + codec + "enc name=enco ! " + codec + "parse config-interval=-1 ! tee name=t t. ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "fpsdisplaysink name=display_sink text-overlay=false video-sink=\"appsink name=hailo_sink\" sync=true signal-fps-measurements=true t. ! "
+               "fpsdisplaysink fps-update-interval=2000 name=display_sink text-overlay=false video-sink=\"appsink name=hailo_sink\" sync=true signal-fps-measurements=true t. ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "rtp" + codec + "pay ! "
                "udpsink host=10.0.0.2 port=5000 sync=true name=udp_sink";

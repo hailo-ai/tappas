@@ -52,7 +52,7 @@ std::string create_pipeline_string(std::string codec)
                "hailo" + codec + "enc name=enco ! "
                "" + codec + "parse config-interval=-1 ! video/x-" + codec + ",framerate=30/1 ! "
                "queue name=q1 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-               "fpsdisplaysink name=display_sink text-overlay=false video-sink=\"filesink location=force_keyframe.hevc name=hailo_sink\" sync=true signal-fps-measurements=true";
+               "fpsdisplaysink fps-update-interval=2000 name=display_sink text-overlay=false video-sink=\"filesink location=force_keyframe.hevc name=hailo_sink\" sync=true signal-fps-measurements=true";
 
                                            
     std::cout << "Pipeline:" << std::endl;

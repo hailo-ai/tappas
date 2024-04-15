@@ -21,7 +21,7 @@ function init_variables() {
     framerate=$DEFAULT_FRAMERATE
     
 
-    num_buffers_if_jpeg=15
+    num_buffers_if_jpeg=10
     property_num_buffers=""
     jpeg_n_threads=3
 
@@ -104,7 +104,7 @@ if [ "$use_hailojpeg" = true ]; then
             multifilesink location=frame%d.jpg \
         jpeg_tee. ! \
             queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-            fpsdisplaysink video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
+            fpsdisplaysink fps-update-interval=2000 video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
         ${additional_parameters}"
 else
     PIPELINE="gst-launch-1.0 \
@@ -115,10 +115,10 @@ else
         udp_tee. ! \
             queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
             rtph264pay ! 'application/x-rtp, media=(string)video, encoding-name=(string)H264' ! \
-            fpsdisplaysink video-sink='$UDP_SINK' name=udp_sink sync=$sync_pipeline text-overlay=false \
+            fpsdisplaysink fps-update-interval=2000 video-sink='$UDP_SINK' name=udp_sink sync=$sync_pipeline text-overlay=false \
         udp_tee. ! \
             queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-            fpsdisplaysink video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
+            fpsdisplaysink fps-update-interval=2000 video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
         ${additional_parameters}"
 fi
 

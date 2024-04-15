@@ -106,7 +106,7 @@ PIPELINE="gst-launch-1.0 \
         $UDP_SINK name=udp_sink sync=$sync_pipeline \
     udp_tee. ! \
         queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-        fpsdisplaysink video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
+        fpsdisplaysink fps-update-interval=2000 video-sink=fakesink name=hailo_display sync=$sync_pipeline text-overlay=false \
     ${additional_parameters}"
 
 echo "Running $network_name"

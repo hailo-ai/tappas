@@ -100,7 +100,7 @@ parse_args $@
 
 function create_pipeline() {
 
-    FPS_DISP="fpsdisplaysink text-overlay=false sync=$sync_pipeline video-sink=fakesink"
+    FPS_DISP="fpsdisplaysink fps-update-interval=2000 text-overlay=false sync=$sync_pipeline video-sink=fakesink"
 
     UDP_SINK="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
               rtph264pay ! 'application/x-rtp, media=(string)video, encoding-name=(string)H264' ! \

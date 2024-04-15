@@ -42,19 +42,19 @@ enum
 static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE("sink",
                                                                    GST_PAD_SINK,
                                                                    GST_PAD_ALWAYS,
-                                                                   gst_caps_from_string(HAILO_BASE_CROPPER_VIDEO_CAPS));
+                                                                   GST_STATIC_CAPS(HAILO_BASE_CROPPER_VIDEO_CAPS));
 
 // We define two source pad templates, one for the main stream and one for the cropped stream.
 // Altough they are the same, we need to define them separately to support a proper caps negotiation in some platforms.
 static GstStaticPadTemplate main_src_factory = GST_STATIC_PAD_TEMPLATE("src_0",
                                                                        GST_PAD_SRC,
                                                                        GST_PAD_ALWAYS,
-                                                                       gst_caps_from_string(HAILO_BASE_CROPPER_VIDEO_CAPS));
+                                                                       GST_STATIC_CAPS(HAILO_BASE_CROPPER_VIDEO_CAPS));
 
 static GstStaticPadTemplate crop_src_factory = GST_STATIC_PAD_TEMPLATE("src_1",
                                                                        GST_PAD_SRC,
                                                                        GST_PAD_ALWAYS,
-                                                                       gst_caps_from_string(HAILO_BASE_CROPPER_VIDEO_CAPS));
+                                                                       GST_STATIC_CAPS(HAILO_BASE_CROPPER_VIDEO_CAPS));
 #define _debug_init \
     GST_DEBUG_CATEGORY_INIT(gst_hailo_basecropper_debug, "hailobasecropper", 0, "hailobasecropper element");
 #define gst_hailo_basecropper_parent_class parent_class

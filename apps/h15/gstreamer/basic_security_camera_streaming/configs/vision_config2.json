@@ -36,7 +36,7 @@
         "camera_fov": 100.0
     },
     "dis": {
-        "enabled": true,
+        "enabled": false,
         "minimun_coefficient_filter": 0.1,
         "decrement_coefficient_threshold": 0.001,
         "increment_coefficient_threshold": 0.01,
@@ -96,7 +96,7 @@
         "enabled": false,
         "sensor": "imx678",
         "method": "HIGH_QUALITY",
-        "loopback-count": 3,
+        "loopback-count": 1,
         "network": {
             "network_path": "/usr/lib/medialib/denoise_config/vd_m_imx678.hef",
             "y_channel": "model/input_layer1",

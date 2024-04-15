@@ -539,6 +539,10 @@ gst_hailo_tracker_sink_event(GstBaseTransform *trans,
         else
         {
             GST_DEBUG_OBJECT(hailotracker, "filtering stream %s", stream_id);
+            if (hailotracker->current_stream_id) {
+                g_free(hailotracker->current_stream_id);
+            }
+
             hailotracker->current_stream_id = strdup(stream_id);
             // If streamid is new create a new JDETracker
             if (std::find(hailotracker->active_streams.begin(),
