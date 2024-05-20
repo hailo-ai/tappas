@@ -13,7 +13,7 @@
 #include <gst/gst.h>
 #include <mutex>
 #include <condition_variable>
-
+#include <queue>
 #include "hailo_objects.hpp"
 
 G_BEGIN_DECLS
@@ -46,6 +46,8 @@ struct _GstHailoMuxer
     GstPad *sinkpad_sub;
     bool eos_sub;
     GstBuffer *mainframe;
+    std::queue<GstBuffer *> sub_buffers_queue;
+    gboolean leaky_sub;
     uint last_offset;
     gboolean sync_counters;
     uint current_counter_main;

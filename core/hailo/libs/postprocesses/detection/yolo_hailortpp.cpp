@@ -70,6 +70,13 @@ void yolov5m_vehicles(HailoROIPtr roi)
     hailo_common::add_detections(roi, detections);
 }
 
+void yolov5m_vehicles_nv12(HailoROIPtr roi)
+{
+    auto post = HailoNMSDecode(roi->get_tensor("yolov5m_vehicles_nv12/yolov5_nms_postprocess"), yolo_vehicles_labels);
+    auto detections = post.decode<float32_t, common::hailo_bbox_float32_t>();
+    hailo_common::add_detections(roi, detections);
+}
+
 void yolov5_no_persons(HailoROIPtr roi)
 {
     auto post = HailoNMSDecode(roi->get_tensor(DEFAULT_YOLOV5M_OUTPUT_LAYER), common::coco_eighty);

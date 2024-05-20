@@ -1,8 +1,11 @@
+#include "dsp/gsthailovideoscale.hpp"
+#include "buffer_utils.hpp"
+#include "gst_hailo_meta.hpp"
+#include "hailo_objects.hpp"
+#include "media_library/buffer_pool.hpp"
+#include "gsthailodsp.h"
 #include <gst/gst.h>
 #include <gst/video/video.h>
-#include <iostream>
-#include "dsp/gsthailovideoscale.hpp"
-#include "gsthailodsp.h"
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_videoscale_debug);
 #define GST_CAT_DEFAULT gst_hailo_videoscale_debug
@@ -19,6 +22,14 @@ static void gst_hailo_videoscale_set_property(GObject *object, guint prop_id, co
 static void gst_hailo_videoscale_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec);
 static GstCaps *gst_hailo_videoscale_transform_caps(GstBaseTransform *trans,
                                                     GstPadDirection direction, GstCaps *caps, GstCaps *filter);
+static gboolean gst_hailo_videoscale_start(GstBaseTransform *base_transform);
+static gboolean gst_hailo_videoscale_stop(GstBaseTransform *base_transform);
+
+enum
+{
+    PROP_PAD_0,
+    PROP_USE_LETTERBOX,
+};
 
 static void
 gst_hailo_videoscale_class_init(GstHailoVideoScaleClass *klass)
@@ -30,8 +41,13 @@ gst_hailo_videoscale_class_init(GstHailoVideoScaleClass *klass)
     object_class->get_property = gst_hailo_videoscale_get_property;
 
     base_transform_class->transform = GST_DEBUG_FUNCPTR(gst_hailo_videoscale_transform);
-
     base_transform_class->transform_caps = GST_DEBUG_FUNCPTR(gst_hailo_videoscale_transform_caps);
+    base_transform_class->start = GST_DEBUG_FUNCPTR(gst_hailo_videoscale_start);
+    base_transform_class->stop = GST_DEBUG_FUNCPTR(gst_hailo_videoscale_stop);
+
+    g_object_class_install_property(object_class, PROP_USE_LETTERBOX,
+                                    g_param_spec_boolean("use-letterbox", "Use letterbox", "Should we do the resize using letterbox.", false,
+                                                         (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_PLAYING)));
 
     gst_element_class_set_static_metadata(GST_ELEMENT_CLASS(klass),
                                           "Hailo Videoscale",
@@ -44,7 +60,7 @@ gst_hailo_videoscale_class_init(GstHailoVideoScaleClass *klass)
                                                             gst_caps_from_string(HAILO_VIDEOSCALE_VIDEO_CAPS)));
     gst_element_class_add_pad_template(GST_ELEMENT_CLASS(klass),
                                        gst_pad_template_new("sink", GST_PAD_SINK, GST_PAD_ALWAYS,
-                                                             gst_caps_from_string(HAILO_VIDEOSCALE_VIDEO_CAPS)));
+                                                            gst_caps_from_string(HAILO_VIDEOSCALE_VIDEO_CAPS)));
 }
 
 static void
@@ -56,8 +72,13 @@ gst_hailo_videoscale_init(GstHailoVideoScale *self)
 static void
 gst_hailo_videoscale_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
+    GstHailoVideoScale *hailovideoscale = (GstHailoVideoScale *)(object);
+
     switch (prop_id)
     {
+    case PROP_USE_LETTERBOX:
+        hailovideoscale->use_letterbox = g_value_get_boolean(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -67,12 +88,42 @@ gst_hailo_videoscale_set_property(GObject *object, guint prop_id, const GValue *
 static void
 gst_hailo_videoscale_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
+    GstHailoVideoScale *hailovideoscale = (GstHailoVideoScale *)(object);
+
     switch (prop_id)
     {
+    case PROP_USE_LETTERBOX:
+        g_value_set_boolean(value, hailovideoscale->use_letterbox);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
     }
+}
+
+static gboolean gst_hailo_videoscale_start(GstBaseTransform *base_transform)
+{
+    auto status = acquire_device();
+    if (status != DSP_SUCCESS)
+    {
+        GST_ERROR_OBJECT(base_transform, "Failed to acquire device. return status: %d", status);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean gst_hailo_videoscale_stop(GstBaseTransform *base_transform)
+{
+    auto staus = release_device();
+
+    if (staus != DSP_SUCCESS)
+    {
+        GST_ERROR_OBJECT(base_transform, "Failed to release device. return status: %d", staus);
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 static GstCaps *
@@ -102,6 +153,37 @@ gst_hailo_videoscale_transform_caps(GstBaseTransform *trans,
     return res_caps;
 }
 
+static HailoBBox calculate_scale_bbox(dsp_image_properties_t *input_image, dsp_image_properties_t *output_image)
+{
+    // Calculate the scaling ratio
+    float ratio = std::min(float(output_image->width) / input_image->width,
+                           float(output_image->height) / input_image->height);
+
+    // Calculate the new dimensions of the input image
+    int new_width = std::round(input_image->width * ratio);
+    int new_height = std::round(input_image->height * ratio);
+
+    // Calculate the margins for letterboxing
+    int left = (output_image->width - new_width) / 2;
+    int top = (output_image->height - new_height) / 2;
+    int right = output_image->width - new_width - left;
+    int bottom = output_image->height - new_height - top;
+
+    // Adjust for rounding errors
+    int cols_diff = output_image->width - (new_width + left + right);
+    int rows_diff = output_image->height - (new_height + top + bottom);
+    left += cols_diff;
+    top += rows_diff;
+
+    // Construct and return the transformation
+    HailoBBox letterboxed_scale = HailoBBox(-(left / float(new_width)),                       // x-offset
+                                             -(top / float(new_height)),                       // y-offset
+                                             1.0 / (new_width / float(output_image->height)),  // width factor
+                                             1.0 / (new_height / float(output_image->width))); // height factor
+
+    return letterboxed_scale;
+}
+
 static GstFlowReturn
 gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbuf, GstBuffer *outbuf)
 {
@@ -111,43 +193,43 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
 
     GST_DEBUG_OBJECT(hailovideoscale, "Hailo Videoscale transform");
 
-    // Get input and output caps
-    GstCaps *incaps, *outcaps;
-    incaps = gst_pad_get_current_caps(base_transform->sinkpad);
-    outcaps = gst_pad_get_current_caps(base_transform->srcpad);
-
-    GstVideoInfo input_video_info;
-    gst_video_info_from_caps(&input_video_info, incaps);
-
-    GstVideoInfo output_video_info;
-    gst_video_info_from_caps(&output_video_info, outcaps);
-
-    // Map input and output buffers to GstVideoFrame
-    GstVideoFrame input_video_frame;
-    if (!gst_video_frame_map(&input_video_frame, &input_video_info, inbuf, GST_MAP_READ))
+    GstCaps *incaps = gst_pad_get_current_caps(base_transform->sinkpad);
+    HailoMediaLibraryBufferPtr input_frame_ptr = hailo_buffer_from_gst_buffer(inbuf, incaps);
+    if (!input_frame_ptr)
     {
-        GST_ERROR_OBJECT(hailovideoscale, "Cannot map input buffer to frame");
-        throw std::runtime_error("Cannot map input buffer to frame");
+        GST_ERROR_OBJECT(hailovideoscale, "Cannot create hailo input buffer from GstBuffer");
+        return GST_FLOW_ERROR;
     }
 
-    GstVideoFrame output_video_frame;
-    if (!gst_video_frame_map(&output_video_frame, &output_video_info, outbuf, GST_MAP_READWRITE))
+    GstCaps *outcaps = gst_pad_get_current_caps(base_transform->srcpad);
+    if(!outcaps)
     {
-        GST_ERROR_OBJECT(hailovideoscale, "Cannot map output buffer to frame");
-        throw std::runtime_error("Cannot map output buffer to frame");
+        GST_ERROR_OBJECT(hailovideoscale, "Failed to get output caps");
+        return GST_FLOW_ERROR;
     }
 
-    // Create dsp image properties from both input and output video frame objects
-    dsp_image_properties_t input_image_properties = create_image_properties_from_video_frame(&input_video_frame);
-    dsp_image_properties_t output_image_properties = create_image_properties_from_video_frame(&output_video_frame);
+    gint size = gst_caps_get_size(outcaps);
+
+    if (size != 1)
+    {
+        GST_ERROR_OBJECT(hailovideoscale, "Output caps size is not 1 (%d)", size);
+        return GST_FLOW_ERROR;
+    }
+    
+    HailoMediaLibraryBufferPtr output_frame_ptr = hailo_buffer_from_gst_buffer(outbuf, outcaps);
+    if (!output_frame_ptr)
+    {
+        GST_ERROR_OBJECT(hailovideoscale, "Cannot create hailo output buffer from GstBuffer");
+        return GST_FLOW_ERROR;
+    }
 
     GST_DEBUG_OBJECT(hailovideoscale, "DSP Resize: Input Width: %ld, Height: %ld. \
                                         Resize target Width: %ld Height: %ld",
-                     input_image_properties.width, input_image_properties.height,
-                     output_image_properties.width, output_image_properties.height);
+                     input_frame_ptr->hailo_pix_buffer->width, input_frame_ptr->hailo_pix_buffer->height,
+                     output_frame_ptr->hailo_pix_buffer->width, output_frame_ptr->hailo_pix_buffer->height);
 
     // Perform the resize operation on the DSP
-    dsp_status result = perform_dsp_resize(&input_image_properties, &output_image_properties, INTERPOLATION_TYPE_BILINEAR);
+    dsp_status result = perform_dsp_resize(input_frame_ptr->hailo_pix_buffer.get(), output_frame_ptr->hailo_pix_buffer.get(), INTERPOLATION_TYPE_BILINEAR, hailovideoscale->use_letterbox);
 
     if (result != DSP_SUCCESS)
     {
@@ -155,13 +237,13 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
         ret = GST_FLOW_ERROR;
     }
 
-    // Free resources
-    free_image_property_planes(&input_image_properties);
-    free_image_property_planes(&output_image_properties);
+    HailoROIPtr hailo_roi = get_hailo_main_roi(outbuf, true);
+    auto scailing_bbox = calculate_scale_bbox(input_frame_ptr->hailo_pix_buffer.get(), output_frame_ptr->hailo_pix_buffer.get());
+    hailo_roi->set_scaling_bbox(scailing_bbox);
 
-    gst_video_frame_unmap(&input_video_frame);
-    gst_video_frame_unmap(&output_video_frame);
- 
+    input_frame_ptr->decrease_ref_count();
+    output_frame_ptr->decrease_ref_count();
+
     gst_caps_unref(incaps);
     gst_caps_unref(outcaps);
 

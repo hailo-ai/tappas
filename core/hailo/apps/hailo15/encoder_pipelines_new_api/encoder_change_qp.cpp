@@ -26,30 +26,33 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         GST_INFO("Changing to low qp");
-        config->rate_control.quantization.qp_min = 3;
-        config->rate_control.quantization.qp_max = 10;
-        config->rate_control.quantization.qp_hdr = 5;
+        hailo_config.rate_control.quantization.qp_min = 3;
+        hailo_config.rate_control.quantization.qp_max = 10;
+        hailo_config.rate_control.quantization.qp_hdr = 5;
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }
     else if (counter % 600 == 400) {
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         GST_INFO("Changing to high qp");
-        config->rate_control.quantization.qp_min = 43;
-        config->rate_control.quantization.qp_max = 49;
-        config->rate_control.quantization.qp_hdr = 45;
+        hailo_config.rate_control.quantization.qp_min = 43;
+        hailo_config.rate_control.quantization.qp_max = 49;
+        hailo_config.rate_control.quantization.qp_hdr = 45;
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }
     else if (counter % 600 == 0) {
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         GST_INFO("Changing to variant qp");
-        config->rate_control.quantization.qp_min = 0;
-        config->rate_control.quantization.qp_max = 51;
-        config->rate_control.quantization.qp_hdr = 26;
+        hailo_config.rate_control.quantization.qp_min = 0;
+        hailo_config.rate_control.quantization.qp_max = 51;
+        hailo_config.rate_control.quantization.qp_hdr = 26;
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }
 

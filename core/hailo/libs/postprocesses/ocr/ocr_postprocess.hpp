@@ -7,7 +7,7 @@
 #include "hailo_common.hpp"
 __BEGIN_DECLS
 void filter(HailoROIPtr roi);
-
+void lprnet_nv12(HailoROIPtr roi);
 std::vector<char> AVAILABLE_CHARS{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-'};
 
 __END_DECLS

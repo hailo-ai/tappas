@@ -1,7 +1,7 @@
 import platform
 from pathlib import Path
 
-VERSION = "v3.28"
+VERSION = "v3.28.1"
 MODEL_ZOO_VERSION = "v2.11"
 
 CONFIG_PATH = Path(__file__).parent

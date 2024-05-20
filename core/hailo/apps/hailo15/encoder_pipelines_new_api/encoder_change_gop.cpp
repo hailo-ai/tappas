@@ -34,8 +34,9 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         // Changing to BIG_GOP_SIZE
-        config->rate_control.gop_length = BIG_GOP;
+        hailo_config.rate_control.gop_length = BIG_GOP;
         GST_INFO("Changing encoder to GOP %d", BIG_GOP);
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }
@@ -43,8 +44,9 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         // Changing to MEDIUM_GOP_SIZE
-        config->rate_control.gop_length = MEDIUM_GOP;
+        hailo_config.rate_control.gop_length = MEDIUM_GOP;
         GST_INFO("Changing encoder to GOP %d", MEDIUM_GOP);
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }
@@ -52,8 +54,9 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         // Changing to SMALL_GOP_SIZE
-        config->rate_control.gop_length = SMALL_GOP;
+        hailo_config.rate_control.gop_length = SMALL_GOP;
         GST_INFO("Changing encoder to GOP %d", SMALL_GOP);
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }

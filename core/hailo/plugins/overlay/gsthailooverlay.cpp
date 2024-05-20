@@ -9,6 +9,9 @@
 #include "common/image.hpp"
 #include "overlay/overlay.hpp"
 #include "gst_hailo_meta.hpp"
+#ifdef HAILO15_TARGET
+#include "buffer_utils.hpp"
+#endif
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailooverlay_debug_category);
 #define GST_CAT_DEFAULT gst_hailooverlay_debug_category
@@ -242,7 +245,14 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     GstVideoInfo *info = gst_video_info_new();
     gst_video_info_from_caps(info, caps);
 
-#ifndef HAILO15_TARGET
+#ifdef HAILO15_TARGET
+    if (!dma_buffer_sync_start(buffer))
+    {
+        GST_CAT_ERROR(GST_CAT_DEFAULT, "Failed to sync buffer");
+        gst_caps_unref(caps);
+        return GST_FLOW_ERROR;
+    }
+#else
     GstMapInfo map;
     gst_buffer_map(buffer, &map, GST_MAP_READWRITE);
 #endif
@@ -270,7 +280,12 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     status = GST_FLOW_OK;
 cleanup:
     gst_caps_unref(caps);
-#ifndef HAILO15_TARGET
+#ifdef HAILO15_TARGET
+    if (!dma_buffer_sync_end(buffer))
+    {
+        GST_CAT_ERROR(GST_CAT_DEFAULT, "Failed to sync buffer end");
+    }
+#else    
     gst_buffer_unmap(buffer, &map);
 #endif
     return status;

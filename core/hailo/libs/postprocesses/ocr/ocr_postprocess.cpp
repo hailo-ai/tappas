@@ -14,17 +14,22 @@
 #define MIN_SCORE_THRESHOLD (0.90) // Min score threshold
 #define MIN_CHARS (6)              // Min number of characters
 
-const char *OUTPUT_LAYER_NAME = "lprnet/conv31";
+const char *DEFAULT_OUTPUT_LAYER_NAME = "lprnet/conv31";
+const char *OUTPUT_LAYER_NAME_NV12 = "lprnet_304x75/conv31";
+
 /**
  * @brief recognize the characters that are in the license plate
  *
  * @param roi holds the network output data
  */
-void OCR_postprocess(HailoROIPtr roi)
+void OCR_postprocess(HailoROIPtr roi, const char *layer_name)
 {
-    HailoTensorPtr net_output = roi->get_tensor(OUTPUT_LAYER_NAME);
+    HailoTensorPtr net_output = roi->get_tensor(layer_name);
     if (nullptr == net_output)
+    {
+        std::cerr << "OCR_postprocess: No output tensor found" << std::endl;
         return;
+    }
 
     xt::xarray<float> output_dequantize;
     output_dequantize = common::get_xtensor_float(net_output);
@@ -79,5 +84,10 @@ void OCR_postprocess(HailoROIPtr roi)
 
 void filter(HailoROIPtr roi)
 {
-    OCR_postprocess(roi);
+    OCR_postprocess(roi, DEFAULT_OUTPUT_LAYER_NAME);
+}
+
+void lprnet_nv12(HailoROIPtr roi)
+{
+    OCR_postprocess(roi, OUTPUT_LAYER_NAME_NV12);
 }

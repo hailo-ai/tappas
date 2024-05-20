@@ -31,6 +31,7 @@ enum
 {
     PROP_0,
     PROP_SYNC_COUNTERS,
+    PROP_LEAKY_SUB,
 };
 
 static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE("sink",
@@ -60,10 +61,13 @@ static gboolean gst_hailomuxer_sink_event(GstPad *pad,
                                           GstEvent *event);
 static GstFlowReturn gst_hailomuxer_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf);
 static GstFlowReturn gst_hailomuxer_chain_sub(GstPad *pad, GstObject *parent, GstBuffer *buf);
+static GstFlowReturn gst_hailomuxer_chain_main_leaky_mode(GstPad *pad, GstObject *parent, GstBuffer *buf);
+static GstFlowReturn gst_hailomuxer_chain_sub_leaky_mode(GstPad *pad, GstObject *parent, GstBuffer *buf);
 static GstFlowReturn gst_hailomuxer_sync_and_drop(GstBuffer *buf, GstHailoMuxer *hailomuxer, bool main_stream);
-static void gst_hailomuxer_merge_rois(GstBuffer *buf, GstHailoMuxer *hailomuxer);
+static void gst_hailomuxer_merge_rois(GstBuffer *main_buf, GstBuffer *sub_buf, GstHailoMuxer *hailomuxer);
 static void gst_hailomuxer_wait_for_main(GstHailoMuxer *hailomuxer, std::unique_lock<std::mutex> &lock);
 static void gst_hailomuxer_wait_for_sub(GstBuffer *buf, GstHailoMuxer *hailomuxer, std::unique_lock<std::mutex> &lock);
+static GstBuffer *gst_hailomuxer_dequeue_sub_frame_leaky_mode(GstHailoMuxer *hailomuxer);
 
 static void
 gst_hailomuxer_class_init(GstHailoMuxerClass *klass)
@@ -89,6 +93,9 @@ gst_hailomuxer_class_init(GstHailoMuxerClass *klass)
 
     g_object_class_install_property(gobject_class, PROP_SYNC_COUNTERS,
                                     g_param_spec_boolean("sync-counters", "sync-counters", "Sync frames by matching HailoCounterMeta (see HailoCounter element)", false,
+                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+    g_object_class_install_property(gobject_class, PROP_LEAKY_SUB,
+                                    g_param_spec_boolean("leaky-sub", "leaky-sub", "allow main frames to pass through the element even if a sub frame is not available (Can't be enabled with sync-counters)", false,
                                                          (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 }
 
@@ -120,6 +127,10 @@ gst_hailomuxer_init(GstHailoMuxer *hailomuxer)
 
     hailomuxer->eos_main = false;
     hailomuxer->eos_sub = false;
+
+    hailomuxer->sync_counters = false;
+    hailomuxer->leaky_sub = false;
+    hailomuxer->sub_buffers_queue = std::queue<GstBuffer *>();
 }
 
 static void
@@ -132,7 +143,31 @@ gst_hailomuxer_set_property(GObject *object, guint prop_id,
     {
     case PROP_SYNC_COUNTERS:
         hailomuxer->sync_counters = g_value_get_boolean(value);
+        if (hailomuxer->leaky_sub)
+        {
+            hailomuxer->leaky_sub = false;
+            // set the chain function to the non-leaky mode
+            gst_pad_set_chain_function(hailomuxer->sinkpad_main, GST_DEBUG_FUNCPTR(gst_hailomuxer_chain_main));
+            gst_pad_set_chain_function(hailomuxer->sinkpad_sub, GST_DEBUG_FUNCPTR(gst_hailomuxer_chain_sub));
+        }
         break;
+    case PROP_LEAKY_SUB:
+        if (!hailomuxer->sync_counters) // If sync_counters is enabled, leaky_sub is not allowed
+        {
+            hailomuxer->leaky_sub = g_value_get_boolean(value);
+            if (hailomuxer->leaky_sub)
+            {
+                gst_pad_set_chain_function(hailomuxer->sinkpad_main, GST_DEBUG_FUNCPTR(gst_hailomuxer_chain_main_leaky_mode));
+                gst_pad_set_chain_function(hailomuxer->sinkpad_sub, GST_DEBUG_FUNCPTR(gst_hailomuxer_chain_sub_leaky_mode));
+            }
+            else
+            {
+                gst_pad_set_chain_function(hailomuxer->sinkpad_main, GST_DEBUG_FUNCPTR(gst_hailomuxer_chain_main));
+                gst_pad_set_chain_function(hailomuxer->sinkpad_sub, GST_DEBUG_FUNCPTR(gst_hailomuxer_chain_sub));
+            }
+        }
+        break;
+
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -149,6 +184,9 @@ gst_hailomuxer_get_property(GObject *object, guint prop_id, GValue *value,
     {
     case PROP_SYNC_COUNTERS:
         g_value_set_boolean(value, hailomuxer->sync_counters);
+        break;
+    case PROP_LEAKY_SUB:
+        g_value_set_boolean(value, hailomuxer->leaky_sub);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -310,20 +348,44 @@ gst_hailomuxer_wait_for_sub(GstBuffer *buf, GstHailoMuxer *hailomuxer, std::uniq
     lock.unlock();
 }
 
+static GstBuffer *gst_hailomuxer_dequeue_sub_frame_leaky_mode(GstHailoMuxer *hailomuxer)
+{
+    GstBuffer *buf = NULL;
+
+    if (!hailomuxer->sub_buffers_queue.empty())
+    {
+        buf = hailomuxer->sub_buffers_queue.front();
+        hailomuxer->sub_buffers_queue.pop();
+    }
+
+    if (hailomuxer->sync_counters)
+    {
+        GstFlowReturn status = gst_hailomuxer_sync_and_drop(buf, hailomuxer, false);
+        if (status == GST_FLOW_OK)
+            return NULL;
+    }
+
+    return buf;
+}
+
 static void
-gst_hailomuxer_merge_rois(GstBuffer *buf, GstHailoMuxer *hailomuxer)
+gst_hailomuxer_merge_rois(GstBuffer *main_buf, GstBuffer *sub_buf, GstHailoMuxer *hailomuxer)
 {
     GstHailoMuxerClass *hailomuxer_class = GST_HAILO_MUXER_GET_CLASS(hailomuxer);
     if (hailomuxer->mainframe != NULL)
     {
-        HailoROIPtr main_buffer_roi = get_hailo_main_roi(hailomuxer->mainframe, true);
-        HailoROIPtr sub_buffer_roi = get_hailo_main_roi(buf);
+        HailoROIPtr main_buffer_roi = get_hailo_main_roi(main_buf, true);
+        HailoROIPtr sub_buffer_roi = get_hailo_main_roi(sub_buf);
+
         hailomuxer_class->handle_sub_frame_roi(main_buffer_roi, sub_buffer_roi);
 
-        // Release the mutex in the main chain if all the objects are handled.
-        hailomuxer->cv_main.notify_one();
+        if(!hailomuxer->leaky_sub)
+        {
+            // Release the mutex in the main chain if all the objects are handled.
+            hailomuxer->cv_main.notify_one();
+        }
     }
-}
+} 
 
 static GstFlowReturn
 gst_hailomuxer_chain_sub(GstPad *pad, GstObject *parent, GstBuffer *buf)
@@ -349,7 +411,7 @@ gst_hailomuxer_chain_sub(GstPad *pad, GstObject *parent, GstBuffer *buf)
         hailomuxer->cv_sub.wait(lock);
     }
 
-    gst_hailomuxer_merge_rois(buf, hailomuxer);
+    gst_hailomuxer_merge_rois(hailomuxer->mainframe, buf, hailomuxer);
     hailomuxer->mainframe = NULL;
     gst_buffer_remove_hailo_meta(buf);
     gst_buffer_unref(buf);
@@ -387,6 +449,58 @@ gst_hailomuxer_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
     return ret;
 }
 
+static GstFlowReturn
+gst_hailomuxer_chain_sub_leaky_mode(GstPad *pad, GstObject *parent, GstBuffer *buf)
+{
+    GstHailoMuxer *hailomuxer = GST_HAILO_MUXER_CAST(parent);
+    std::unique_lock<std::mutex> lock(hailomuxer->mutex);
+
+    // Avoid locking on eos
+    if (hailomuxer->eos_main)
+        return GST_FLOW_OK;
+
+    hailomuxer->sub_buffers_queue.push(buf);
+
+    return GST_FLOW_OK;
+}
+
+static GstFlowReturn
+gst_hailomuxer_chain_main_leaky_mode(GstPad *pad, GstObject *parent, GstBuffer *buf)
+{
+    GstFlowReturn ret = GST_FLOW_ERROR;
+    GstHailoMuxer *hailomuxer = GST_HAILO_MUXER_CAST(parent);
+    std::unique_lock<std::mutex> lock(hailomuxer->mutex);
+
+    // Avoid locking on eos
+    if (hailomuxer->eos_sub)
+        return GST_FLOW_OK;
+
+    GstBuffer *sub_buffer = gst_hailomuxer_dequeue_sub_frame_leaky_mode(hailomuxer);
+    if (sub_buffer)
+    {
+        gst_hailomuxer_merge_rois(buf, sub_buffer, hailomuxer);
+        gst_buffer_remove_hailo_meta(sub_buffer);
+        gst_buffer_unref(sub_buffer);
+    }
+
+    if (hailomuxer->sync_counters)
+    {
+        GstFlowReturn status = gst_hailomuxer_sync_and_drop(buf, hailomuxer, true);
+        if (status == GST_FLOW_OK)
+            return GST_FLOW_OK;
+    }
+
+    gst_pad_sticky_events_foreach(hailomuxer->sinkpad_main, forward_events, hailomuxer->srcpad);
+
+    // Remove the counter meta from the main frame.
+    if (hailomuxer->sync_counters && (!gst_buffer_remove_hailo_counter_meta(buf)))
+        GST_ERROR_OBJECT(hailomuxer, "Failed to remove counter meta from main frame");
+
+    // Push main buffer into the src pad.
+    ret = gst_pad_push(hailomuxer->srcpad, buf);
+    return ret;
+}
+
 /**
  * Functionality to perform for each incoming sub frame.
  * Called from the chain_sub method before the releasing the mutex and the buffers.
@@ -398,12 +512,19 @@ gst_hailomuxer_chain_main(GstPad *pad, GstObject *parent, GstBuffer *buf)
  */
 static void gst_hailomuxer_handle_sub_frame_roi(HailoROIPtr main_buffer_roi, HailoROIPtr sub_buffer_roi)
 {
-    // Copy all hailo objects from buffer2_roi to buffer1_roi
-    if (sub_buffer_roi && (sub_buffer_roi != main_buffer_roi ))
+    // Copy all hailo objects from sub buffer to main buffer and apply rescaling based of the sub roi scaling bbox
+    if (sub_buffer_roi && (sub_buffer_roi != main_buffer_roi))
     {
-        for (auto obj : sub_buffer_roi->get_objects())
+        std::vector<HailoObjectPtr> objects = sub_buffer_roi->get_objects();
+
+        for (auto &obj: objects)
         {
-            main_buffer_roi->add_object(obj);
+            if (obj->get_type() == HAILO_DETECTION)
+            {
+                HailoROIPtr sub_obj_roi = std::dynamic_pointer_cast<HailoROI>(obj);
+                sub_obj_roi->set_bbox(std::move(hailo_common::create_flattened_bbox(sub_obj_roi->get_bbox(), sub_buffer_roi->get_scaling_bbox())));
+                main_buffer_roi->add_object(sub_obj_roi);
+            }
         }
     }
 }

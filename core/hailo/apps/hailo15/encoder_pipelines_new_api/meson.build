@@ -4,13 +4,6 @@
 
 output_path = '/encoder_pipelines_new_api/'
 
-media_library_common_dep = dependency('hailo_media_library_common', method : 'pkg-config')
-media_library_frontend_dep = dependency('hailo_media_library_frontend', method : 'pkg-config')
-media_library_encoder_dep = dependency('hailo_media_library_encoder', method : 'pkg-config')
-encoder_dep = dependency('hailo_encoder', method : 'pkg-config')
-
-
-dependencies_apps = plugin_deps + media_library_encoder_dep + media_library_common_dep + media_library_frontend_dep + encoder_dep
 include_encoder_app =  hailo_general_inc + cxxopts_inc + [include_directories('../')]
 encoder_appsink_tee_src = ['encoder_appsink_tee.cpp', '../apps_common.cpp']
 

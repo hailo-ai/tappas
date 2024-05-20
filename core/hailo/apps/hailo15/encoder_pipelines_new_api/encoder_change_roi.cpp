@@ -25,12 +25,13 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
-        config->coding_control.roi_area1.enable = true;
-        config->coding_control.roi_area1.left = 200;
-        config->coding_control.roi_area1.top = 200;
-        config->coding_control.roi_area1.right = 500;
-        config->coding_control.roi_area1.bottom = 500;
-        config->coding_control.roi_area1.qp_delta = 20;
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
+        hailo_config.coding_control.roi_area1.enable = true;
+        hailo_config.coding_control.roi_area1.left = 200;
+        hailo_config.coding_control.roi_area1.top = 200;
+        hailo_config.coding_control.roi_area1.right = 500;
+        hailo_config.coding_control.roi_area1.bottom = 500;
+        hailo_config.coding_control.roi_area1.qp_delta = 20;
         GST_INFO("Changing ROI to (200,200,500,500,20)");
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }
@@ -38,12 +39,13 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
-        config->coding_control.roi_area1.enable = true;
-        config->coding_control.roi_area1.left = 700;
-        config->coding_control.roi_area1.top = 700;
-        config->coding_control.roi_area1.right = 900;
-        config->coding_control.roi_area1.bottom = 900;
-        config->coding_control.roi_area1.qp_delta = 5;
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
+        hailo_config.coding_control.roi_area1.enable = true;
+        hailo_config.coding_control.roi_area1.left = 700;
+        hailo_config.coding_control.roi_area1.top = 700;
+        hailo_config.coding_control.roi_area1.right = 900;
+        hailo_config.coding_control.roi_area1.bottom = 900;
+        hailo_config.coding_control.roi_area1.qp_delta = 5;
         GST_INFO("Changing ROI to (700:700:900:900:5)");
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }

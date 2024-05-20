@@ -35,23 +35,24 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         gpointer value = nullptr;
         g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
+        hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
 
         if (counter % 400 != 0) {
 	        // Changing to VBR
             GST_INFO("Changing encoder to VBR");
-            config->rate_control.picture_rc = PICTURE_RC_OFF;
-            config->rate_control.ctb_rc = true;
-            config->rate_control.bitrate.target_bitrate = BITRATE_FOR_VBR;
-            config->rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_VBR;
+            hailo_config.rate_control.picture_rc = PICTURE_RC_OFF;
+            hailo_config.rate_control.ctb_rc = true;
+            hailo_config.rate_control.bitrate.target_bitrate = BITRATE_FOR_VBR;
+            hailo_config.rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_VBR;
         }
         else
         {
             // Changing to CBR
             GST_INFO("Changing encoder to CBR");
-            config->rate_control.picture_rc = PICTURE_RC_ON;
-            config->rate_control.ctb_rc = true;
-            config->rate_control.bitrate.target_bitrate = BITRATE_FOR_CBR;
-            config->rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_CBR;
+            hailo_config.rate_control.picture_rc = PICTURE_RC_ON;
+            hailo_config.rate_control.ctb_rc = true;
+            hailo_config.rate_control.bitrate.target_bitrate = BITRATE_FOR_CBR;
+            hailo_config.rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_CBR;
         }
         g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
     }
@@ -148,12 +149,13 @@ void set_starting_config(GstElement *pipeline)
     // get properties
     // Error getting properties from encoder
     encoder_config_t config;
+    hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(config);
     g_object_get(G_OBJECT(encoder), "config", &config, NULL);
     // Configuring starting config
-    config.rate_control.picture_rc = PICTURE_RC_ON;
-    config.rate_control.ctb_rc = true;
-    config.rate_control.bitrate.target_bitrate = BITRATE_FOR_CBR;
-    config.rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_CBR;
+    hailo_config.rate_control.picture_rc = PICTURE_RC_ON;
+    hailo_config.rate_control.ctb_rc = true;
+    hailo_config.rate_control.bitrate.target_bitrate = BITRATE_FOR_CBR;
+    hailo_config.rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_CBR;
     g_object_set(G_OBJECT(encoder), "config", config, NULL);
     // free resources
     gst_object_unref(encoder);

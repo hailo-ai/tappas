@@ -27,6 +27,7 @@ typedef struct _GstHailoVideoScaleClass GstHailoVideoScaleClass;
 
 struct _GstHailoVideoScale {
   GstHailoDspBaseTransform parent;
+  gboolean use_letterbox;
 };
 
 struct _GstHailoVideoScaleClass {
