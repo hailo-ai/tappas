@@ -215,3 +215,9 @@ void facial_landmarks_yuy2(HailoROIPtr roi)
     output_layer_name = "tddfa_mobilenet_v1_yuy2/fc1";
     facial_landmark(roi);
 }
+
+void facial_landmarks_nv12(HailoROIPtr roi)
+{
+    output_layer_name = "tddfa_mobilenet_v1_nv12/fc1";
+    facial_landmark(roi);
+}

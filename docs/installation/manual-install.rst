@@ -74,7 +74,7 @@ The following APT packages need to be installed, using the command below:
 * python3-virtualenv
 * python-gi-dev
 * libgirepository1.0-dev
-* gcc-9 and g++-9
+* gcc-12 and g++-12
 * cmake
 * libzmq3-dev
 * git
@@ -84,7 +84,7 @@ To install the above packages, run the following command:
 
 .. code-block:: sh
     
-    sudo apt-get install -y rsync ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-9 g++-9 cmake git libzmq3-dev
+    sudo apt-get install -y rsync ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-12 g++-12 cmake git libzmq3-dev
 
 The following packages are required as well, and their installation instructions can be viewed from the links below:
 
@@ -98,7 +98,25 @@ In case any requirements are missing, a requirements table will be printed when 
 
 OpenCV Installation
 -------------------
+To install OpenCV, run the following commands:
 
+.. code-block:: sh
+    
+    sudo apt-get install -y libopencv-dev python3-opencv
+
+To check your OpenCV version, run the following command:
+
+.. code-block:: sh
+
+    # To check the OpenCV version installed 
+    pkg-config --modversion opencv4
+
+.. tip::
+
+    If you are running on an old OS the apt-get version might be too old (You will be notified on the next steps), you can install OpenCV manually as shown below.
+
+Opencv compilation from source
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: sh
 
     # Download Opencv and unzip
@@ -138,7 +156,7 @@ Run the following command to install GStreamer:
 
 .. code-block:: sh
 
-    sudo apt-get install -y libcairo2-dev libgirepository1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio gcc-9 g++-9 python-gi-dev
+    sudo apt-get install -y libcairo2-dev libgirepository1.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio gcc-12 g++-12 python-gi-dev
 
 Please refer to: `GStreamer offical installation guide <https://gstreamer.freedesktop.org/documentation/installing/on-linux.html?gi-language=c#install-gstreamer-on-ubuntu-or-debian>`_ for more details
 
@@ -218,3 +236,27 @@ The solution is to export an environment variable:
 .. code-block:: sh
 
     export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
+
+PCIe descriptor page size error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you encounter the following error: (actual page size might vary)
+
+.. code-block:: sh
+
+    [HailoRT] [error] CHECK_AS_EXPECTED failed - max_desc_page_size given 16384 is bigger than hw max desc page size 4096"
+
+Some hosts doesn't support certain PCIe descriptor page size.
+in order to overcome this issue add the text below to /etc/modprobe.d/hailo_pci.conf (create the file if it doesn't exist)
+
+.. code-block:: sh
+
+    options hailo_pci force_desc_page_size=4096
+    # you can do this by running the following command:
+    echo 'options hailo_pci force_desc_page_size=4096' >> /etc/modprobe.d/hailo_pci.conf
+
+Reboot the machine for this change to take effect. You can also reload the driver without rebooting by running the following commands:
+
+.. code-block:: sh
+
+    modprobe -r hailo_pci
+    modprobe hailo_pci

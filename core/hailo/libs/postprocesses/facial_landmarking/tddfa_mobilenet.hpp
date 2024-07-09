@@ -12,4 +12,5 @@ void filter(HailoROIPtr roi);
 // Used for Face Detection + Face Landmarks app.
 void facial_landmarks_merged(HailoROIPtr roi);
 void facial_landmarks_yuy2(HailoROIPtr roi);
+void facial_landmarks_nv12(HailoROIPtr roi);
 __END_DECLS

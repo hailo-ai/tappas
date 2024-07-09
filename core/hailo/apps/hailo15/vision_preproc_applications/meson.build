@@ -14,3 +14,4 @@ executable('frontend_update',
   install_dir: apps_install_dir + '/vision_preproc',
 )
 
+

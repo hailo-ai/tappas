@@ -1,2 +1,2 @@
 example:
-	g++-9 postprocess_example.cpp `pkg-config hailo_tappas --libs --cflags` -O3 -shared -o libtappas_example.so
+	g++-12 postprocess_example.cpp `pkg-config hailo_tappas --libs --cflags` -O3 -shared -o libtappas_example.so

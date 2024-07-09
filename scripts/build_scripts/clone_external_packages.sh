@@ -9,7 +9,7 @@
   git clone --depth 1 --shallow-submodules -b 0.7.3 https://github.com/xtensor-stack/xtl.git
   git clone --depth 1 --shallow-submodules -b v3.0.0 https://github.com/jarro2783/cxxopts.git
   git clone --depth 1 --shallow-submodules -b v1.1.0 https://github.com/Tencent/rapidjson.git
-  git clone --depth 1 --shallow-submodules -b v2.9.0 https://github.com/pybind/pybind11.git
+  git clone --depth 1 --shallow-submodules -b v2.11.0 https://github.com/pybind/pybind11.git
 
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/base
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/blas

@@ -1,10 +1,10 @@
 {
-  "path": "apps/gstreamer/imx8/detection/resources",
+  "path": "apps/h8/gstreamer/imx8/multistream_detection/resources",
   "requirements": [
     {
-      "bucket": "tappas",
-      "source": "imx8/hefs/yolov5s_personface_nv12_no_ddr.hef",
-      "destination": "yolov5s_personface_nv12_no_ddr.hef"
+      "bucket": "model_zoo",
+      "source": "general/hefs/yolov5s_personface_nv12.hef",
+      "destination": "yolov5s_personface_nv12.hef"
     },
     {
       "bucket": "tappas",

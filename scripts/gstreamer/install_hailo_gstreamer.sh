@@ -12,6 +12,7 @@ INCLUDE_UNIT_TESTS=true
 PYTHON_VERSION=$(python3 --version | awk '{print $2}' | awk -F'.' '{print $1"."$2}')
 TARGET="all"
 TARGET_PLATFORM="x86"
+GCC_VERSION="12"
 INSTALLATION_DIR=/opt/hailo/tappas
 
 # Occupy all the cores could sometimes freeze the PC
@@ -30,6 +31,7 @@ function print_usage() {
     echo "  --skip-unit-tests      Skip compilation of unit tests"
     echo "  --target               Tappas build target [all, plugins, libs, apps] (default = all)"
     echo "  --target-platform      Target platform, used for installing only required media and hef files [x86, arm, hailo15] (Default is $TARGET_PLATFORM)"
+    echo "  --gcc-version          GCC version to use (Default is $GCC_VERSION)"
     echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
     exit 1
 }
@@ -52,6 +54,9 @@ function parse_args() {
             shift
         elif [ "$1" == "--target-platform" ]; then
             TARGET_PLATFORM=$2
+            shift
+        elif [ "$1" == "--gcc-version" ]; then
+            GCC_VERSION=$2
             shift
         elif [ "$1" == "--skip-hailort" ]; then
             SKIP_HAILORT=true
@@ -93,7 +98,7 @@ function main() {
 
     echo "Compiling Hailo Gstreamer target $TARGET, with $num_cores_to_use cpu cores, build type $BUILD_MODE $reconfigure_flag"
 
-    CC=gcc-9 CXX=g++-9 meson build.$BUILD_MODE $reconfigure_flag --prefix "${INSTALLATION_DIR}" --buildtype $BUILD_MODE \
+    CC=gcc-$GCC_VERSION CXX=g++-$GCC_VERSION meson build.$BUILD_MODE $reconfigure_flag --prefix "${INSTALLATION_DIR}" --buildtype $BUILD_MODE \
                             -Dtarget=$TARGET \
                             -Dtarget_platform=$TARGET_PLATFORM \
                             -Dlibargs="-I/usr/include/hailo/,-I/usr/include/gstreamer-1.0/gst/hailo/" \

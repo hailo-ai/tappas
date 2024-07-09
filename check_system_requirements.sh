@@ -8,6 +8,11 @@ readonly log_found="V$log_boundary"
 readonly log_missing="X$log_boundary"
 readonly log_warning=" $log_boundary"
 
+if [ -z "$GCC_VERSION" ]; then
+    echo GCC version not set
+    exit 1
+fi
+
 declare -a apt_reqs
 
 apt_reqs[0]='ffmpeg'
@@ -16,8 +21,8 @@ apt_reqs[2]='python3-dev'
 apt_reqs[3]='python3-pip'
 apt_reqs[4]='python3-setuptools'
 apt_reqs[5]='libgirepository'
-apt_reqs[6]='gcc-9'
-apt_reqs[7]='g++-9'
+apt_reqs[6]="gcc-$GCC_VERSION"
+apt_reqs[7]="g++-$GCC_VERSION"
 apt_reqs[8]='python-gi-dev'
 apt_reqs[9]='pkg-config'
 apt_reqs[10]='libcairo2-dev'

@@ -38,7 +38,7 @@ Parameters
               "id": "datetime_id",
               "font_size": 2,
               "line_thickness": 3,
-              "rgb": [0, 0, 255],
+              "text_color": [0, 0, 255],
               "x": 0.1,
               "y": 0.7,
               "z-index": 3
@@ -50,7 +50,7 @@ Parameters
               "label": "example text 1",
               "font_size": 2,
               "line_thickness": 3,
-              "rgb": [255, 0, 0],
+              "text_color": [255, 0, 0],
               "x": 0.7,
               "y": 0.8,
               "z-index": 1

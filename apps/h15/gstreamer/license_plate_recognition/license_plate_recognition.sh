@@ -11,6 +11,7 @@ function init_variables() {
     readonly CROPPING_ALGORITHMS_DIR="$POSTPROCESS_DIR/cropping_algorithms"
     readonly RESOURCES_DIR="${CURRENT_DIR}/resources"
     readonly DEFAULT_LICENSE_PLATE_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov4_license_plate.json"
+    readonly DEFAULT_ENCODER_CONFIG_PATH="$RESOURCES_DIR/configs/encoder_config.json"
 
     # Default Video
     readonly DEFAULT_VIDEO_SOURCE="$RESOURCES_DIR/lpr_nv12.raw"
@@ -46,6 +47,7 @@ function init_variables() {
     udp_port=$DEFAULT_UDP_PORT
     udp_host_ip=$DEFAULT_UDP_HOST_IP
 
+    encoder_config_path=$DEFAULT_ENCODER_CONFIG_PATH
     print_gst_launch_only=false
     additional_parameters=""
     stats_element=""
@@ -159,7 +161,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     hailoupload pool-size=16 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     video/x-raw, framerate=25/1 ! \
-    hailoh264enc ! h264parse config-interval=-1 ! \
+    hailoencodebin config-file-path=$encoder_config_path ! h264parse config-interval=-1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     tee name=udp_tee \
     udp_tee. ! \

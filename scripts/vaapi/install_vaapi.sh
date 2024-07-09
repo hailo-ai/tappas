@@ -11,6 +11,13 @@ GREEN='\033[1;32m'
 NC='\033[0m'
 NO_LOG="none"
 
+ubuntu_version=$(lsb_release -r | awk '{print $2}' | awk -F'.' '{print $1}')
+if [ $ubuntu_version -eq 20 ]; then
+    GCC_VERSION=9
+else
+    GCC_VERSION=12
+fi
+
 no_cache=false
 # Occupy all the cores could sometimes freeze the PC
 num_cores_to_use=$(($(nproc) / 2))
@@ -160,7 +167,7 @@ function gmmlib_install() {
     log_info "Compiling gmmlib"
     get_repo gmmlib "$GMMLIB_VERSION"
     mkdir -p build && pushd build
-    cmake -DCMAKE_BUILD_TYPE=Release CMAKE_C_COMPILER=/usr/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 ../
+    cmake -DCMAKE_BUILD_TYPE=Release CMAKE_C_COMPILER=/usr/bin/gcc-$GCC_VERSION -DCMAKE_CXX_COMPILER=/usr/bin/g++-$GCC_VERSION ../
     cmake --build . --config Release -j $num_cores_to_use
     sudo cmake --install .
     
@@ -208,7 +215,7 @@ function media_driver_install() {
     get_repo media-driver "$MEDIA_DRIVER_VERSION" "$MEDIA_DRIVER_COMMIT_HASH"
     mkdir -p build && pushd build
 
-    cmake -DCMAKE_BUILD_TYPE=Release CMAKE_C_COMPILER=/usr/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 ../
+    cmake -DCMAKE_BUILD_TYPE=Release CMAKE_C_COMPILER=/usr/bin/gcc-$GCC_VERSION -DCMAKE_CXX_COMPILER=/usr/bin/g++-$GCC_VERSION ../
     make -j $num_cores_to_use
     sudo make install
 

@@ -31,9 +31,7 @@ gtk-doc-tools
 libcairo2-dev 
 gir1.2-gstreamer-1.0 
 python3-gi
-python-gi-dev 
-gcc-9 
-g++-9 
+python-gi-dev  
 lsb-release 
 autoconf 
 automake 
@@ -42,12 +40,18 @@ libzmq3-dev
 # Specific versions
 20.04:python3-gst-1.0
 20.04:python3-dev
+20.04:gcc-9 
+20.04:g++-9
 
 21.04:python3-gst-1.0
 21.04:python3-dev
 21.04:gstreamer1.0-plugins-good
+21.04:gcc-12 
+21.04:g++-12
 
 22.04:python3-gst-1.0
 22.04:python3-dev
 22.04:python3-cairo-dev
 22.04:gstreamer1.0-plugins-good
+22.04:gcc-12 
+22.04:g++-12

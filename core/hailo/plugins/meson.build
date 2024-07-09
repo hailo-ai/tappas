@@ -82,6 +82,7 @@ shared_library('gsthailotools',
     install_dir: get_option('libdir') + '/gstreamer-1.0/',
 )
 
+
 if not get_option('include_python')
     subdir_done()
 endif

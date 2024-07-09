@@ -8,6 +8,8 @@
 
 const char *CONFIG_FILE_1 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config1.json";
 const char *CONFIG_FILE_2 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config2.json";
+const char *ENCODER_CONFIG_FILE_1 = "/home/root/apps/basic_security_camera_streaming/resources/configs/encoder_config_4k_no_osd.json";
+const char *ENCODER_CONFIG_FILE_2 = "/home/root/apps/basic_security_camera_streaming/resources/configs/encoder_config_fhd_no_osd.json";
 const static uint cycle_frames_a = 200;
 const static uint cycle_frames_b = 400;
 
@@ -89,14 +91,11 @@ std::string create_pipeline_string(std::string codec, std::string config_string)
 {
     std::string pipeline = "";
 
-    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=mmap ! "
-               "video/x-raw, width=3840, height=2160, framerate=30/1, format=NV12 ! "
-               "queue leaky=no max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! "
-               "hailofrontend config-string='" +
+    pipeline = "hailofrontendbinsrc config-string='" +
                config_string + "' name=frontend "
                                "frontend. ! "
                                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                               "hailoh264enc bitrate=10000000 hrd=false ! video/x-h264 ! "
+                               "hailoencodebin config-file-path="+ ENCODER_CONFIG_FILE_1 + " ! video/x-h264 ! "
                                "tee name=stream1_tee "
                                "stream1_tee. ! "
                                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
@@ -107,7 +106,7 @@ std::string create_pipeline_string(std::string codec, std::string config_string)
                                "fpsdisplaysink fps-update-interval=2000 name=display_sink1 text-overlay=false video-sink=\"appsink max-buffers=1 name=hailo_sink1\" sync=true signal-fps-measurements=true "
                                "frontend. ! "
                                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
-                               "hailoh264enc bitrate=10000000 hrd=false ! video/x-h264 ! "
+                               "hailoencodebin config-file-path="+ ENCODER_CONFIG_FILE_2 + " ! video/x-h264 ! "
                                "tee name=stream2_tee "
                                "stream2_tee. ! "
                                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
@@ -163,13 +162,16 @@ void set_callbacks(GstElement *pipeline, bool print_fps)
 void set_probes(GstElement *pipeline)
 {
     // extract elements from pipeline
-    GstElement *frontend = gst_bin_get_by_name(GST_BIN(pipeline), "frontend");
+    GstElement *frontendbinsrc = gst_bin_get_by_name(GST_BIN(pipeline), "frontend");
+    // inner elements
+    GstElement *hailofrontend = gst_bin_get_by_name(GST_BIN(frontendbinsrc), "hailofrontendelement");
     // extract pads from elements
-    GstPad *pad_frontend = gst_element_get_static_pad(frontend, "sink");
+    GstPad *pad_frontend = gst_element_get_static_pad(hailofrontend, "sink");
     // set probes
     gst_pad_add_probe(pad_frontend, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback)probe_callback, pipeline, NULL);
     // free resources
-    gst_object_unref(frontend);
+    gst_object_unref(frontendbinsrc);
+    gst_object_unref(hailofrontend);
 }
 
 std::string read_string_from_file(const char *file_path)

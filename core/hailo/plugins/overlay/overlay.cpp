@@ -221,6 +221,10 @@ static overlay_status_t draw_id(HailoMat &mat, HailoUniqueIDPtr &hailo_id, Hailo
 template <typename T>
 void calc_destination_roi_and_resize_mask(cv::Mat &destinationROI, cv::Mat &image_planes, HailoROIPtr roi, HailoMaskPtr mask, cv::Mat &resized_mask_data, T data_ptr, int cv_type)
 {
+    if (mask->get_height() == 0 || mask->get_width() == 0) {
+        return;
+    }
+
     HailoBBox bbox = roi->get_bbox();
     int roi_xmin = bbox.xmin() * image_planes.cols;
     int roi_ymin = bbox.ymin() * image_planes.rows;

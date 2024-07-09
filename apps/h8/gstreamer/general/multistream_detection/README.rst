@@ -52,8 +52,10 @@ OR
 #. ``--show-fps`` Prints the fps to the output.
 #. ``--debug`` Uses gst-top to print time and memory consuming elements, saves the results as text and graph.
 #. ``--num-of-sources`` Sets the number of sources to use by given input. The default and recommended value in this pipeline is 12 (for files) or 8 (for camera streams over RTSP protocol).
-#. ``--set-live-source`` Use the live source given (example: /dev/video2). this flag is optional. if it's in use, num_of_sources is limited to 4.
+#. ``--set-live-source`` Use the actual source data given (example: /dev/video2). this flag is optional. if it's in use, num_of_sources is limited to 4.
 #. ``--tcp-address`` If specified, set the sink be a TCP (expected format is 'host:port').
+#. ``--network`` If specified, set the network to use. Choose from [yolov5, yolox, yolov8], default is yolov5.
+#. ``--device-count`` If specified, set the number of devices to use. Default (and maximum value) is the minimum between 4 and the number of devices on machine.
 #. ``--print-gst-launch`` Prints the ready gst-launch command without running it.
 
 
@@ -68,16 +70,13 @@ The output should look like:
    :height: 250px
 
 
-Configuration
--------------
-
-The app post process parameters can be configured by a json file located in $TAPPAS_WORKSPACE/apps/h8/gstreamer/general/multistream_detection/resources/configs/yolov5.json
-
 Supported Networks
 ------------------
 
 
-* 'yolov5m_wo_spp' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
+* 'yolov8m' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov8m.yaml
+* 'yolov5m_wo_spp_60p' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolov5m_wo_spp_60p.yaml
+* 'yolovx_l_leaky' - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/yolovx_l_leaky.yaml
 
 Overview of the Pipeline
 ------------------------
@@ -96,7 +95,7 @@ Example of HailoRT Stream Multiplexer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-* This app shows the usage of the HailoRT Stream Multiplexer. This feature controls the time shared on the Hailo device between all streams. The Stream Multiplexer is enabled by the ``Hailonet`` scheduling-algorithm property when in use in multiple ``Hailonet`` elements that run the same HEF file. When the Stream Multiplexer is in use, there is no need to use ``funnel`` and ``streamiddemux`` like elements because the logic is handled internally.
+* This application shows the usage of the HailoRT Stream Multiplexer. This feature controls the time shared on the Hailo device between all streams. The Stream Multiplexer is enabled by the ``Hailonet`` scheduling-algorithm property when in use in multiple ``Hailonet`` elements that run the same HEF file. When the Stream Multiplexer is in use, there is no need to use ``funnel`` and ``streamiddemux`` like elements because the logic is handled internally.
 
 Using Retraining to Replace Models
 ----------------------------------
@@ -104,16 +103,31 @@ Using Retraining to Replace Models
 .. note:: It is recommended to first read the `Retraining TAPPAS Models <../../../../../docs/write_your_own_application/retraining-tappas-models.rst>`_ page. 
 
 Retraining Dockers (available on Hailo Model Zoo), can be used to replace the following models with ones
-that are trained in the dataset:
+that are trained on the users own dataset:
+
+- ``yolov8m``
+  
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov8>`_
+
+    - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file
 
 - ``yolov5m``
   
   - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolov5>`_
 
     - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
-    - Should use ModelZoo to compile together with ``centerpose`` for this pipeline. 
-      See `detection_pose_estimation.yaml <https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/multi-networks/detection_pose_estimation/detection_pose_estimation.yaml>`_
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update ``resources/configs/yolov5.json`` with the new post-processing parameters (NMS)
+
+- ``yolox_l_leaky``
+
+  - `Retraining docker <https://github.com/hailo-ai/hailo_model_zoo/tree/master/training/yolovx>`_
+
+   - For optimum compatibility and performance with TAPPAS, use for compilation the corresponding YAML file from above.
+  - TAPPAS changes to replace model:
+
+    - Update HEF_PATH on the .sh file

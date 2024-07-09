@@ -24,6 +24,10 @@ const char *OUTPUT_LAYER_NAME_NV12 = "lprnet_304x75/conv31";
  */
 void OCR_postprocess(HailoROIPtr roi, const char *layer_name)
 {
+    if (!roi->has_tensors())
+    {
+        return;
+    }
     HailoTensorPtr net_output = roi->get_tensor(layer_name);
     if (nullptr == net_output)
     {

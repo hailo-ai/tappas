@@ -12,14 +12,15 @@ function init_variables() {
     readonly DEFAULT_HEF_PATH="${RESOURCES_DIR}/yolov5m_wo_spp_60p_nv12_fhd.hef"
     readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/yolov5.json" 
     readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/frontend_config.json"
+    readonly DEFAULT_ENCODER_CONFIG_PATH="$RESOURCES_DIR/configs/encoder_config.json"
     readonly DEFAULT_UDP_PORT=5000
     readonly DEFAULT_UDP_HOST_IP="10.0.0.2"
     readonly DEFAULT_FRAMERATE="30/1"
     readonly DEFAULT_BITRATE=25000000
 
+    encoder_config_path=$DEFAULT_ENCODER_CONFIG_PATH
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
-    input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
     json_config_path=$DEFAULT_JSON_CONFIG_PATH
     frontend_config_file_path=$DEFAULT_FRONTEND_CONFIG_FILE_PATH
@@ -37,11 +38,12 @@ function init_variables() {
     additional_parameters=""
 
     # Limit the encoding bitrate to 20Mbps to support weak host.
-    # Comment this out if you encounter a large latency in the host side
-    # Tune the value down to reach the desired latency (will decrease the video quality).
+    # if you encounter a large latency in the host side.
+    # Set the following values down in the encoder config file, to reach the desired latency (will decrease the video quality).
     # ----------------------------------------------
     # bitrate=20000000
-    # encoding_hrd="hrd=true hrd-cpb-size=$bitrate"
+    # hrd: true
+    # hrd-cpb-size: <same as bitrate>
     # ----------------------------------------------
 }
 
@@ -50,7 +52,6 @@ function print_usage() {
     echo ""
     echo "Options:"
     echo "  --help                  Show this help"
-    echo "  -i INPUT --input INPUT  Set the camera source (default $input_source)"
     echo "  --show-fps              Print fps"
     echo "  --print-gst-launch      Print the ready gst-launch command without running it"
     exit 0
@@ -66,9 +67,6 @@ function parse_args() {
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
             additional_parameters="-v | grep hailo_display"
-        elif [ "$1" = "--input" ] || [ "$1" = "-i" ]; then
-            input_source="$2"
-            shift
         else
             echo "Received invalid argument: $1. See expected arguments below:"
             print_usage
@@ -86,9 +84,7 @@ parse_args $@
 UDP_SINK="udpsink host=$udp_host_ip port=$udp_port"
 
 PIPELINE="gst-launch-1.0 \
-    v4l2src device=$input_source io-mode=mmap ! video/x-raw,format=NV12,width=3840,height=2160, framerate=$framerate ! \
-    queue leaky=downstream max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailofrontend config-file-path=$frontend_config_file_path name=frontend \
+    hailofrontendbinsrc config-file-path=$frontend_config_file_path name=frontend \
     frontend. ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$hef_path scheduling-algorithm=1 vdevice-group-id=device0 ! \
@@ -97,7 +93,7 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailooverlay qos=false ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailoh264enc bitrate=$bitrate $encoding_hrd ! h264parse config-interval=-1 ! \
+    hailoencodebin config-file-path=$encoder_config_path ! h264parse config-interval=-1 ! \
     video/x-h264,framerate=$framerate ! \
     tee name=udp_tee \
     udp_tee. ! \

@@ -20,26 +20,25 @@ function init_variables() {
 
     readonly DEFAULT_MAX_BUFFER_SIZE=5
     readonly DEFAULT_FORMAT="NV12"
-    readonly DEFAULT_BITRATE=25000000
     readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/frontend_config.json"
 
     input_source=$DEFAULT_VIDEO_SOURCE
 
-    json_config_path_4k="$RESOURCES_DIR/configs/osd_4k.json"
-    json_config_path_fhd="$RESOURCES_DIR/configs/osd_fhd.json"
-    json_config_path_hd="$RESOURCES_DIR/configs/osd_hd.json" 
-    json_config_path_sd="$RESOURCES_DIR/configs/osd_sd.json"
+    json_config_path_4k="$RESOURCES_DIR/configs/encoder_config_sink_4k.json"
+    json_config_path_hd="$RESOURCES_DIR/configs/encoder_config_sink_hd.json" 
+    json_config_path_sd="$RESOURCES_DIR/configs/encoder_config_sink_sd.json"
     
     frontend_config_file_path="$DEFAULT_FRONTEND_CONFIG_FILE_PATH"
 
     encoding_hrd="hrd=false"
 
     # Limit the encoding bitrate to 10Mbps to support weak host.
-    # Comment this out if you encounter a large latency in the host side
-    # Tune the value down to reach the desired latency (will decrease the video quality).
+    # if you encounter a large latency in the host side.
+    # Set the following values down in the encoder config file, to reach the desired latency (will decrease the video quality).
     # ----------------------------------------------
     # bitrate=10000000
-    # encoding_hrd="hrd=true hrd-cpb-size=$bitrate"
+    # hrd=true
+    # hrd-cpb-size=<same as bitrate>
     # ----------------------------------------------
 
     max_buffers_size=$DEFAULT_MAX_BUFFER_SIZE
@@ -107,9 +106,7 @@ function create_pipeline() {
               udpsink host=10.0.0.2 sync=$sync_pipeline"
 
     FOUR_K_TO_ENCODER_BRANCH="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-                            hailoosd config-file-path=$json_config_path_4k ! \
-                            queue leaky=downstream max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! \
-                            hailoh264enc bitrate=$FOUR_K_BITRATE hrd=false ! \
+                            hailoencodebin config-file-path=$json_config_path_4k ! \
                             video/x-h264 ! \
                             tee name=fourk_enc_tee \
                             fourk_enc_tee. ! \
@@ -126,9 +123,7 @@ function create_pipeline() {
                 $FPS_DISP name=hailo_display_fhd "
 
     HD_BRANCH="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-               hailoosd config-file-path=$json_config_path_hd ! \
-               queue leaky=downstream max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! \
-               hailoh264enc bitrate=$HD_BITRATE $encoding_hrd ! \
+               hailoencodebin config-file-path=$json_config_path_hd ! \
                video/x-h264 ! \
                 tee name=hd_tee \
                 hd_tee. ! \
@@ -138,9 +133,7 @@ function create_pipeline() {
                     $FPS_DISP name=hailo_display_hd_enc "
 
     SD_BRANCH="queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-               hailoosd config-file-path=$json_config_path_sd ! \
-               queue leaky=downstream max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! \
-               hailoh264enc bitrate=$SD_BITRATE $encoding_hrd ! \
+               hailoencodebin config-file-path=$json_config_path_sd ! \
                video/x-h264 ! \
                 tee name=sd_tee \
                 sd_tee. ! \
@@ -154,9 +147,7 @@ function create_pipeline() {
 create_pipeline $@
 
 PIPELINE="${debug_stats_export} gst-launch-1.0 \
-    v4l2src io-mode=mmap device=$input_source name=src_0 ! video/x-raw, width=3840, height=2160, framerate=30/1, format=$video_format ! \
-    queue leaky=downstream max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailofrontend config-file-path=$frontend_config_file_path name=preproc \
+    hailofrontendbinsrc config-file-path=$frontend_config_file_path name=preproc \
     preproc. ! $FOUR_K_TO_ENCODER_BRANCH \
     preproc. ! $FOUR_K_BRANCH \
     preproc. ! $FHD_BRANCH \

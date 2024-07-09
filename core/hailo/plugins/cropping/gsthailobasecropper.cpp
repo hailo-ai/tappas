@@ -19,7 +19,8 @@
 #include "hailo_common.hpp"
 #include "gst_hailo_meta.hpp"
 #ifdef HAILO15_TARGET
-#include "gsthailodsp.h"
+#include "buffer_utils.hpp"
+#include "media_library/dsp_utils.hpp"
 #include "gsthailodspbufferpoolutils.hpp"
 #endif
 
@@ -606,7 +607,7 @@ static GstBuffer *gst_hailo_basecropper_allocate_new_buffer(GstHailoBaseCropper 
 static gboolean dsp_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, cv::Rect crop_rect, std::shared_ptr<HailoMat> resized_image,
                                     GstBuffer *input_buffer, GstVideoInfo *input_video_info, GstBuffer *output_buffer, GstVideoInfo *output_video_info)
 {
-    crop_resize_dims_t crop_resize_dims = {
+    dsp_utils::crop_resize_dims_t crop_resize_dims = {
         .perform_crop = 1,
         .crop_start_x = (size_t)crop_rect.x,
         .crop_end_x = (size_t)crop_rect.x + crop_rect.width,
@@ -659,16 +660,18 @@ static gboolean dsp_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, cv::
     }
 
     // Create dsp image properties from both input and output video frame objects
-    dsp_image_properties_t input_image_properties = create_image_properties_from_video_frame(&input_video_frame);
-    dsp_image_properties_t output_image_properties = create_image_properties_from_video_frame(&output_video_frame);
+    dsp_image_properties_t input_image_properties;
+    dsp_image_properties_t output_image_properties;
+    create_dsp_buffer_from_video_frame(&input_video_frame, input_image_properties);
+    create_dsp_buffer_from_video_frame(&output_video_frame, output_image_properties);
 
     // Perform the crop and resize
-    dsp_status result = perform_dsp_crop_and_resize(&input_image_properties, &output_image_properties, crop_resize_dims,
+    dsp_status result = dsp_utils::perform_crop_and_resize(&input_image_properties, &output_image_properties, crop_resize_dims,
                                                     get_dsp_interpolation_type_from_cv(hailo_basecropper, cv::InterpolationFlags::INTER_LINEAR));
 
     // Free resources
-    free_image_property_planes(&input_image_properties);
-    free_image_property_planes(&output_image_properties);
+    dsp_utils::free_image_property_planes(&input_image_properties);
+    dsp_utils::free_image_property_planes(&output_image_properties);
     gst_video_frame_unmap(&input_video_frame);
     gst_video_frame_unmap(&output_video_frame);
 

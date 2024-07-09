@@ -33,7 +33,7 @@
         "color_interpolation": "INTERPOLATION_TYPE_BILINEAR",
         "sensor_calib_path": "/home/root/apps/resources/cam_intrinsics.txt",
         "camera_type": "CAMERA_TYPE_PINHOLE",
-        "camera_fov": 100.0
+        "camera_fov": -1
     },
     "dis": {
         "enabled": false,
@@ -69,6 +69,13 @@
     "optical_zoom": {
         "enabled": true,
         "magnification": 1.0
+    },
+    "hdr": {
+        "enabled": false,
+        "dol": 3,
+        "resolution": "4k",
+        "lsRatio": 23.7,
+        "vsRatio": 6.25
     },
     "digital_zoom": {
         "enabled": false,

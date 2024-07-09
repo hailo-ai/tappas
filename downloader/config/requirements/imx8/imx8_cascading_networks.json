@@ -3,6 +3,16 @@
   "requirements": [
     {
       "bucket": "model_zoo",
+      "source": "general/hefs/tddfa_mobilenet_v1.hef",
+      "destination": "tddfa_mobilenet_v1.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "general/hefs/lightface_slim.hef",
+      "destination": "lightface_slim.hef"
+    },
+    {
+      "bucket": "tappas",
       "source": "general/hefs/yolov5m_wo_spp_60p.hef",
       "destination": "yolov5m_wo_spp_60p.hef"
     },

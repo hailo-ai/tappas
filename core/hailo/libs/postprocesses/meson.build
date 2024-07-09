@@ -138,6 +138,23 @@ shared_library('centerpose_post',
 )
 
 ################################################
+# YOLOV8_POSE SOURCES
+################################################
+yolov8pose_post_sources = [
+    'pose_estimation/yolov8pose_postprocess.cpp',
+]
+
+shared_library('yolov8pose_post',
+    yolov8pose_post_sources,
+    cpp_args : hailo_lib_args,
+    include_directories: [hailo_general_inc, include_directories('./')] + xtensor_inc,
+    dependencies : post_deps,
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: post_proc_install_dir,
+)
+
+################################################
 # MSPN SOURCES
 ################################################
 mspn_post_sources = [

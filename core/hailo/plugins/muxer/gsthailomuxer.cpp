@@ -525,6 +525,10 @@ static void gst_hailomuxer_handle_sub_frame_roi(HailoROIPtr main_buffer_roi, Hai
                 sub_obj_roi->set_bbox(std::move(hailo_common::create_flattened_bbox(sub_obj_roi->get_bbox(), sub_buffer_roi->get_scaling_bbox())));
                 main_buffer_roi->add_object(sub_obj_roi);
             }
+            else
+            {
+                main_buffer_roi->add_object(obj);
+            }
         }
     }
 }

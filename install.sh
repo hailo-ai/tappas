@@ -4,6 +4,7 @@ set -e
 skip_hailort=false
 target_platform="x86"
 compile_num_cores=""
+gcc_version=12
 
 if [[ -z "$TAPPAS_WORKSPACE" ]]; then
   export TAPPAS_WORKSPACE=$(dirname "$(realpath "$0")")
@@ -27,7 +28,7 @@ function print_usage() {
   echo "Options:"
   echo "  --help                 Show this help"
   echo "  --skip-hailort         Skips installation of HailoRT Deb package"
-  echo "  --target-platform      Target platform [x86, rockchip, rpi(raspberry pi), hailo15], used for downloading only required media and hef files (Default is $target_platform)"
+  echo "  --target-platform      Target platform [x86, rockchip, rpi(raspberry pi 4),  rpi5(raspberry pi 5), hailo15], used for downloading only required media and hef files (Default is $target_platform)"
   echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
   echo "  --download-apps-data   Comma separated list (without spaces) of apps to download data for. Does not work with option '--target-platform'"
   echo "  --list-apps            Show the list of available apps"
@@ -76,7 +77,12 @@ function python_venv_create_and_install() {
     rm -rf ${VENV_PATH}/$VENV_NAME
 
     echo "Creating new virtualenv ($VENV_NAME) in ($VENV_PATH) and installing into it"
-    python3 -m virtualenv $VENV_PATH/$VENV_NAME
+    # if target platform is rpi5 add --system-site-packages flag to the virtualenv creation
+    if [ "$target_platform" == "rpi5" ]; then
+      python3 -m virtualenv --system-site-packages $VENV_PATH/$VENV_NAME
+    else
+      python3 -m virtualenv $VENV_PATH/$VENV_NAME
+    fi
     source ${VENV_PATH}/$VENV_NAME/bin/activate
   fi
   # Install pip packages & Call the downloader script
@@ -121,15 +127,26 @@ function install_hailo() {
 
   if [ ! -z $libgsthailo_ver_num ] && [ $libgsthailo_ver_num == $libhailort_version_num ]; then
     echo "libgsthailo version was already compiled - will skip compilation"
-    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores
+    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version $compile_num_cores
   else
     echo "found newer version of libgsthailo"
-    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --compile-libgsthailo $compile_num_cores
+    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version --compile-libgsthailo $compile_num_cores
+  fi
+}
+
+function set_gcc_version(){
+  if [ "$target_platform" == "rpi" ] || [ "$target_platform" == "rockchip" ]; then
+    gcc_version=9
+  else
+    ubuntu_version=$(lsb_release -r | awk '{print $2}' | awk -F'.' '{print $1}')
+    if [ $ubuntu_version -eq 20 ]; then
+        gcc_version=9
+    fi
   fi
 }
 
 function check_systems_requirements(){
-  ./check_system_requirements.sh
+  GCC_VERSION=$gcc_version ./check_system_requirements.sh
   if [ "$?" != "0"  ]; then
     exit 1
   fi
@@ -228,6 +245,7 @@ function list_supported_apps(){
 
 function main() {
   uninstall
+  set_gcc_version
   check_systems_requirements
   verify_that_hailort_found_if_needed
   python_venv_create_and_install

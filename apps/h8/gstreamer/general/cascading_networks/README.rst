@@ -39,10 +39,8 @@ The output should look like:
    </div>
 
 
-Model
------
-
-Joined together:
+Models
+------
 
 * ``lightface_slim`` in resolution of 320X240X3 - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/lightface_slim.yaml
 * ``tddfa_mobilenet_v1`` in resolution of 120X120X3 - https://github.com/hailo-ai/hailo_model_zoo/blob/master/hailo_model_zoo/cfg/networks/tddfa_mobilenet_v1.yaml

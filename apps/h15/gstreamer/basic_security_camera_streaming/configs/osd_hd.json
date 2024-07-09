@@ -20,7 +20,7 @@
                 "font_size": 35,
                 "font_path": "/usr/share/fonts/ttf/LiberationMono-Regular.ttf",
                 "line_thickness": 3,
-                "rgb": [
+                "text_color": [
                     255,
                     255,
                     255
@@ -39,7 +39,7 @@
                 "font_size": 35,
                 "font_path": "/usr/share/fonts/ttf/LiberationMono-Regular.ttf",
                 "line_thickness": 3,
-                "rgb": [
+                "text_color": [
                     255,
                     255,
                     255
@@ -56,7 +56,7 @@
                 "font_size": 35,
                 "font_path": "/usr/share/fonts/ttf/LiberationMono-Regular.ttf",
                 "line_thickness": 3,
-                "rgb": [
+                "text_color": [
                     255,
                     255,
                     255

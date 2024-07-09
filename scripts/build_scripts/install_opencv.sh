@@ -35,7 +35,7 @@ function clean_environment() {
     rm -rf "opencv-4.5.2"
 }
 
-function main() {
+function main_from_source() {
     sudo apt-get install -y unzip
 
     pushd $TAPPAS_WORKSPACE/sources
@@ -43,6 +43,11 @@ function main() {
     compile
     clean_environment
     popd
+}
+
+function main() {
+    sudo apt-get install -y unzip
+    sudo apt-get install -y libopencv-dev python3-opencv
 }
 
 main

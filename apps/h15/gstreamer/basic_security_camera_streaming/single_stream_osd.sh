@@ -4,17 +4,19 @@ set -e
 CURRENT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 function init_variables() {
-    readonly RESOURCES_DIR="/home/root/apps/detection/resources"
+    readonly RESOURCES_DIR="/home/root/apps/basic_security_camera_streaming/resources"
     readonly DEFAULT_VIDEO_SOURCE="/dev/video0"
-    readonly DEFAULT_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/osd.json"
-    readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/frontend_config.json"
+    readonly DEFAULT_OSD_JSON_CONFIG_PATH="$RESOURCES_DIR/configs/osd_4k.json"
+    readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/frontend_config_single_stream_4k.json"
+    readonly DEFAULT_ENCODER_CONFIG_PATH="$RESOURCES_DIR/configs/encoder_config_4k_no_osd.json"
     readonly DEFAULT_UDP_PORT=5000
     readonly DEFAULT_UDP_HOST_IP="10.0.0.2"
     readonly DEFAULT_BITRATE=25000000
     readonly DEFAULT_FRAMERATE="30/1"
 
     input_source=$DEFAULT_VIDEO_SOURCE
-    json_config_path=$DEFAULT_JSON_CONFIG_PATH
+    encoder_config_path=$DEFAULT_ENCODER_CONFIG_PATH
+    osd_config_path=$DEFAULT_OSD_JSON_CONFIG_PATH
     frontend_config_file_path=$DEFAULT_FRONTEND_CONFIG_FILE_PATH
     udp_port=$DEFAULT_UDP_PORT
     udp_host_ip=$DEFAULT_UDP_HOST_IP
@@ -34,8 +36,8 @@ function init_variables() {
     additional_parameters=""
 
     # Limit the encoding bitrate to 10Mbps to support weak host.
-    # Comment this out if you encounter a large latency in the host side.
-    # Tune the value down to reach the desired latency (will decrease the video quality).
+    # if you encounter a large latency in the host side.
+    # Set the following values down in the encoder config file, to reach the desired latency (will decrease the video quality).
     # ----------------------------------------------
     # bitrate=10000000
     # ----------------------------------------------
@@ -91,7 +93,7 @@ BASE_PIPELINE="v4l2src device=$input_source io-mode=mmap $property_num_buffers !
     hailofrontend config-file-path=$frontend_config_file_path name=frontend \
     frontend. ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailoosd config-file-path=$json_config_path ! \
+    hailoosd config-file-path=$osd_config_path ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 "
 
 if [ "$use_hailojpeg" = true ]; then
@@ -109,7 +111,7 @@ if [ "$use_hailojpeg" = true ]; then
 else
     PIPELINE="gst-launch-1.0 \
         $BASE_PIPELINE ! \
-        hailoh264enc bitrate=$bitrate ! h264parse config-interval=-1 ! \
+        hailoencodebin config-file-path=$encoder_config_path ! h264parse config-interval=-1 ! \
         video/x-h264,framerate=30/1 ! \
         tee name=udp_tee \
         udp_tee. ! \

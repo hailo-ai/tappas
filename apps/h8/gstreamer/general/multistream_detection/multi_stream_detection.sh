@@ -9,8 +9,12 @@ function init_variables() {
     readonly RESOURCES_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/general/multistream_detection/resources"
     readonly POSTPROCESS_DIR="$TAPPAS_WORKSPACE/apps/h8/gstreamer/libs/post_processes/"
     readonly POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
-    readonly HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
+    readonly DEFAULT_HEF_PATH="$RESOURCES_DIR/yolov5m_wo_spp_60p.hef"
+    readonly DEFAULT_NETWORK_NAME="yolov5"
+    readonly MAX_NUM_OF_DEVICES=4
 
+    hef_path=$DEFAULT_HEF_PATH
+    network_name=$DEFAULT_NETWORK_NAME
     num_of_src=12
     live_src=""
     additional_parameters=""
@@ -18,6 +22,19 @@ function init_variables() {
     compositor_locations="sink_0::xpos=0 sink_0::ypos=0 sink_1::xpos=640 sink_1::ypos=0 sink_2::xpos=1280 sink_2::ypos=0 sink_3::xpos=1920 sink_3::ypos=0 sink_4::xpos=0 sink_4::ypos=640 sink_5::xpos=640 sink_5::ypos=640 sink_6::xpos=1280 sink_6::ypos=640 sink_7::xpos=1920 sink_7::ypos=640 sink_8::xpos=0 sink_8::ypos=1280 sink_9::xpos=640 sink_9::ypos=1280 sink_10::xpos=1280 sink_10::ypos=1280 sink_11::xpos=1920 sink_11::ypos=1280 sink_12::xpos=0 sink_12::ypos=1920 sink_13::xpos=640 sink_13::ypos=1920 sink_14::xpos=1280 sink_14::ypos=1920 sink_15::xpos=1920 sink_15::ypos=1920"
     print_gst_launch_only=false
     video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
+
+    max_devices=$(lspci -d 1e60: | wc -l)
+
+    if (($max_devices == 0)); then
+        echo "Error: No devices found."
+        exit 1
+    fi
+    
+    if (($max_devices > $MAX_NUM_OF_DEVICES)); then
+        max_devices=$MAX_NUM_OF_DEVICES
+    fi
+
+    device_count=$max_devices
 }
 
 function print_usage() {
@@ -26,8 +43,10 @@ function print_usage() {
     echo "Options:"
     echo "  --help                          Show this help"
     echo "  --show-fps                      Printing fps"
-    echo "  --set-live-source LIVE_SOURCE   Use the live source given (example: /dev/video2). this flag is optional. if it's in use, num_of_sources is limited to 4."
+    echo "  --network NETWORK               Set network to use. choose from [yolov5, yolox, yolov8], default is yolov5"
+    echo "  --set-live-source LIVE_SOURCE   Use the actual source data given (example: /dev/video2). this flag is optional. if it's in use, num_of_sources is limited to 4."
     echo "  --num-of-sources NUM            Setting number of sources to given input (default value is 12, maximum value is 16)"
+    echo "  --device-count NUM              Number of devices to use, maximum allowed is $max_devices"
     echo "  --print-gst-launch              Print the ready gst-launch command without running it"
     exit 0
 }
@@ -52,6 +71,19 @@ function parse_args() {
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
             additional_parameters="-v | grep hailo_display"
+        elif [ $1 == "--network" ]; then
+            if [ $2 == "yolov8" ]; then
+                network_name="yolov8m"
+                hef_path="$RESOURCES_DIR/yolov8m.hef"
+            elif [ $2 == "yolox" ]; then
+                network_name="yolox"
+                hef_path="$RESOURCES_DIR/yolovx_l_leaky.hef"
+            elif [ $2 != "yolov5" ]; then
+                echo "Received invalid network: $2. See expected arguments below:"
+                print_usage
+                exit 1
+            fi
+            shift
         elif [ "$1" = "--set-live-source" ]; then
             shift
             echo "Setting live_src to $1"
@@ -60,6 +92,17 @@ function parse_args() {
             shift
             echo "Setting number of sources to $1"
             num_of_src=$1
+        elif [ "$1" = "--device-count" ]; then
+            device_count="$2"
+            re='^[1-9][0-9]*$'
+            if ! [[ $device_count =~ $re ]]; then
+                echo "Invaild argument: Requested $device_count devices is not a positive number."
+                exit 1
+            elif (($device_count > $max_devices)); then
+                echo "Invaild argument: Requested $device_count devices while only a maximum of $max_devices is allowed."
+                exit 1
+            fi
+            shift
         else
             echo "Received invalid argument: $1. See expected arguments below:"
             print_usage
@@ -106,9 +149,9 @@ function main() {
     pipeline="gst-launch-1.0 \
            hailoroundrobin mode=0 name=fun ! \
            queue name=hailo_pre_infer_q_0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-           hailonet hef-path=$HEF_PATH nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
+           hailonet hef-path=$hef_path device-count=$device_count scheduling-algorithm=0 nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
            queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-           hailofilter so-path=$POSTPROCESS_SO qos=false ! \
+           hailofilter function-name=$network_name so-path=$POSTPROCESS_SO qos=false ! \
            queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
            hailooverlay ! \
            hailostreamrouter name=sid $streamrouter_input_streams compositor name=comp start-time-selection=0 $compositor_locations ! \
@@ -117,6 +160,7 @@ function main() {
            fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
            $sources ${additional_parameters}"
 
+    echo "Running $network_name"
     echo ${pipeline}
     if [ "$print_gst_launch_only" = true ]; then
         exit 0
