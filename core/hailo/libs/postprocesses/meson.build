@@ -27,7 +27,7 @@ yolo_hailortpp_sources = [
 shared_library('yolo_hailortpp_post',
     yolo_hailortpp_sources,
     cpp_args : hailo_lib_args,
-    include_directories: [hailo_general_inc, include_directories('./')],
+    include_directories: [hailo_general_inc, include_directories('./'), rapidjson_inc],
     dependencies : post_deps,
     gnu_symbol_visibility : 'default',
     install: true,

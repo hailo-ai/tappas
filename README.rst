@@ -92,9 +92,12 @@ Installation
    * - Yocto installation
      - `Read more about Yocto installation <docs/installation/yocto.rst>`_
      - Yocto supported BSP's
-   * - Raspberry pi installation
-     - `Read more about Raspberry pi installation <docs/installation/raspberry-pi-install.rst>`_
-     - Raspberry Pi OS, Ubuntu 20.04
+   * - Raspberry Pi 4 installation
+     - `Read more about Raspberry Pi 4 installation <docs/installation/raspberry-pi-install.rst>`_
+     - Raspberry Pi OS
+   * - Raspberry Pi 5 installation
+     - `Read more about Raspberry Pi 5 installation <https://github.com/hailo-ai/hailo-rpi5-examples/blob/main/doc/install-raspberry-pi5.md>`_
+     - Raspberry Pi OS
 
 
 
@@ -350,6 +353,15 @@ The pipeline demonstrates another method for inference based decision making tha
 
 Changelog
 ----------
+
+**v3.29.1 (Aug 2024)**
+
+* Hailo-8:
+
+  * Updated infrastructure to better support Raspberry Pi 5
+  * Added an option to control Yolo (Detection) Hailort post-process parameters via a JSON configuration
+  * Semantic segmentation post-process now extracts the argmax tensor using Regular Expressions
+
 
 **v3.29.0 (July 2024)**
 

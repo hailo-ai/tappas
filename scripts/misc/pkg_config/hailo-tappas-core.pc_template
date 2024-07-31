@@ -1,21 +1,20 @@
-prefix=/opt/hailo/tappas
+prefix=/usr
 includedir=${prefix}/include
 arch=
 libdir=${prefix}/lib/${arch}-linux-gnu
-tappas_installation_dir=/opt/hailo/tappas
-tappas_libdir=${tappas_installation_dir}/lib/${arch}-linux-gnu
+tappas_libdir=${libdir}/hailo/tappas
 tappas_workspace=
-tappas_includedir=${tappas_installation_dir}/include
-tappas_sources=${tappas_workspace}/sources
+tappas_includedir=${includedir}/hailo/tappas
+tappas_sources=${tappas_includedir}/sources
 tappas_hailometa_includedir=${tappas_includedir}/gsthailometa
-tappas_postproc_includedir=${tappas_workspace}/core/hailo/libs/postprocesses
-tappas_postproc_lib_dir=${tappas_workspace}/apps/h8/gstreamer/libs/post_processes/
-tappas_general_includedir=${tappas_workspace}/core/hailo/general
-tappas_mat_includedir=${tappas_workspace}/core/hailo/plugins/common
-tappas_tracking_includedir=${tappas_workspace}/core/hailo/tracking
+tappas_postproc_includedir=${tappas_includedir}
+tappas_postproc_lib_dir=${tappas_libdir}/post_processes
+tappas_general_includedir=${tappas_includedir}/general
+tappas_mat_includedir=${tappas_includedir}/plugins/common
+tappas_tracking_includedir=${tappas_includedir}/tracking
 
 
-
+catch2_includedir=${tappas_sources}/Catch2/include
 cxxopts_includedir=${tappas_sources}/cxxopts/include
 pybind11_includedir=${tappas_sources}/pybind11/include
 rapidjson_includedir=${tappas_sources}/rapidjson/include
@@ -38,6 +37,7 @@ Cflags: -I${includedir} \
         -I${tappas_general_includedir} \
         -I${tappas_mat_includedir} \
         -I${tappas_tracking_includedir} \
+        -I${catch2_includedir} \
         -I${cxxopts_includedir} \
         -I${pybind11_includedir} \
         -I${rapidjson_includedir} \

@@ -2,6 +2,7 @@
 set -e
 
 skip_hailort=false
+core_only=false
 target_platform="x86"
 compile_num_cores=""
 gcc_version=12
@@ -32,6 +33,7 @@ function print_usage() {
   echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
   echo "  --download-apps-data   Comma separated list (without spaces) of apps to download data for. Does not work with option '--target-platform'"
   echo "  --list-apps            Show the list of available apps"
+  echo "  --core-only            Install tappas core only (no apps data)"
   exit 1
 }
 
@@ -41,6 +43,8 @@ function parse_args() {
       print_usage
     elif [ "$1" == "--skip-hailort" ]; then
       skip_hailort=true
+    elif [ "$1" == "--core-only" ]; then
+      core_only=true
     elif [ "$1" == "--target-platform" ]; then
       target_platform=$2
       platform_arg_passed=true
@@ -90,10 +94,13 @@ function python_venv_create_and_install() {
   pip3 install -r $TAPPAS_WORKSPACE/core/requirements/requirements.txt
   pip3 install -r $TAPPAS_WORKSPACE/core/requirements/gstreamer_requirements.txt
   pip3 install -r $TAPPAS_WORKSPACE/downloader/requirements.txt
-  if [[ ${apps_to_set} ]]; then
-    python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform --apps-list $apps_to_set
-  else
-    python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform
+  # if rpi5 (core_only) is set dont download apps data (TAPPAS Core mode)
+  if [ "$core_only" = false ]; then
+    if [[ ${apps_to_set} ]]; then
+      python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform --apps-list $apps_to_set
+    else
+      python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform
+    fi
   fi
 }
 

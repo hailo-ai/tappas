@@ -11,21 +11,22 @@ set -e
 
 readonly TAPPAS_INSTALLATION_DIR=/opt/hailo/tappas
 readonly TAPPAS_PKG_CONFIG_DIR=${TAPPAS_INSTALLATION_DIR}/pkgconfig
-readonly TAPPAS_PKG_CONFIG_FILE="hailo_tappas.pc"
 readonly TAPPAS_PKG_CONFIG_FILE_TEMPLATE="hailo_tappas.pc_template"
+readonly TAPPAS_CORE_PKG_CONFIG_FILE_TEMPLATE="hailo-tappas-core.pc_template"
+TAPPAS_PKG_CONFIG_FILE_BY_MODE=$TAPPAS_PKG_CONFIG_FILE_TEMPLATE
 readonly ARCH=$(uname -m)
 
 function print_usage(){
 cat << EOF
 
-    Usage: $0 --tappas-workspace TAPPAS_WORKSPACE_PATH --tappas-version VERSION
+    Usage: $0 --tappas-workspace TAPPAS_WORKSPACE_PATH --tappas-version VERSION [--core-only]
 
 EOF
   return 1
 }
 
 function parse_args(){
-  if [[ $# != 4 ]]; then
+  if [[ $# -lt 4 || $# -gt 6 ]]; then
       print_usage
   fi
   while test $# -gt 0; do
@@ -36,6 +37,9 @@ function parse_args(){
       shift 2
     elif [ "$1" == "--tappas-version" ]; then
       TAPPAS_VERSION=$2
+      shift 2
+    elif [ "$1" == "--core-only" ]; then
+      TAPPAS_PKG_CONFIG_FILE_BY_MODE=$TAPPAS_CORE_PKG_CONFIG_FILE_TEMPLATE
       shift 2
     else
       echo "Unknown parameters, exiting"
@@ -50,10 +54,11 @@ function prepare_pkg_config_dir(){
 }
 
 function update_pc_file(){
+  TAPPAS_PKG_CONFIG_FILE=${TAPPAS_PKG_CONFIG_FILE_BY_MODE%_template}
   sed "s|tappas_workspace=|tappas_workspace=${TAPPAS_WORKSPACE}|; \
         s|arch=|arch=${ARCH}|; \
         s|Version:|Version: ${TAPPAS_VERSION}|" \
-        pkg_config/${TAPPAS_PKG_CONFIG_FILE_TEMPLATE} > pkg_config/${TAPPAS_PKG_CONFIG_FILE}
+        pkg_config/${TAPPAS_PKG_CONFIG_FILE_BY_MODE} > pkg_config/${TAPPAS_PKG_CONFIG_FILE}
 }
 
 function copy_pc_file(){

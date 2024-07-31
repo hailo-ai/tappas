@@ -4,8 +4,6 @@ Run TAPPAS on Raspberry PI 4
 Overview
 --------
 
-Hailo supports both Ubuntu 20.04 and Raspberry Pi OS, our recommendation is to install TAPPAS on Raspberry Pi OS.
-
 This guide focuses on the installation of TAPPAS on Raspberry Pi OS.
 
 Preparing the Device
