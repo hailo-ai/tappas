@@ -76,7 +76,7 @@ std::string create_pipeline_string(std::string codec)
         output_format = "h264";
     }
 
-    pipeline = "v4l2src name=src_element num-buffers=500 device=/dev/video0 io-mode=mmap ! "
+    pipeline = "v4l2src name=src_element num-buffers=500 device=/dev/video0 io-mode=dmabuf ! "
                 "video/x-raw,format=NV12,width=3840,height=2160, framerate=30/1 ! "
                 "queue leaky=no max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! "
                 "tee name=t t. ! "

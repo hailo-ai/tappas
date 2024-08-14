@@ -33,7 +33,7 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
     if (counter % 200 == 0) {
         // get properties
         gpointer value = nullptr;
-        g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
+        g_object_get(G_OBJECT(encoder_element), "user-config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
         hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
 
@@ -54,7 +54,7 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
             hailo_config.rate_control.bitrate.target_bitrate = BITRATE_FOR_CBR;
             hailo_config.rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_CBR;
         }
-        g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
+        g_object_set(G_OBJECT(encoder_element), "user-config", config, NULL);
     }
 
     gst_object_unref(encoder_element);
@@ -84,7 +84,7 @@ std::string create_pipeline_string(std::string codec)
         output_format = "h264";
     }
 
-    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=mmap ! "
+    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=dmabuf ! "
                "video/x-raw,format=NV12,width=1920,height=1080, framerate=30/1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "hailoencoder config-file-path=" + config_file_path + " name=enco ! " + codec + "parse config-interval=-1 ! "
@@ -150,13 +150,13 @@ void set_starting_config(GstElement *pipeline)
     // Error getting properties from encoder
     encoder_config_t config;
     hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(config);
-    g_object_get(G_OBJECT(encoder), "config", &config, NULL);
+    g_object_get(G_OBJECT(encoder), "user-config", &config, NULL);
     // Configuring starting config
     hailo_config.rate_control.picture_rc = PICTURE_RC_ON;
     hailo_config.rate_control.ctb_rc = true;
     hailo_config.rate_control.bitrate.target_bitrate = BITRATE_FOR_CBR;
     hailo_config.rate_control.bitrate.tolerance_moving_bitrate = TOL_MOVING_BITRATE_FOR_CBR;
-    g_object_set(G_OBJECT(encoder), "config", config, NULL);
+    g_object_set(G_OBJECT(encoder), "user-config", config, NULL);
     // free resources
     gst_object_unref(encoder);
 }

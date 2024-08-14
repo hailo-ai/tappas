@@ -24,36 +24,36 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
     counter++;
     if (counter % 600 == 200) {
         gpointer value = nullptr;
-        g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
+        g_object_get(G_OBJECT(encoder_element), "user-config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
         hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         GST_INFO("Changing to low qp");
         hailo_config.rate_control.quantization.qp_min = 3;
         hailo_config.rate_control.quantization.qp_max = 10;
         hailo_config.rate_control.quantization.qp_hdr = 5;
-        g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
+        g_object_set(G_OBJECT(encoder_element), "user-config", config, NULL);
     }
     else if (counter % 600 == 400) {
         gpointer value = nullptr;
-        g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
+        g_object_get(G_OBJECT(encoder_element), "user-config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
         hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         GST_INFO("Changing to high qp");
         hailo_config.rate_control.quantization.qp_min = 43;
         hailo_config.rate_control.quantization.qp_max = 49;
         hailo_config.rate_control.quantization.qp_hdr = 45;
-        g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
+        g_object_set(G_OBJECT(encoder_element), "user-config", config, NULL);
     }
     else if (counter % 600 == 0) {
         gpointer value = nullptr;
-        g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
+        g_object_get(G_OBJECT(encoder_element), "user-config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
         hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         GST_INFO("Changing to variant qp");
         hailo_config.rate_control.quantization.qp_min = 0;
         hailo_config.rate_control.quantization.qp_max = 51;
         hailo_config.rate_control.quantization.qp_hdr = 26;
-        g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
+        g_object_set(G_OBJECT(encoder_element), "user-config", config, NULL);
     }
 
     gst_object_unref(encoder_element);
@@ -83,7 +83,7 @@ std::string create_pipeline_string(std::string codec)
         config_file_path = "/home/root/apps/encoder_pipelines_new_api/configs/encoder_sink_fhd_h264.json";
         output_format = "h264";
     }
-    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=mmap ! "
+    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=dmabuf ! "
                "video/x-raw,format=NV12,width=1920,height=1080, framerate=30/1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "hailoencoder config-file-path=" + config_file_path + " name=enco ! " + codec + "parse config-interval=-1 ! "

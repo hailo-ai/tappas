@@ -88,7 +88,7 @@ parse_args $@
 
 UDP_SINK="udpsink host=$udp_host_ip port=$udp_port"
 PIPELINE=""
-BASE_PIPELINE="v4l2src device=$input_source io-mode=mmap $property_num_buffers ! video/x-raw,format=NV12,width=3840,height=2160, framerate=$framerate ! \
+BASE_PIPELINE="v4l2src device=$input_source io-mode=dmabuf $property_num_buffers ! video/x-raw,format=NV12,width=3840,height=2160, framerate=$framerate ! \
     queue leaky=downstream max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailofrontend config-file-path=$frontend_config_file_path name=frontend \
     frontend. ! \

@@ -104,7 +104,7 @@ function parse_args() {
 
 init_variables $@
 parse_args $@
-source_element="v4l2src io-mode=mmap device=/dev/video0 name=src_0 ! video/x-raw, width=1920, height=1080, format=RGB"
+source_element="v4l2src io-mode=dmabuf device=/dev/video0 name=src_0 ! video/x-raw, width=1920, height=1080, format=RGB"
 internal_offset=true
 
 function create_lp_detection_pipeline() {

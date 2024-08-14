@@ -23,7 +23,7 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
 
     if (counter % 400 == 200) {
         gpointer value = nullptr;
-        g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
+        g_object_get(G_OBJECT(encoder_element), "user-config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
         hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         hailo_config.coding_control.roi_area1.enable = true;
@@ -33,11 +33,11 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         hailo_config.coding_control.roi_area1.bottom = 500;
         hailo_config.coding_control.roi_area1.qp_delta = 20;
         GST_INFO("Changing ROI to (200,200,500,500,20)");
-        g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
+        g_object_set(G_OBJECT(encoder_element), "user-config", config, NULL);
     }
     else if (counter % 400 == 0) {
         gpointer value = nullptr;
-        g_object_get(G_OBJECT(encoder_element), "config", &value, NULL);
+        g_object_get(G_OBJECT(encoder_element), "user-config", &value, NULL);
         encoder_config_t *config = reinterpret_cast<encoder_config_t *>(value);
         hailo_encoder_config_t hailo_config = std::get<hailo_encoder_config_t>(*config);
         hailo_config.coding_control.roi_area1.enable = true;
@@ -47,7 +47,7 @@ static GstPadProbeReturn encoder_probe_callback(GstPad *pad, GstPadProbeInfo *in
         hailo_config.coding_control.roi_area1.bottom = 900;
         hailo_config.coding_control.roi_area1.qp_delta = 5;
         GST_INFO("Changing ROI to (700:700:900:900:5)");
-        g_object_set(G_OBJECT(encoder_element), "config", config, NULL);
+        g_object_set(G_OBJECT(encoder_element), "user-config", config, NULL);
     }
     counter++;
 
@@ -77,7 +77,7 @@ std::string create_pipeline_string(std::string codec)
         config_file_path = "/home/root/apps/encoder_pipelines_new_api/configs/encoder_sink_fhd_h264.json";
         output_format = "h264";
     }
-    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=mmap ! "
+    pipeline = "v4l2src name=src_element device=/dev/video0 io-mode=dmabuf ! "
                "video/x-raw,format=NV12,width=1920,height=1080, framerate=30/1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "hailoencoder config-file-path=" + config_file_path + " name=enco ! " + codec + "parse config-interval=-1 ! "

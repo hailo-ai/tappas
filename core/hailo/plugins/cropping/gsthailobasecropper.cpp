@@ -666,8 +666,10 @@ static gboolean dsp_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, cv::
     create_dsp_buffer_from_video_frame(&output_video_frame, output_image_properties);
 
     // Perform the crop and resize
-    dsp_status result = dsp_utils::perform_crop_and_resize(&input_image_properties, &output_image_properties, crop_resize_dims,
-                                                    get_dsp_interpolation_type_from_cv(hailo_basecropper, cv::InterpolationFlags::INTER_LINEAR));
+    dsp_status result = dsp_utils::perform_crop_and_resize(&input_image_properties, &output_image_properties,
+                                                            crop_resize_dims,
+                                                            get_dsp_interpolation_type_from_cv(hailo_basecropper, cv::InterpolationFlags::INTER_LINEAR),
+                                                            std::nullopt);
 
     // Free resources
     dsp_utils::free_image_property_planes(&input_image_properties);

@@ -95,7 +95,7 @@ std::string create_pipeline_string(std::string codec)
                         "ctb-rc=1";
                         
 
-    pipeline = "v4l2src name=src_element num-buffers=900 device=/dev/video0 io-mode=mmap ! "
+    pipeline = "v4l2src name=src_element num-buffers=900 device=/dev/video0 io-mode=dmabuf ! "
                "video/x-raw,format=NV12,width=1920,height=1080, framerate=30/1 ! "
                "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
                "hailo" + codec + "enc name=enco " + encoder_arguments + " ! " + codec + "parse config-interval=-1 ! "

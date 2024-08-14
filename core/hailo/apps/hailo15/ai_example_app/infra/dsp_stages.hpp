@@ -138,7 +138,7 @@ public:
             auto &dims = crop_resize_dims[i];
             
             HailoMediaLibraryBufferPtr cropped_buffer = std::make_shared<hailo_media_library_buffer>();
-            if (m_buffer_pool->acquire_buffer(*cropped_buffer) != MEDIA_LIBRARY_SUCCESS)
+            if (m_buffer_pool->acquire_buffer(cropped_buffer) != MEDIA_LIBRARY_SUCCESS)
             {
                 std::cerr << "Failed to acquire buffer" << std::endl;
                 return AppStatus::DSP_OPERATION_ERROR;
@@ -184,7 +184,6 @@ public:
             // Set the ROI of the cropped buffer to the scale of the parent ROI
             // Note, this will make overlay incorrect if the bboxes are not flattened
             cropped_buffer_ptr->get_roi()->set_scaling_bbox(get_crop_bbox(i));
-            cropped_buffers[i]->decrease_ref_count();
             cropped_buffer_ptr->add_time_stamp(m_stage_name+"_"+ std::to_string(i));
 
             send_to_specific_subsciber(m_sub_subscriber, cropped_buffer_ptr);
