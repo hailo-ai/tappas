@@ -1,4 +1,12 @@
 {
+    "input_video": {
+        "resolution": {
+            "width": 3840,
+            "height": 2160,
+            "framerate": 30
+        },
+        "source": "/dev/video0"
+    },
     "output_video": {
         "method": "INTERPOLATION_TYPE_BILINEAR",
         "format": "IMAGE_FORMAT_NV12",
@@ -40,8 +48,7 @@
         "enabled": true,
         "color_interpolation": "INTERPOLATION_TYPE_BILINEAR",
         "sensor_calib_path": "/home/root/apps/resources/cam_intrinsics.txt",
-        "camera_type": "CAMERA_TYPE_PINHOLE",
-        "camera_fov": -1
+        "camera_type": "CAMERA_TYPE_PINHOLE"
     },
     "dis": {
         "enabled": false,
@@ -53,6 +60,7 @@
         "black_corners_correction_enabled": true,
         "black_corners_threshold": 0.5,
         "average_luminance_threshold": 0,
+        "camera_fov_factor": 1,
         "angular_dis": {
             "enabled": false,
             "vsm": {
@@ -69,6 +77,22 @@
             "fix_stabilization_longitude": 0.0,
             "fix_stabilization_latitude": 0.0
         }
+    },
+    "eis": {
+        "enabled": false,
+        "eis_config_path": "/home/root/apps/resources/final_calibration.json",
+        "window_size": 10,
+        "rotational_smoothing_coefficient": 0.0,
+        "iir_hpf_coefficient": 0.997,
+        "camera_fov_factor": 0.85,
+        "line_readout_time": 7410
+    },
+    "gyro":
+    {
+        "enabled": false,
+        "sensor_name": "lsm6dsr_gyro",
+        "sensor_frequency": "833.000000",
+        "scale": 0.000152716
     },
     "gmv": {
         "source": "isp",
@@ -97,15 +121,15 @@
         "enabled": false,
         "direction": "FLIP_DIRECTION_VERTICAL"
     },
+    "isp": {
+        "auto-configuration": true
+    },
     "hailort": {
         "device-id": "device0"
     },
     "hdr": {
         "enabled": false,
-        "dol": 3,
-        "resolution": "4k",
-        "lsRatio": 23.7,
-        "vsRatio": 6.25
+        "dol": 3
     },
     "denoise": {
         "enabled": false,

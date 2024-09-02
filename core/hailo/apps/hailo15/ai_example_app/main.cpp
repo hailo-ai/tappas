@@ -204,7 +204,6 @@ void subscribe_elements(std::shared_ptr<AppResources> app_resources)
             {
                 BufferPtr wrapped_buffer = std::make_shared<Buffer>(buffer);
                 app_resources->pipeline->get_stage_by_name(TILLING_STAGE)->push(wrapped_buffer, s.id);
-                buffer->decrease_ref_count();
             };
         }
         else if (s.id == AI_VISION_SINK)
@@ -218,7 +217,6 @@ void subscribe_elements(std::shared_ptr<AppResources> app_resources)
                 CroppingMetadataPtr cropping_meta = std::make_shared<CroppingMetadata>(4);
                 wrapped_buffer->add_metadata(cropping_meta);
                 agg_stage->push(wrapped_buffer, s.id);
-                buffer->decrease_ref_count();                                                        
             };           
             // subscribe aggregator to post stage as subframe
             ConnectedStagePtr post_stage = std::static_pointer_cast<ConnectedStage>(app_resources->pipeline->get_stage_by_name(POST_STAGE));
@@ -230,7 +228,6 @@ void subscribe_elements(std::shared_ptr<AppResources> app_resources)
             fe_callbacks[s.id] = [s, app_resources](HailoMediaLibraryBufferPtr buffer, size_t size)
             {
                 app_resources->encoders[s.id]->add_buffer(buffer);
-                buffer->decrease_ref_count();
             };
         }
     }
@@ -264,7 +261,6 @@ void subscribe_elements(std::shared_ptr<AppResources> app_resources)
             if (app_resources->print_latency) {
                 app_resources->pipeline->print_latency();
             }
-            data->get_buffer()->increase_ref_count();
             app_resources->encoders[AI_VISION_SINK]->add_buffer(data->get_buffer());
         });
 }
@@ -487,7 +483,7 @@ int main(int argc, char *argv[])
         // Stop pipeline
         stop_app(app_resources);
         // terminate program  
-        exit(signal); 
+        exit(0); 
     });
 
     // Parse user arguments

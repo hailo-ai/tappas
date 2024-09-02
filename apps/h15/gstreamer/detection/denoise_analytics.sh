@@ -11,16 +11,17 @@ function init_variables() {
     readonly DEFAULT_VIDEO_SOURCE="/dev/video0"
     readonly DEFAULT_HEF_PATH="${RESOURCES_DIR}/yolov5m_wo_spp_60p_nv12_640.hef"
     readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/denoise_analytics_frontend_config.json"
+    readonly DEFAULT_ENCODER_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/denoise_analytics_encoder_config.json"
     readonly DEFAULT_UDP_PORT=5000
     readonly DEFAULT_UDP_HOST_IP="10.0.0.2"
     readonly DEFAULT_FRAMERATE="30/1"
-    readonly DEFAULT_BITRATE=10000000
 
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_name=$DEFAULT_NETWORK_NAME
     input_source=$DEFAULT_VIDEO_SOURCE
     hef_path=$DEFAULT_HEF_PATH
     frontend_config_file_path=$DEFAULT_FRONTEND_CONFIG_FILE_PATH
+    encoder_config_file_path=$DEFAULT_ENCODER_CONFIG_FILE_PATH
     udp_port=$DEFAULT_UDP_PORT
     udp_host_ip=$DEFAULT_UDP_HOST_IP
     sync_pipeline=false
@@ -28,19 +29,10 @@ function init_variables() {
     framerate=$DEFAULT_FRAMERATE
     max_buffers_size=3
 
-    bitrate=$DEFAULT_BITRATE
     encoding_hrd="hrd=false"
 
     print_gst_launch_only=false
     additional_parameters=""
-
-    # Limit the encoding bitrate to 20Mbps to support weak host.
-    # Comment this out if you encounter a large latency in the host side
-    # Tune the value down to reach the desired latency (will decrease the video quality).
-    # ----------------------------------------------
-    # bitrate=20000000
-    # encoding_hrd="hrd=true hrd-cpb-size=$bitrate"
-    # ----------------------------------------------
 }
 
 function print_usage() {
@@ -118,7 +110,7 @@ PIPELINE="gst-launch-1.0 \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
     hailooverlay qos=false ! \
     queue leaky=no max-size-buffers=$max_buffers_size max-size-bytes=0 max-size-time=0 ! \
-    hailoh264enc bitrate=$bitrate $encoding_hrd ! h264parse config-interval=-1 ! \
+    hailoencodebin config-file-path=$encoder_config_file_path ! h264parse config-interval=-1 ! \
     video/x-h264,framerate=$framerate ! \
     tee name=udp_tee \
     udp_tee. ! \

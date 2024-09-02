@@ -98,28 +98,21 @@ Lets look at the Buffer class in more detail:
     **MetadataPtr** and **TimeStampPtr**. The **HailoMediaLibraryBufferPtr** is the image data, the **HailoROIPtr** is 
     the inference results, and the vectors are for metadata and timestamps.
 
-    Let's take a look at the construction/destruction:
+    Let's take a look at the construction:
 
         .. code-block:: cpp
 
             Buffer(HailoMediaLibraryBufferPtr buffer)
                 : m_buffer(buffer) 
             {
-                m_buffer->increase_ref_count();
                 m_roi = std::make_shared<HailoROI>(HailoROI(HailoBBox(0.0f, 0.0f, 1.0f, 1.0f)));
                 TimeStampPtr time_stamp =  std::make_shared<TimeStamp>("Source");
                 m_timestamps.push_back(time_stamp);
             }
 
-            ~Buffer() {
-                m_buffer->decrease_ref_count();
-            }
-
     Note that the constructor takes a pre-existing **HailoMediaLibraryBufferPtr** as input. This is becuase we will recieve
     one as the output to the Media Library Frontend and Encoder modules. The constructor also creates a **HailoROI** object
     with default values and a **TimeStamp** object with the name "Source", indicating timestamp for this buffer's source.
-    It also increases the reference count of the **HailoMediaLibraryBufferPtr** to prevent it from being deallocated, and decreases the ref count
-    when this buffer is destroyed. Isolating the refcount management to the Buffer class allows us to more easily manage the lifetime of the **HailoMediaLibraryBufferPtr**.
     If we pass a shared pointer to this Buffer class between stages, then it will naturally manage the lifetime of the **HailoMediaLibraryBufferPtr** as needed:
 
         .. code-block:: cpp
@@ -819,7 +812,6 @@ The subscribe_elements() function implements the figure shown above:
                         {
                             BufferPtr wrapped_buffer = std::make_shared<Buffer>(buffer);
                             app_resources->pipeline->get_stage_by_name(TILLING_STAGE)->push(wrapped_buffer, s.id);
-                            buffer->decrease_ref_count();
                         };
                     }
                     else if (s.id == AI_VISION_SINK)
@@ -833,7 +825,6 @@ The subscribe_elements() function implements the figure shown above:
                             CroppingMetadataPtr cropping_meta = std::make_shared<CroppingMetadata>(4);
                             wrapped_buffer->add_metadata(cropping_meta);
                             agg_stage->push(wrapped_buffer, s.id);
-                            buffer->decrease_ref_count();                                                        
                         };           
                         // subscribe aggregator to post stage as subframe
                         ConnectedStagePtr post_stage = std::static_pointer_cast<ConnectedStage>(app_resources->pipeline->get_stage_by_name(POST_STAGE));
@@ -845,7 +836,6 @@ The subscribe_elements() function implements the figure shown above:
                         fe_callbacks[s.id] = [s, app_resources](HailoMediaLibraryBufferPtr buffer, size_t size)
                         {
                             app_resources->encoders[s.id]->add_buffer(buffer);
-                            buffer->decrease_ref_count();
                         };
                     }
                 }
@@ -863,7 +853,6 @@ The subscribe_elements() function implements the figure shown above:
             {
                 BufferPtr wrapped_buffer = std::make_shared<Buffer>(buffer);
                 app_resources->pipeline->get_stage_by_name(TILLING_STAGE)->push(wrapped_buffer, s.id);
-                buffer->decrease_ref_count();
             };
 
     We then connect the encoder modules to their respective UDP modules:
@@ -902,7 +891,6 @@ The subscribe_elements() function implements the figure shown above:
                         if (app_resources->print_latency) {
                             app_resources->pipeline->print_latency();
                         }
-                        data->get_buffer()->increase_ref_count();
                         app_resources->encoders[AI_VISION_SINK]->add_buffer(data->get_buffer());
                     });
             }

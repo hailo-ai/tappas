@@ -228,7 +228,14 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
                      output_frame_ptr->hailo_pix_buffer->width, output_frame_ptr->hailo_pix_buffer->height);
 
     // Perform the resize operation on the DSP
-    dsp_status result = dsp_utils::perform_resize(input_frame_ptr->hailo_pix_buffer.get(), output_frame_ptr->hailo_pix_buffer.get(), INTERPOLATION_TYPE_BILINEAR, hailovideoscale->use_letterbox);
+
+    dsp_letterbox_properties_t letterbox_params{
+        .alignment = hailovideoscale->use_letterbox ? DSP_LETTERBOX_MIDDLE : DSP_NO_LETTERBOX,
+        .color = {.y = 0, .u = 128, .v = 128}, // Black letterbox border
+    };
+
+    dsp_status result = dsp_utils::perform_resize(input_frame_ptr->hailo_pix_buffer.get(), output_frame_ptr->hailo_pix_buffer.get(), 
+                                                  INTERPOLATION_TYPE_BILINEAR, letterbox_params);
 
     if (result != DSP_SUCCESS)
     {
@@ -239,9 +246,6 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
     HailoROIPtr hailo_roi = get_hailo_main_roi(outbuf, true);
     auto scailing_bbox = calculate_scale_bbox(input_frame_ptr->hailo_pix_buffer.get(), output_frame_ptr->hailo_pix_buffer.get());
     hailo_roi->set_scaling_bbox(scailing_bbox);
-
-    input_frame_ptr->decrease_ref_count();
-    output_frame_ptr->decrease_ref_count();
 
     gst_caps_unref(incaps);
     gst_caps_unref(outcaps);

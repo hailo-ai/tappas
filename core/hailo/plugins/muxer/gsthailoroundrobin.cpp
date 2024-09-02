@@ -778,9 +778,7 @@ gst_hailo_round_robin_sink_event(GstPad *pad, GstObject *parent, GstEvent *event
             GST_OBJECT_LOCK(hailo_round_robin);
             fpad->got_eos = TRUE;
             hailo_round_robin->condition_vars_blocking[pad_num]->notify_all();
-            hailo_round_robin->condition_vars_blocking[pad_num] = NULL;
             hailo_round_robin->condition_vars_non_blocking[pad_num]->notify_all();
-            hailo_round_robin->condition_vars_non_blocking[pad_num] = NULL;
             forward = gst_hailo_round_robin_all_sinkpads_eos_unlocked(hailo_round_robin);
             GST_OBJECT_UNLOCK(hailo_round_robin);
         }

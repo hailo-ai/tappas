@@ -216,7 +216,7 @@ public:
             // Acquire a buffer for this tensor output from the corresponding buffer pool
             HailoMediaLibraryBufferPtr tensor_buffer = std::make_shared<hailo_media_library_buffer>();
             BufferPtr tensor_buffer_ptr = std::make_shared<Buffer>(tensor_buffer);
-            if (m_tensor_buffer_pools[output.name()]->acquire_buffer(*tensor_buffer) != MEDIA_LIBRARY_SUCCESS)
+            if (m_tensor_buffer_pools[output.name()]->acquire_buffer(tensor_buffer) != MEDIA_LIBRARY_SUCCESS)
             {
                 std::cerr << "Failed to acquire buffer" << std::endl;
                 return AppStatus::BUFFER_ALLOCATION_ERROR;

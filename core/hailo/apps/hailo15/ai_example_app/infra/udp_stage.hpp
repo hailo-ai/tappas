@@ -285,11 +285,9 @@ struct UdpPtrWrapper
     HailoMediaLibraryBufferPtr ptr;
 };
 
-static inline bool hailo_media_library_udp_unref(UdpPtrWrapper *wrapper)
+static inline void hailo_media_library_udp_release(UdpPtrWrapper *wrapper)
 {
-    HailoMediaLibraryBufferPtr buffer = wrapper->ptr;
     delete wrapper;
-    return buffer->decrease_ref_count();
 }
 
 AppStatus UdpModule::add_buffer(HailoMediaLibraryBufferPtr ptr, size_t size)
@@ -300,7 +298,7 @@ AppStatus UdpModule::add_buffer(HailoMediaLibraryBufferPtr ptr, size_t size)
     GstBuffer *gst_buffer = gst_buffer_new_wrapped_full(GST_MEMORY_FLAG_PHYSICALLY_CONTIGUOUS,
                                                         ptr->get_plane(0),
                                                         ptr->get_plane_size(0),
-                                                        0, size, wrapper, GDestroyNotify(hailo_media_library_udp_unref));
+                                                        0, size, wrapper, GDestroyNotify(hailo_media_library_udp_release));
     gst_buffer_add_hailo_buffer_meta(gst_buffer, ptr, size);
     
     GstFlowReturn ret = this->add_buffer_internal(gst_buffer);

@@ -118,7 +118,6 @@ public:
     Buffer(HailoMediaLibraryBufferPtr buffer)
         : m_buffer(buffer) 
     {
-        m_buffer->increase_ref_count();
         m_roi = std::make_shared<HailoROI>(HailoROI(HailoBBox(0.0f, 0.0f, 1.0f, 1.0f)));
         TimeStampPtr time_stamp =  std::make_shared<TimeStamp>("Source");
         m_timestamps.push_back(time_stamp);
@@ -128,16 +127,11 @@ public:
     Buffer(HailoMediaLibraryBufferPtr buffer, HailoROIPtr roi)
         : m_buffer(buffer) 
     {
-        m_buffer->increase_ref_count();
         if (roi) {
             m_roi = roi;
         } else {
             m_roi = std::make_shared<HailoROI>(HailoROI(HailoBBox(0.0f, 0.0f, 1.0f, 1.0f)));
         }
-    }
-
-    ~Buffer() {
-        m_buffer->decrease_ref_count();
     }
 
     HailoMediaLibraryBufferPtr get_buffer() const {
