@@ -152,7 +152,7 @@ gst_hailo_videoscale_transform_caps(GstBaseTransform *trans,
     return res_caps;
 }
 
-static HailoBBox calculate_scale_bbox(dsp_image_properties_t *input_image, dsp_image_properties_t *output_image)
+static HailoBBox calculate_scale_bbox(HailoBufferDataPtr input_image, HailoBufferDataPtr output_image)
 {
     // Calculate the scaling ratio
     float ratio = std::min(float(output_image->width) / input_image->width,
@@ -224,8 +224,8 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
 
     GST_DEBUG_OBJECT(hailovideoscale, "DSP Resize: Input Width: %ld, Height: %ld. \
                                         Resize target Width: %ld Height: %ld",
-                     input_frame_ptr->hailo_pix_buffer->width, input_frame_ptr->hailo_pix_buffer->height,
-                     output_frame_ptr->hailo_pix_buffer->width, output_frame_ptr->hailo_pix_buffer->height);
+                     input_frame_ptr->buffer_data->width, input_frame_ptr->buffer_data->height,
+                     output_frame_ptr->buffer_data->width, output_frame_ptr->buffer_data->height);
 
     // Perform the resize operation on the DSP
 
@@ -234,7 +234,7 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
         .color = {.y = 0, .u = 128, .v = 128}, // Black letterbox border
     };
 
-    dsp_status result = dsp_utils::perform_resize(input_frame_ptr->hailo_pix_buffer.get(), output_frame_ptr->hailo_pix_buffer.get(), 
+    dsp_status result = dsp_utils::perform_resize(input_frame_ptr->buffer_data.get(), output_frame_ptr->buffer_data.get(), 
                                                   INTERPOLATION_TYPE_BILINEAR, letterbox_params);
 
     if (result != DSP_SUCCESS)
@@ -244,7 +244,7 @@ gst_hailo_videoscale_transform(GstBaseTransform *base_transform, GstBuffer *inbu
     }
 
     HailoROIPtr hailo_roi = get_hailo_main_roi(outbuf, true);
-    auto scailing_bbox = calculate_scale_bbox(input_frame_ptr->hailo_pix_buffer.get(), output_frame_ptr->hailo_pix_buffer.get());
+    auto scailing_bbox = calculate_scale_bbox(input_frame_ptr->buffer_data, output_frame_ptr->buffer_data);
     hailo_roi->set_scaling_bbox(scailing_bbox);
 
     gst_caps_unref(incaps);

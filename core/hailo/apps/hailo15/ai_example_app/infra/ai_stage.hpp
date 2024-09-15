@@ -124,8 +124,8 @@ public:
         for (auto &output : m_infer_model->outputs()) {
             size_t tensor_size = output.get_frame_size();
             std::string tensor_name = m_stage_name + "/" + output.name();
-            m_tensor_buffer_pools[output.name()] = std::make_shared<MediaLibraryBufferPool>(tensor_size, 1, DSP_IMAGE_FORMAT_GRAY8,
-                                                                                             m_output_pool_size, CMA, tensor_size, tensor_name);
+            m_tensor_buffer_pools[output.name()] = std::make_shared<MediaLibraryBufferPool>(tensor_size, 1, HAILO_FORMAT_GRAY8,
+                                                                                             m_output_pool_size, HAILO_MEMORY_TYPE_DMABUF, tensor_size, tensor_name);
             if (m_tensor_buffer_pools[output.name()]->init() != MEDIA_LIBRARY_SUCCESS)
             {
                 return AppStatus::BUFFER_ALLOCATION_ERROR;
@@ -177,10 +177,10 @@ public:
      */
     AppStatus set_pix_buf(const HailoMediaLibraryBufferPtr buffer)
     {
-        auto y_plane_buffer = buffer->get_plane(0);
+        auto y_plane_buffer = buffer->get_plane_ptr(0);
         uint32_t y_plane_size = buffer->get_plane_size(0);
 
-        auto uv_plane_buffer = buffer->get_plane(1);
+        auto uv_plane_buffer = buffer->get_plane_ptr(1);
         uint32_t uv_plane_size = buffer->get_plane_size(1);
 
         hailo_pix_buffer_t pix_buffer{};
@@ -227,7 +227,7 @@ public:
 
             // Set the HailoRT bindings for the acquired buffer
             size_t tensor_size = output.get_frame_size();
-            auto status = m_bindings.output(output.name())->set_buffer(hailort::MemoryView(tensor_buffer->get_plane(0), tensor_size));
+            auto status = m_bindings.output(output.name())->set_buffer(hailort::MemoryView(tensor_buffer->get_plane_ptr(0), tensor_size));
             if (HAILO_SUCCESS != status) {
                 std::cerr << m_stage_name << " failed to set infer output buffer "<< output.name() << ", Hailort status = " << status << std::endl;
                 return AppStatus::HAILORT_ERROR;
@@ -269,7 +269,7 @@ public:
                 input_buffer->add_metadata(tensor_metadata);
 
                 // Add the vstream info and data pointer to the HailoRoi for later use (postprocessing)
-                input_buffer->get_roi()->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(tensor_buffer->get_buffer()->get_plane(0)), 
+                input_buffer->get_roi()->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(tensor_buffer->get_buffer()->get_plane_ptr(0)), 
                                                                                   m_vstream_infos[output.name()]));
             }
 

@@ -23,6 +23,7 @@
 #include "infra/overlay_stage.hpp"
 #include "infra/udp_stage.hpp"
 #include "infra/tracker_stage.hpp"
+#include "infra/aggregator_stage.hpp"
 
 #define FRONTEND_CONFIG_FILE "/home/root/apps/ai_example_app/resources/configs/frontend_config.json"
 #define ENCODER_OSD_CONFIG_FILE(id) get_encoder_osd_config_file(id)
@@ -210,17 +211,13 @@ void subscribe_elements(std::shared_ptr<AppResources> app_resources)
         {
             std::cout << "subscribing to frontend for '" << s.id << "'" << std::endl;
             ConnectedStagePtr agg_stage = std::static_pointer_cast<ConnectedStage>(app_resources->pipeline->get_stage_by_name(AGGREGATOR_STAGE));
-            agg_stage->add_queue(s.id);
             fe_callbacks[s.id] = [s, app_resources, agg_stage](HailoMediaLibraryBufferPtr buffer, size_t size)
             {                      
                 BufferPtr wrapped_buffer = std::make_shared<Buffer>(buffer);
                 CroppingMetadataPtr cropping_meta = std::make_shared<CroppingMetadata>(4);
                 wrapped_buffer->add_metadata(cropping_meta);
                 agg_stage->push(wrapped_buffer, s.id);
-            };           
-            // subscribe aggregator to post stage as subframe
-            ConnectedStagePtr post_stage = std::static_pointer_cast<ConnectedStage>(app_resources->pipeline->get_stage_by_name(POST_STAGE));
-            post_stage->add_subscriber(agg_stage);
+            };
         }
         else
         {
@@ -424,16 +421,22 @@ void create_pipeline(std::shared_ptr<AppResources> app_resources)
                                                                                         "", DETECTION_AI_STAGE, 5, false, app_resources->print_fps);
     std::shared_ptr<HailortAsyncStage> detection_stage = std::make_shared<HailortAsyncStage>(DETECTION_AI_STAGE, YOLO_HEF_FILE, 4, 40 ,"device0", 4, 4, std::chrono::milliseconds(100), app_resources->print_fps);
     std::shared_ptr<PostprocessStage> detection_post_stage = std::make_shared<PostprocessStage>(POST_STAGE, YOLO_POST_SO, YOLO_FUNC_NAME, "", 5, false, app_resources->print_fps);
-    std::shared_ptr<AggregatorStage> agg_stage = std::make_shared<AggregatorStage>(AGGREGATOR_STAGE, false, 5, false, app_resources->print_fps);
+    std::shared_ptr<AggregatorStage> agg_stage = std::make_shared<AggregatorStage>(AGGREGATOR_STAGE, false, 
+                                                                                   AI_VISION_SINK, 2, 
+                                                                                   POST_STAGE, 8, 
+                                                                                   false, app_resources->print_fps);
+    std::shared_ptr<TrackerStage> tracker_stage = std::make_shared<TrackerStage>(TRACKER_STAGE, 1, false, -1, app_resources->print_fps);
     std::shared_ptr<BBoxCropStage> bbox_crop_stage = std::make_shared<BBoxCropStage>(BBOX_CROP_STAGE, 100, BBOX_CROP_INPUT_WIDTH, BBOX_CROP_INPUT_HEIGHT,
                                                                                     BBOX_CROP_OUTPUT_WIDTH, BBOX_CROP_OUTPUT_HEIGHT,
-                                                                                    AGGREGATOR_STAGE_2, LANDMARKS_AI_STAGE, BBOX_CROP_LABEL, 3, false, app_resources->print_fps);
-    std::shared_ptr<OverlayStage> overlay_stage = std::make_shared<OverlayStage>(OVERLAY_STAGE, 1, false, app_resources->print_fps);
-    std::shared_ptr<AggregatorStage> agg_stage_2 = std::make_shared<AggregatorStage>(AGGREGATOR_STAGE_2, false, 20 , false, app_resources->print_fps);
-    std::shared_ptr<CallbackStage> sink_stage = std::make_shared<CallbackStage>(AI_CALLBACK_STAGE, 2, false);
-    std::shared_ptr<TrackerStage> tracker_stage = std::make_shared<TrackerStage>(TRACKER_STAGE, 1, false, -1, app_resources->print_fps);
+                                                                                    AGGREGATOR_STAGE_2, LANDMARKS_AI_STAGE, BBOX_CROP_LABEL, 1, false, app_resources->print_fps);
     std::shared_ptr<HailortAsyncStage> landmarks_stage = std::make_shared<HailortAsyncStage>(LANDMARKS_AI_STAGE, LANDMARKS_HEF_FILE, 20, 101 ,"device0", 1, 1, std::chrono::milliseconds(100), app_resources->print_fps);
     std::shared_ptr<PostprocessStage> landmarks_post_stage = std::make_shared<PostprocessStage>(LANDMARKS_POST_STAGE, LANDMARKS_POST_SO, LANDMARKS_FUNC_NAME, "", 50, false, app_resources->print_fps);
+    std::shared_ptr<AggregatorStage> agg_stage_2 = std::make_shared<AggregatorStage>(AGGREGATOR_STAGE_2, false, 
+                                                                                     BBOX_CROP_STAGE, 2, 
+                                                                                     LANDMARKS_POST_STAGE, 30,
+                                                                                     false, app_resources->print_fps);
+    std::shared_ptr<OverlayStage> overlay_stage = std::make_shared<OverlayStage>(OVERLAY_STAGE, 1, false, app_resources->print_fps);
+    std::shared_ptr<CallbackStage> sink_stage = std::make_shared<CallbackStage>(AI_CALLBACK_STAGE, 1, false);
     
     // Add stages to pipeline
     app_resources->pipeline->add_stage(tilling_stage);
@@ -451,6 +454,7 @@ void create_pipeline(std::shared_ptr<AppResources> app_resources)
     // Subscribe stages to each other
     tilling_stage->add_subscriber(detection_stage);
     detection_stage->add_subscriber(detection_post_stage);
+    detection_post_stage->add_subscriber(agg_stage);
     agg_stage->add_subscriber(tracker_stage);
     tracker_stage->add_subscriber(bbox_crop_stage);
     bbox_crop_stage->add_subscriber(agg_stage_2);

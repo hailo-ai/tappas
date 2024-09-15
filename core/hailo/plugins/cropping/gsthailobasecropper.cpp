@@ -660,20 +660,18 @@ static gboolean dsp_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, cv::
     }
 
     // Create dsp image properties from both input and output video frame objects
-    dsp_image_properties_t input_image_properties;
-    dsp_image_properties_t output_image_properties;
-    create_dsp_buffer_from_video_frame(&input_video_frame, input_image_properties);
-    create_dsp_buffer_from_video_frame(&output_video_frame, output_image_properties);
+    HailoBufferDataPtr input_buffer_data;
+    HailoBufferDataPtr output_buffer_data;
+    create_hailo_buffer_data_from_video_frame(&input_video_frame, input_buffer_data);
+    create_hailo_buffer_data_from_video_frame(&output_video_frame, output_buffer_data);
 
     // Perform the crop and resize
-    dsp_status result = dsp_utils::perform_crop_and_resize(&input_image_properties, &output_image_properties,
+    dsp_status result = dsp_utils::perform_crop_and_resize(input_buffer_data.get(), output_buffer_data.get(),
                                                             crop_resize_dims,
                                                             get_dsp_interpolation_type_from_cv(hailo_basecropper, cv::InterpolationFlags::INTER_LINEAR),
                                                             std::nullopt);
 
     // Free resources
-    dsp_utils::free_image_property_planes(&input_image_properties);
-    dsp_utils::free_image_property_planes(&output_image_properties);
     gst_video_frame_unmap(&input_video_frame);
     gst_video_frame_unmap(&output_video_frame);
 

@@ -96,26 +96,26 @@ public:
      * @return Bounding box of the crop.
      */
     virtual HailoBBox get_crop_bbox(int index) = 0;
-    
+
     /**
      * @brief Performs post-processing after cropping.
      * @param input_buffer Input buffer.
      */
     virtual void post_crop(BufferPtr input_buffer) {}
-    
+
     /**
      * @brief Performs pre-processing before cropping.
      * @param input_buffer Input buffer.
      */
     virtual void pre_crop(BufferPtr input_buffer) {}
-    
+
     /**
      * @brief Gets the ROI for a specific crop.
      * @param index Index of the crop.
      * @return ROI of the crop.
      */
     virtual HailoROIPtr get_crop_roi(int index) { return nullptr; }
-    
+
     /**
      * @brief Processes the data buffer, performing cropping and resizing.
      * @param data Data buffer.
@@ -129,14 +129,18 @@ public:
         std::vector<dsp_crop_resize_params_t> crops_params;
         std::vector<dsp_crop_api_t> crop_resize_dims;
         std::vector<HailoMediaLibraryBufferPtr> cropped_buffers;
+        std::vector<hailo_dsp_buffer_data_t> output_dsp_buffers;
         prepare_crops(data, crop_resize_dims);
-        
+
         std::size_t num_crops_allowed = std::min(crop_resize_dims.size(), (std::size_t)m_output_pool_size);
+
+        crops_params.reserve(num_crops_allowed);
+        output_dsp_buffers.reserve(num_crops_allowed);
 
         for (std::size_t i = 0; i < num_crops_allowed; ++i)
         {
             auto &dims = crop_resize_dims[i];
-            
+
             HailoMediaLibraryBufferPtr cropped_buffer = std::make_shared<hailo_media_library_buffer>();
             if (m_buffer_pool->acquire_buffer(cropped_buffer) != MEDIA_LIBRARY_SUCCESS)
             {
@@ -144,23 +148,24 @@ public:
                 return AppStatus::DSP_OPERATION_ERROR;
             }
 
-            
+            output_dsp_buffers.emplace_back(std::move(cropped_buffer->buffer_data->As<hailo_dsp_buffer_data_t>()));
             dsp_crop_resize_params_t crop_resize_params = {
                 .crop = &dims,
             };
-            crop_resize_params.dst[0] = cropped_buffer->hailo_pix_buffer.get();
-            
-            crops_params.push_back(crop_resize_params);
-            cropped_buffers.push_back(cropped_buffer);
+
+            crop_resize_params.dst[0] = &output_dsp_buffers[i].properties;
+            crops_params.emplace_back(std::move(crop_resize_params));
+            cropped_buffers.emplace_back(cropped_buffer);
         }
 
+        HailoMediaLibraryBufferPtr input_buffer = data->get_buffer();
+        hailo_dsp_buffer_data_t in_buffer_data = input_buffer->buffer_data->As<hailo_dsp_buffer_data_t>();
         dsp_multi_crop_resize_params_t multi_crop_resize_params = {
-            .src = data->get_buffer()->hailo_pix_buffer.get(),
+            .src = &in_buffer_data.properties,
             .crop_resize_params = crops_params.data(),
             .crop_resize_params_count = num_crops_allowed,
             .interpolation = INTERPOLATION_TYPE_BILINEAR,
         };
-        
 
         status = dsp_utils::perform_dsp_multi_resize(&multi_crop_resize_params);
         if (status != DSP_SUCCESS) 
@@ -242,8 +247,8 @@ public:
     AppStatus init() override
     {
         auto bytes_per_line = dsp_utils::get_dsp_desired_stride_from_width(m_output_width);
-        m_buffer_pool = std::make_shared<MediaLibraryBufferPool>(m_output_width, m_output_hight, DSP_IMAGE_FORMAT_NV12,
-                                                                 m_output_pool_size, CMA, bytes_per_line, "tilling_buffer_pool");
+        m_buffer_pool = std::make_shared<MediaLibraryBufferPool>(m_output_width, m_output_hight, HAILO_FORMAT_NV12,
+                                                                 m_output_pool_size, HAILO_MEMORY_TYPE_DMABUF, bytes_per_line, "tilling_buffer_pool");
            
         if (m_buffer_pool->init() != MEDIA_LIBRARY_SUCCESS)
         {
@@ -333,8 +338,8 @@ public:
     AppStatus init() override
     {
         auto bytes_per_line = dsp_utils::get_dsp_desired_stride_from_width(m_output_width);
-        m_buffer_pool = std::make_shared<MediaLibraryBufferPool>(m_output_width, m_output_hight, DSP_IMAGE_FORMAT_NV12,
-                                                                 m_output_pool_size, CMA, bytes_per_line, "detection_buffer_pool");
+        m_buffer_pool = std::make_shared<MediaLibraryBufferPool>(m_output_width, m_output_hight, HAILO_FORMAT_NV12,
+                                                                 m_output_pool_size, HAILO_MEMORY_TYPE_DMABUF, bytes_per_line, "detection_buffer_pool");
            
         if (m_buffer_pool->init() != MEDIA_LIBRARY_SUCCESS)
         {
