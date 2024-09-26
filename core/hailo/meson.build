@@ -1,7 +1,7 @@
 # Project Declaration
 
 project('gst-hailo-tools', 'c', 'cpp',
-        version : '3.29.1',
+        version : '3.30.0',
         default_options : [ 'buildtype=release',
                             'c_std=c11', 'cpp_std=c++17']
        )
@@ -16,8 +16,21 @@ if compiler_version >= 9
   add_global_arguments('-fconcepts', language : 'cpp')
 endif
 
-# Include Directories
+# Pkgconfig
+pkgc = import('pkgconfig')
+
+# General Include Directories
 hailo_general_inc = [include_directories('./general')]
+general_headers = ['general/hailo_common.hpp',
+                   'general/hailo_objects.hpp', 
+                   'general/hailo_tensors.hpp',
+                   'general/json_config.hpp']
+install_headers(general_headers, subdir: 'hailo/tappas/general')
+pkgc.generate(name: 'hailo_tappas_general',
+              subdirs: 'hailo/tappas/general',
+              version: meson.project_version(),
+              description: 'Hailo Tappas General Headers',
+)
 hailo_mat_inc = [include_directories('./plugins/common/')]
 
 # Xtensor Include Directories

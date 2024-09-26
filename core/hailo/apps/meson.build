@@ -11,22 +11,17 @@ thread_deps = [dependency('threads')]
 ################################################
 # GST Image Handling
 ################################################
-image_src = '../plugins/common/image.cpp'
+image_dep = dependency('tappas_image_utils', method : 'pkg-config')
 
-image_lib = shared_library('hailo_gst_image',
-  image_src,
-  cpp_args : hailo_lib_args,
-  include_directories: [hailo_general_inc, include_directories('../plugins')],
-  dependencies : plugin_deps + [opencv_dep],
-  gnu_symbol_visibility : 'default',
-  version: meson.project_version(),
-  install: true,
-  install_dir: get_option('libdir'),
-)
+################################################
+# Tracker Dep
+################################################
+tracker_dep = dependency('hailo_tracker', method : 'pkg-config')
 
-image_dep = declare_dependency(
-  include_directories: [include_directories('../plugins/common')],
-  link_with : image_lib)
+################################################
+# General Dep
+################################################
+tappas_general_dep = dependency('hailo_tappas_general', method : 'pkg-config')
 
 ################################################
 # CV Singleton

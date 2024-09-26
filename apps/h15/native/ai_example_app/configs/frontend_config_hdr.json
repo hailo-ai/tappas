@@ -16,13 +16,25 @@
                 "width": 3840,
                 "height": 2160,
                 "framerate": 30,
-                "pool_max_buffers": 20
+                "pool_max_buffers": 30
             },
             {
                 "width": 1280,
                 "height": 720,
                 "framerate": 30,
-                "pool_max_buffers": 20
+                "pool_max_buffers": 14
+            },
+            {
+                "width": 720,
+                "height": 480,
+                "framerate": 30,
+                "pool_max_buffers": 13
+            },
+            {
+                "width": 1920,
+                "height": 1080,
+                "framerate": 15,
+                "pool_max_buffers": 10
             }
         ]
     },
@@ -103,19 +115,19 @@
         "enabled": false,
         "direction": "FLIP_DIRECTION_VERTICAL"
     },
+    "hailort": {
+        "device-id": "device0"
+    },
     "isp": {
         "auto-configuration": false,
         "isp_config_files_path": "/usr/bin"
     },
-    "hailort": {
-        "device-id": "device0"
-    },
     "hdr": {
-        "enabled": false,
+        "enabled": true,
         "dol": 3
     },
     "denoise": {
-        "enabled": true,
+        "enabled": false,
         "sensor": "imx678",
         "method": "HIGH_QUALITY",
         "loopback-count": 1,
@@ -127,16 +139,6 @@
             "feedback_uv_channel": "model/input_layer2",
             "output_y_channel": "model/conv17",
             "output_uv_channel": "model/conv14"
-        }
-    },
-    "defog": {
-        "enabled": false,
-        "network": {
-            "network_path": "/usr/lib/medialib/defog_config/dehazenet.hef",
-            "y_channel": "dehazenet/input_layer1",
-            "uv_channel": "dehazenet/input_layer2",
-            "output_y_channel": "dehazenet/conv17",
-            "output_uv_channel": "dehazenet/ew_add1"
         }
     }
 }

@@ -76,21 +76,21 @@ public:
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         overlay_status_t ret = OVERLAY_STATUS_UNINITIALIZED;
 
-        std::shared_ptr<HailoMat> hmat = std::make_shared<HailoNV12Mat>((uint8_t*)data->get_buffer()->get_plane(0),
-                                              data->get_buffer()->hailo_pix_buffer->height,
-                                              data->get_buffer()->hailo_pix_buffer->width,
+        std::shared_ptr<HailoMat> hmat = std::make_shared<HailoNV12Mat>((uint8_t*)data->get_buffer()->get_plane_ptr(0),
+                                              data->get_buffer()->buffer_data->height,
+                                              data->get_buffer()->buffer_data->width,
                                               data->get_buffer()->get_plane_stride(0),
                                               data->get_buffer()->get_plane_stride(1),
                                               m_hailooverlay_info.line_thickness,
                                               m_hailooverlay_info.font_thickness,
-                                              (uint8_t*)data->get_buffer()->get_plane(0),
-                                              (uint8_t*)data->get_buffer()->get_plane(1));
+                                              (uint8_t*)data->get_buffer()->get_plane_ptr(0),
+                                              (uint8_t*)data->get_buffer()->get_plane_ptr(1));
 
         if (hmat)
         {
-            if (DmaMemoryAllocator::get_instance().dmabuf_sync_start(data->get_buffer()->get_plane(0)) != MEDIA_LIBRARY_SUCCESS)
+            if (DmaMemoryAllocator::get_instance().dmabuf_sync_start(data->get_buffer()->get_plane_ptr(0)) != MEDIA_LIBRARY_SUCCESS)
                     return AppStatus::DMA_ERROR;
-            if (DmaMemoryAllocator::get_instance().dmabuf_sync_start(data->get_buffer()->get_plane(1)) != MEDIA_LIBRARY_SUCCESS)
+            if (DmaMemoryAllocator::get_instance().dmabuf_sync_start(data->get_buffer()->get_plane_ptr(1)) != MEDIA_LIBRARY_SUCCESS)
                     return AppStatus::DMA_ERROR;
             // Blur faces if face-blur is activated.
             if (m_hailooverlay_info.face_blur)
@@ -103,9 +103,9 @@ public:
             {
                 std::cerr << " Overlay failure draw_all failed, status = " << ret << std::endl;
             }
-            if (DmaMemoryAllocator::get_instance().dmabuf_sync_end(data->get_buffer()->get_plane(0)) != MEDIA_LIBRARY_SUCCESS)
+            if (DmaMemoryAllocator::get_instance().dmabuf_sync_end(data->get_buffer()->get_plane_ptr(0)) != MEDIA_LIBRARY_SUCCESS)
                     return AppStatus::DMA_ERROR;
-            if (DmaMemoryAllocator::get_instance().dmabuf_sync_end(data->get_buffer()->get_plane(1)) != MEDIA_LIBRARY_SUCCESS)
+            if (DmaMemoryAllocator::get_instance().dmabuf_sync_end(data->get_buffer()->get_plane_ptr(1)) != MEDIA_LIBRARY_SUCCESS)
                     return AppStatus::DMA_ERROR;
         }
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

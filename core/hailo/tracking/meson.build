@@ -15,9 +15,18 @@ tracker_lib = shared_library('hailo_tracker',
     install_dir: get_option('libdir'),
 )
 
+install_headers('hailo_tracker.hpp', subdir: 'hailo/tappas')
+
 tracker_dep = declare_dependency(
   include_directories: [include_directories('.')],
   link_with : tracker_lib)
+
+pkgc.generate(name: 'hailo_tracker',
+              libraries: tracker_lib,
+              subdirs: 'hailo/tappas',
+              version: meson.project_version(),
+              description: 'Hailo Tappas tracker API',
+)
 
 if not get_option('include_python')
     subdir_done()

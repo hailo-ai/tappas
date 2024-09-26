@@ -14,4 +14,4 @@ subdir('lpr')
 subdir('encoder_pipelines')
 subdir('encoder_pipelines_new_api')
 subdir('vision_preproc_applications')
-subdir('ai_example_app')
+

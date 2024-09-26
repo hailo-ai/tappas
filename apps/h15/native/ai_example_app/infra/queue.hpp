@@ -15,6 +15,7 @@ private:
     std::queue<BufferPtr> m_queue;
     size_t m_max_buffers;
     bool m_leaky;
+    bool m_print_level;
     std::string m_name;
     bool m_flushing;
     std::unique_ptr<std::condition_variable> m_condvar;
@@ -22,8 +23,8 @@ private:
     uint64_t m_drop_count = 0, m_push_count = 0;
 
 public:
-    Queue(std::string name, size_t max_buffers, bool leaky=false)
-        : m_max_buffers(max_buffers), m_leaky(leaky), m_name(name), m_flushing(false) 
+    Queue(std::string name, size_t max_buffers, bool leaky=false, bool print_level=false)
+        : m_max_buffers(max_buffers), m_leaky(leaky), m_print_level(print_level), m_name(name), m_flushing(false)
     {
         m_mutex = std::make_shared<std::mutex>();
         m_condvar = std::make_unique<std::condition_variable>();
@@ -68,6 +69,10 @@ public:
         }
         m_queue.push(buffer);
         m_push_count++;
+        if (m_print_level)
+        {
+            std::cout << "Queue: " << m_name << " level: " << m_queue.size() << std::endl;
+        }
         m_condvar->notify_one();
     }
 

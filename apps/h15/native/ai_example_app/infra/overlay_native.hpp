@@ -17,7 +17,7 @@
 #include <map>
 #include <vector>
 #include "hailo_objects.hpp"
-#include "common/hailomat.hpp"
+#include "tappas/plugins/common/hailomat.hpp"
 #include <opencv2/opencv.hpp>
 #include <algorithm>
 #include "hailo_common.hpp"
@@ -31,7 +31,7 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
 void face_blur(HailoMat &mat, HailoROIPtr roi);
 
 cv::Scalar indexToColor(size_t index);
-#include "overlay/overlay_utils.hpp"
+#include "tappas/plugins/common/overlay_utils.hpp"
 
 #define SPACE " "
 #define TEXT_CLS_FONT_SCALE_FACTOR (0.0025f)

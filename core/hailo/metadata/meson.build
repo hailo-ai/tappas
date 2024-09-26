@@ -20,7 +20,6 @@ meta_dep = declare_dependency(
   include_directories: [include_directories('.')],
   link_with : meta_lib)
 
-pkgc = import('pkgconfig')
 pkgc.generate(name: 'gsthailometa',
               libraries: meta_lib,
               subdirs: '.',

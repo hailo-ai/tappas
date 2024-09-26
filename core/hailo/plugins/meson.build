@@ -40,7 +40,7 @@ plugin_sources = [
     'export/export_file/gsthailoexportfile.cpp',
     'export/export_zmq/gsthailoexportzmq.cpp',
     'import/import_zmq/gsthailoimportzmq.cpp',
-    'common/gsthailonvalve.cpp',
+    'filter/gsthailonvalve.cpp',
 ]
 
 # equivalent to - dl_dep = dependency('dl')
@@ -82,6 +82,38 @@ shared_library('gsthailotools',
     install_dir: get_option('libdir') + '/gstreamer-1.0/',
 )
 
+################################################
+# GST Image Handling
+################################################
+common_image_src = 'common/image.cpp'
+
+common_image_lib = shared_library('hailo_gst_image',
+  common_image_src,
+  cpp_args : hailo_lib_args,
+  include_directories: [hailo_general_inc, include_directories('.')],
+  dependencies : plugin_deps + [opencv_dep],
+  gnu_symbol_visibility : 'default',
+  version: meson.project_version(),
+  install: true,
+  install_dir: get_option('libdir'),
+)
+
+common_image_dep = declare_dependency(
+  include_directories: [include_directories('./common')],
+  link_with : common_image_lib)
+
+pkgc.generate(
+    name : 'tappas_image_utils',
+    libraries : common_image_lib,
+    subdirs : 'hailo/tappas/plugins/common',
+    version : meson.project_version(),
+    description : 'Hailo Tappas common image utils',
+)
+
+common_headers = ['./common/hailomat.hpp',
+                  './common/image.hpp',
+                  './overlay/overlay_utils.hpp']
+install_headers(common_headers, subdir: 'hailo/tappas/plugins/common')
 
 if not get_option('include_python')
     subdir_done()

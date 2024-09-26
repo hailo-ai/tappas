@@ -198,11 +198,11 @@ std::string UdpModule::create_pipeline_string()
         caps2.str() + " ! " +
         "tee name=udp_tee "
         "udp_tee. ! "
-            "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! " +
+            "queue leaky=no max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! " +
             rtp_payloader + " ! application/x-rtp, media=video, encoding-name=" + encoding_name + " ! " +
             udp_sink.str() + " name=udp_sink sync=true "
         "udp_tee. ! "
-            "queue leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! "
+            "queue leaky=no max-size-buffers=2 max-size-bytes=0 max-size-time=0 ! "
             "fpsdisplaysink fps-update-interval=2000 signal-fps-measurements=true name=fpsdisplaysink "
             "text-overlay=false sync=true video-sink=fakesink ";
 
@@ -296,7 +296,7 @@ AppStatus UdpModule::add_buffer(HailoMediaLibraryBufferPtr ptr, size_t size)
     UdpPtrWrapper *wrapper = new UdpPtrWrapper();
     wrapper->ptr = ptr;
     GstBuffer *gst_buffer = gst_buffer_new_wrapped_full(GST_MEMORY_FLAG_PHYSICALLY_CONTIGUOUS,
-                                                        ptr->get_plane(0),
+                                                        ptr->get_plane_ptr(0),
                                                         ptr->get_plane_size(0),
                                                         0, size, wrapper, GDestroyNotify(hailo_media_library_udp_release));
     gst_buffer_add_hailo_buffer_meta(gst_buffer, ptr, size);

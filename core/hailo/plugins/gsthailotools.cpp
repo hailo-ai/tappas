@@ -27,7 +27,7 @@
 #include "import/import_zmq/gsthailoimportzmq.hpp"
 #include "gray_scale/gsthailonv12togray.hpp"
 #include "gray_scale/gsthailograytonv12.hpp"
-#include "common/gsthailonvalve.hpp"
+#include "filter/gsthailonvalve.hpp"
 #ifdef HAILO15_TARGET
 #include "dsp/upload2/gsthailoupload2.hpp"
 #include "dsp/gsthailovideoscale.hpp"

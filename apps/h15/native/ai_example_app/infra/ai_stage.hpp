@@ -45,7 +45,6 @@ private:
     std::shared_ptr<hailort::AsyncInferJob> m_last_infer_job; ///< Pointer to the last asynchronous inference job.
 
     // network members
-    std::queue<BufferPtr> m_batch_queue;    ///< Queue for batching input buffers.
     std::string m_hef_path; ///< Path to the Hailo Execution File (HEF).
     std::string m_group_id; ///< Group ID for the HailoRT device.
     int m_batch_size;   ///< Batch size for inference.
@@ -124,8 +123,8 @@ public:
         for (auto &output : m_infer_model->outputs()) {
             size_t tensor_size = output.get_frame_size();
             std::string tensor_name = m_stage_name + "/" + output.name();
-            m_tensor_buffer_pools[output.name()] = std::make_shared<MediaLibraryBufferPool>(tensor_size, 1, DSP_IMAGE_FORMAT_GRAY8,
-                                                                                             m_output_pool_size, CMA, tensor_size, tensor_name);
+            m_tensor_buffer_pools[output.name()] = std::make_shared<MediaLibraryBufferPool>(tensor_size, 1, HAILO_FORMAT_GRAY8,
+                                                                                             m_output_pool_size, HAILO_MEMORY_TYPE_DMABUF, tensor_size, tensor_name);
             if (m_tensor_buffer_pools[output.name()]->init() != MEDIA_LIBRARY_SUCCESS)
             {
                 return AppStatus::BUFFER_ALLOCATION_ERROR;
@@ -160,11 +159,6 @@ public:
                 return AppStatus::HAILORT_ERROR;
             }
         }
-        // Flush the batch queue
-        while (!m_batch_queue.empty())
-        {
-            m_batch_queue.pop();
-        }
 
         return AppStatus::SUCCESS;
     }
@@ -177,10 +171,10 @@ public:
      */
     AppStatus set_pix_buf(const HailoMediaLibraryBufferPtr buffer)
     {
-        auto y_plane_buffer = buffer->get_plane(0);
+        auto y_plane_buffer = buffer->get_plane_ptr(0);
         uint32_t y_plane_size = buffer->get_plane_size(0);
 
-        auto uv_plane_buffer = buffer->get_plane(1);
+        auto uv_plane_buffer = buffer->get_plane_ptr(1);
         uint32_t uv_plane_size = buffer->get_plane_size(1);
 
         hailo_pix_buffer_t pix_buffer{};
@@ -218,7 +212,7 @@ public:
             BufferPtr tensor_buffer_ptr = std::make_shared<Buffer>(tensor_buffer);
             if (m_tensor_buffer_pools[output.name()]->acquire_buffer(tensor_buffer) != MEDIA_LIBRARY_SUCCESS)
             {
-                std::cerr << "Failed to acquire buffer" << std::endl;
+                std::cerr << "Failed to acquire buffer " << m_stage_name <<std::endl;
                 return AppStatus::BUFFER_ALLOCATION_ERROR;
             }
 
@@ -227,7 +221,7 @@ public:
 
             // Set the HailoRT bindings for the acquired buffer
             size_t tensor_size = output.get_frame_size();
-            auto status = m_bindings.output(output.name())->set_buffer(hailort::MemoryView(tensor_buffer->get_plane(0), tensor_size));
+            auto status = m_bindings.output(output.name())->set_buffer(hailort::MemoryView(tensor_buffer->get_plane_ptr(0), tensor_size));
             if (HAILO_SUCCESS != status) {
                 std::cerr << m_stage_name << " failed to set infer output buffer "<< output.name() << ", Hailort status = " << status << std::endl;
                 return AppStatus::HAILORT_ERROR;
@@ -269,7 +263,7 @@ public:
                 input_buffer->add_metadata(tensor_metadata);
 
                 // Add the vstream info and data pointer to the HailoRoi for later use (postprocessing)
-                input_buffer->get_roi()->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(tensor_buffer->get_buffer()->get_plane(0)), 
+                input_buffer->get_roi()->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(tensor_buffer->get_buffer()->get_plane_ptr(0)), 
                                                                                   m_vstream_infos[output.name()]));
             }
 
@@ -307,41 +301,26 @@ public:
      */
     AppStatus process(BufferPtr data)
     {
-        // Build up a batch of input buffers
-        m_batch_queue.push(data);
-        if (static_cast<int>(m_batch_queue.size()) < m_batch_size)
+
+        // Set the input buffer
+        if (set_pix_buf(data->get_buffer()) != AppStatus::SUCCESS)
         {
-            // if we have not yet reached batch size, then skip to next buffer
-            return AppStatus::SUCCESS;
+            return AppStatus::HAILORT_ERROR;
         }
 
-        // we have reached batch size inputs, so infer each one
-        for (int i=0; i < m_batch_size; i++)
+        // Acquire and set tensor buffers
+        std::unordered_map<std::string, BufferPtr> tensor_buffers;
+        if (acquire_and_set_tensor_buffers(tensor_buffers) != AppStatus::SUCCESS)
         {
-            // Get the input buffer from the batch
-            auto input_buffer = m_batch_queue.front();
-            m_batch_queue.pop();
-            
-            // Set the input buffer
-            if (set_pix_buf(input_buffer->get_buffer()) != AppStatus::SUCCESS)
-            {
-                return AppStatus::HAILORT_ERROR;
-            }
-
-            // Acquire and set tensor buffers
-            std::unordered_map<std::string, BufferPtr> tensor_buffers;
-            if (acquire_and_set_tensor_buffers(tensor_buffers) != AppStatus::SUCCESS)
-            {
-                return AppStatus::HAILORT_ERROR;
-            }
-
-            // Run the inference
-            if (infer(input_buffer, tensor_buffers) != AppStatus::SUCCESS)
-            {
-                return AppStatus::HAILORT_ERROR;
-            }
+            return AppStatus::HAILORT_ERROR;
         }
 
+        // Run the inference
+        if (infer(data, tensor_buffers) != AppStatus::SUCCESS)
+        {
+            return AppStatus::HAILORT_ERROR;
+        }
+        
         return AppStatus::SUCCESS;
     }
 };

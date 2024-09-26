@@ -169,11 +169,17 @@ class MesonInstaller(ABC):
         self._logger = logging.getLogger(__file__)
         self._runner = ShellRunner()
 
-        self._output_build_dir = FOLDER_NAME / f'{self._arch.value}-gsthailotools-build-{self._build_type}'
+        self._build_folder = self.get_meson_build_folder()
+
+        self._output_build_dir = FOLDER_NAME / f'{self._arch.value}-{self._build_folder}-build-{self._build_type}'
         self._toolchain_dir_path = Path(toolchain_dir_path).absolute().resolve()
         self._toolchain_rootfs_base_path = self._toolchain_dir_path / "sysroots" / f"{self._arch.value}-poky-linux"
 
         self._install_toolchain()
+
+    @abstractmethod
+    def get_meson_build_folder(self):
+        pass
 
     @abstractmethod
     def get_meson_build_command(self):
@@ -271,7 +277,7 @@ class MesonInstaller(ABC):
         return env_from_environ_setup
 
     def build(self):
-        self._logger.info("Building gsthailotools plugins and post processes")
+        self._logger.info(f"Building {self._build_folder}")
         env = self.get_custom_environment()
 
         src_dir_name = self._src_build_dir.parts[-1]

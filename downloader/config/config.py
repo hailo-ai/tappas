@@ -1,8 +1,8 @@
 import platform
 from pathlib import Path
 
-VERSION = "v3.29"
-MODEL_ZOO_VERSION = "v2.12"
+VERSION = "v3.30"
+MODEL_ZOO_VERSION = "v2.13"
 
 CONFIG_PATH = Path(__file__).parent
 DOWNLOADER_PATH = CONFIG_PATH.parent
