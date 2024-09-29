@@ -422,7 +422,7 @@ void create_pipeline(std::shared_ptr<AppResources> app_resources)
     std::shared_ptr<TillingCropStage> tilling_stage = std::make_shared<TillingCropStage>(TILLING_STAGE,40, TILLING_INPUT_WIDTH, TILLING_INPUT_HEIGHT,
                                                                                         TILLING_OUTPUT_WIDTH, TILLING_OUTPUT_HEIGHT,
                                                                                         "", DETECTION_AI_STAGE, 5, false, app_resources->print_fps);
-    std::shared_ptr<HailortAsyncStage> detection_stage = std::make_shared<HailortAsyncStage>(DETECTION_AI_STAGE, YOLO_HEF_FILE, 4, 40 ,"device0", 4, 4, std::chrono::milliseconds(100), app_resources->print_fps);
+    std::shared_ptr<HailortAsyncStage> detection_stage = std::make_shared<HailortAsyncStage>(DETECTION_AI_STAGE, YOLO_HEF_FILE, 4, 40 ,"device0", 8, 8, std::chrono::milliseconds(100), app_resources->print_fps);
     std::shared_ptr<PostprocessStage> detection_post_stage = std::make_shared<PostprocessStage>(POST_STAGE, YOLO_POST_SO, YOLO_FUNC_NAME, "", 5, false, app_resources->print_fps);
     std::shared_ptr<AggregatorStage> agg_stage = std::make_shared<AggregatorStage>(AGGREGATOR_STAGE, false, 5, false, app_resources->print_fps);
     std::shared_ptr<BBoxCropStage> bbox_crop_stage = std::make_shared<BBoxCropStage>(BBOX_CROP_STAGE, 100, BBOX_CROP_INPUT_WIDTH, BBOX_CROP_INPUT_HEIGHT,

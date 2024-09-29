@@ -45,7 +45,6 @@ private:
     std::shared_ptr<hailort::AsyncInferJob> m_last_infer_job; ///< Pointer to the last asynchronous inference job.
 
     // network members
-    std::queue<BufferPtr> m_batch_queue;    ///< Queue for batching input buffers.
     std::string m_hef_path; ///< Path to the Hailo Execution File (HEF).
     std::string m_group_id; ///< Group ID for the HailoRT device.
     int m_batch_size;   ///< Batch size for inference.
@@ -160,11 +159,6 @@ public:
                 return AppStatus::HAILORT_ERROR;
             }
         }
-        // Flush the batch queue
-        while (!m_batch_queue.empty())
-        {
-            m_batch_queue.pop();
-        }
 
         return AppStatus::SUCCESS;
     }
@@ -218,7 +212,7 @@ public:
             BufferPtr tensor_buffer_ptr = std::make_shared<Buffer>(tensor_buffer);
             if (m_tensor_buffer_pools[output.name()]->acquire_buffer(tensor_buffer) != MEDIA_LIBRARY_SUCCESS)
             {
-                std::cerr << "Failed to acquire buffer" << std::endl;
+                std::cerr << "Failed to acquire buffer " << m_stage_name <<std::endl;
                 return AppStatus::BUFFER_ALLOCATION_ERROR;
             }
 
@@ -307,41 +301,26 @@ public:
      */
     AppStatus process(BufferPtr data)
     {
-        // Build up a batch of input buffers
-        m_batch_queue.push(data);
-        if (static_cast<int>(m_batch_queue.size()) < m_batch_size)
+
+        // Set the input buffer
+        if (set_pix_buf(data->get_buffer()) != AppStatus::SUCCESS)
         {
-            // if we have not yet reached batch size, then skip to next buffer
-            return AppStatus::SUCCESS;
+            return AppStatus::HAILORT_ERROR;
         }
 
-        // we have reached batch size inputs, so infer each one
-        for (int i=0; i < m_batch_size; i++)
+        // Acquire and set tensor buffers
+        std::unordered_map<std::string, BufferPtr> tensor_buffers;
+        if (acquire_and_set_tensor_buffers(tensor_buffers) != AppStatus::SUCCESS)
         {
-            // Get the input buffer from the batch
-            auto input_buffer = m_batch_queue.front();
-            m_batch_queue.pop();
-            
-            // Set the input buffer
-            if (set_pix_buf(input_buffer->get_buffer()) != AppStatus::SUCCESS)
-            {
-                return AppStatus::HAILORT_ERROR;
-            }
-
-            // Acquire and set tensor buffers
-            std::unordered_map<std::string, BufferPtr> tensor_buffers;
-            if (acquire_and_set_tensor_buffers(tensor_buffers) != AppStatus::SUCCESS)
-            {
-                return AppStatus::HAILORT_ERROR;
-            }
-
-            // Run the inference
-            if (infer(input_buffer, tensor_buffers) != AppStatus::SUCCESS)
-            {
-                return AppStatus::HAILORT_ERROR;
-            }
+            return AppStatus::HAILORT_ERROR;
         }
 
+        // Run the inference
+        if (infer(data, tensor_buffers) != AppStatus::SUCCESS)
+        {
+            return AppStatus::HAILORT_ERROR;
+        }
+        
         return AppStatus::SUCCESS;
     }
 };

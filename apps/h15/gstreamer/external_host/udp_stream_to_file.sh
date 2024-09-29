@@ -76,6 +76,7 @@ PIPELINE="gst-launch-1.0 \
     udpsrc port=$port address=$address ! application/x-rtp,encoding-name=${encoder^^} ! \
     queue ${queue_params_non_leaky} ! rtpjitterbuffer mode=0 !  \
     queue ${queue_params_non_leaky} ! rtp${encoder}depay !  \
+    video/x-${encoder},framerate=30/1 ! \
     queue ${queue_params_non_leaky} ! ${encoder}parse config-interval=-1 ! mp4mux ! \
     queue ${queue_params_non_leaky} ! \
     filesink location=${output_file_name} sync=false ${additional_parameters} -e"

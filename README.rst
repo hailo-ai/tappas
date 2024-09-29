@@ -7,7 +7,7 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.18.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.19.0-green
    :target: https://github.com/hailo-ai/hailort
    :alt: HailoRT
    :height: 20
@@ -68,7 +68,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.18.
+    This version is compatible with HailoRT v4.19.
 
 
 Installation

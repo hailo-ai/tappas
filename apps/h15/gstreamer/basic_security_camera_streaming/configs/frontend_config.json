@@ -1,4 +1,12 @@
 {
+    "input_video": {
+        "resolution": {
+            "width": 3840,
+            "height": 2160,
+            "framerate": 30
+        },
+        "source": "/dev/video0"
+    },
     "output_video": {
         "method": "INTERPOLATION_TYPE_BILINEAR",
         "format": "IMAGE_FORMAT_NV12",
@@ -72,14 +80,18 @@
     },
     "eis": {
         "enabled": false,
-        "correction_applied": false,
         "eis_config_path": "/home/root/apps/resources/final_calibration.json",
-        "gyro_sensor_name": "lsm6dsr_gyro",
-        "gyro_sensor_freq": "833.000000",
         "window_size": 10,
-        "gyro_scale": 0.000152716,
         "rotational_smoothing_coefficient": 0.0,
-        "iir_hpf_coefficient": 0.997
+        "iir_hpf_coefficient": 0.997,
+        "camera_fov_factor": 1
+    },
+    "gyro":
+    {
+        "enabled": false,
+        "sensor_name": "lsm6dsr_gyro",
+        "sensor_frequency": "833.000000",
+        "scale": 0.000152716
     },
     "gmv": {
         "source": "isp",
@@ -116,10 +128,7 @@
     },
     "hdr": {
         "enabled": false,
-        "dol": 3,
-        "resolution": "4k",
-        "lsRatio": 23.7,
-        "vsRatio": 6.25
+        "dol": 3
     },
     "denoise": {
         "enabled": false,

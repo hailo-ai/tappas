@@ -140,11 +140,10 @@ public:
             HailoMediaLibraryBufferPtr cropped_buffer = std::make_shared<hailo_media_library_buffer>();
             if (m_buffer_pool->acquire_buffer(cropped_buffer) != MEDIA_LIBRARY_SUCCESS)
             {
-                std::cerr << "Failed to acquire buffer" << std::endl;
+                std::cerr << "Failed to acquire buffer " << m_stage_name <<std::endl;
                 return AppStatus::DSP_OPERATION_ERROR;
             }
 
-            
             dsp_crop_resize_params_t crop_resize_params = {
                 .crop = &dims,
             };
