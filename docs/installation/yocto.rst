@@ -49,7 +49,7 @@ Add the following to your image in your ``conf/local.conf``\ :
 
 .. code-block:: sh
 
-   IMAGE_INSTALL_append = "libgsthailotools tappas-apps hailo-post-processes tappas-tracers"
+   IMAGE_INSTALL:append = "libgsthailotools tappas-apps hailo-post-processes tappas-tracers"
 
 Build your image
 ----------------

@@ -117,6 +117,8 @@ Documentation
 Getting Started with Hailo-15
 -----------------------------
 
+TAPPAS is now released separately for Hailo-8, for Hailo-15 please refer to https://github.com/hailo-ai/tappas/tree/master-vpu.
+
 For a quick start with Hailo-15, please refer to the Vision Processor Software Package documentation section
 in Hailo's `Developer Zone <https://hailo.ai/developer-zone/documentation/>`_.
 
@@ -127,6 +129,11 @@ Example Applications Built with TAPPAS
 
 .. note:: For the Raspberry Pi 5 applications, go to
   `Hailo Raspberry Pi 5 Examples <https://github.com/hailo-ai/hailo-rpi5-examples>`_.
+
+.. note:: These example applications are part of the Hailo AI Software Suite.
+
+  Hailo offers an additional set of
+  `Application Code Examples <https://github.com/hailo-ai/Hailo-Application-Code-Examples>`_.
 
 TAPPAS comes with a rich set of pre-configured pipelines optimized for different common hosts.
 
@@ -350,11 +357,24 @@ The pipeline demonstrates another method for inference based decision making tha
 
 ----
 
+Support
+-------
+
+If you need support, please post your question on our `Hailo community Forum <https://community.hailo.ai/>`_ for assistance.
+
+Contact information is available at `hailo.ai <https://hailo.ai/contact-us/>`_.
+
+----
 
 Changelog
 ----------
 
-**v3.29.1 (Aug 2024)**
+**v3.30.0 (October 2024)**
+
+* TAPPAS is now released separately for Hailo-8, for Hailo-15 please refer to https://github.com/hailo-ai/tappas/tree/master-vpu
+* Various bug fixes and stability Improvements
+
+**v3.29.1 (August 2024)**
 
 * Hailo-8:
 
