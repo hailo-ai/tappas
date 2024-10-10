@@ -18,7 +18,7 @@ Frontend Pipeline
     :align: center
 
 The application begins with the Frontend pipeline. This is also known as the **Vision Pipeline**, as it is responsible for capturing the video feed from the camera and adjusting the image for application needs.
-The Frontend pipeline is provided by the Media Library package on the Hailo15, and provides the following operations:
+The Frontend pipeline is provided by the Media Library package on the Hailo-15, and provides the following operations:
 
 - **Video capture** - from the camera sensor
 - **HDR** - High Dynamic Range, accelerated on the NN core
@@ -44,12 +44,12 @@ HD/SD Pipelines
     :align: center
 
 The HD and SD pipelines are identical, and are responsible for encoding and streaming their video feed to RTSP.
-The Encoder/OSD module is provided by the Media Library package on the Hailo15, and is accelerated by both the DSP and the encoder hardware.
+The Encoder/OSD module is provided by the Media Library package on the Hailo-15, and is accelerated by both the DSP and the encoder hardware.
 
 After the Frontend pipeline, the HD and SD pipelines take the resized video streams and perform the following operations:
 
 - **On-Screen Display (OSD)** - The HD/SD pipelines add overlays such as text, graphics, and timestamps to the video feed uisng DSP blending.
-- **Encoding** - Video encoding to compress the video feed for streaming purposes. This is done with the hardware accelerated encoder provided in the Hailo15.
+- **Encoding** - Video encoding to compress the video feed for streaming purposes. This is done with the hardware accelerated encoder provided in the Hailo-15.
 - **RTP/UDP Streaming** - The encoded video is payloaded into RTP packets and streamed over UDP to the host machine.
 
 For further reading on the Encoder/OSD module, please refer to the Media Library documentation.
@@ -82,36 +82,38 @@ Tiling
 ------
 We will first focus on the tiling sub-pipeline where the FHD stream passes inference.
 The first stage here is tiling, where the image is **cropped and resized on the DSP** before being passed to the NN core for inference.
-The tiling in this application is 2x2, and then resized to the size of the following network (640x640):
+The tiling in this application is **multi-scale**, meaning that tiles are taken from different scale spaces to better capture large and small objects.
+Specifically this application has 4 similar sized tiles in a 2x2 grid, and 1 large tile encompassing the whole image. The 5 tiles are then resized to the size of the following network (640x640):
 
 .. figure:: readme_resources/tiling.png
     :alt: Application Pipeline
     :align: center
-    :height: 448 px
-    :width: 1539 px
-    :scale: 80%
+    :height: 679 px
+    :width: 2529 px
+    :scale: 60%
 
-    The FHD image is tiled into 4 smaller images, each resized to 640x640 resolution.
+    The FHD image is tiled into 4 smaller images and 1 large image, each resized to 640x640 resolution.
 
 Yolo Object Detection
 ---------------------
-After tiling, we now have 4 new images that are passed to the NN core for inference. 
-It is important to note here that although the input stream had a framerate of 15 FPS, the output of the tiling stage is **60 FPS (15 FPS * 4 tiles)**.
-This means that if inference at this stage needs to meet at least 60FPS performance to not cause a bottleneck. Luckily the Hailo15 is capable of this performance.
+After tiling, we now have 5 new images that are passed to the NN core for inference. 
+It is important to note here that although the input stream had a framerate of 15 FPS, the output of the tiling stage is **75 FPS (15 FPS * 5 tiles)**.
+This means that if inference at this stage needs to meet at least 75FPS performance to not cause a bottleneck. Luckily the Hailo-15 is capable of this performance.
 Inference is performed on the tiles using the Hailo Async API, and after a light postprocessing stage we now have bounding boxes for the people and faces detected in the image.
 
 .. figure:: readme_resources/detection.png
     :alt: Application Pipeline
     :align: center
 
-    Detections are made for each of the 4 tiles.
+    Detections are made for each of the 5 tiles.
 
 Aggregation
 -----------
 With the bounding boxes in hand, we can now aggregate the results to the 4K stream. This is done through an aggregator stage, which takes the bounding box metadata
 and adds it to the 4K stream. The size and location of the boxes is adjusted to the 4K resolution, so that they match their new image space.
+Afterwards NMS is used to remove overlapping bounding boxes between large and small tiles.
 The aggregator has two input streams coming at different framerates, so how is it able to take metadata from the sub stream? In this case the aggregator stage
-is set to a "leaky" mode, so 4K frames coming at 30FPS do not wait for the tiled stream to catch up, and instead use the latest available metadata from the tiled stream (in packs of 4 tiles).
+is set to a "leaky" mode, so 4K frames coming at 30FPS do not wait for the tiled stream to catch up, and instead use the latest available metadata from the tiled stream (in packs of 5 tiles).
 Between the two input framerates (30 FPS for 4K and 15 FPS for FHD), this means we have bounding boxes for every second frame of the 4K stream.
 
 .. figure:: readme_resources/aggregator.png
@@ -121,7 +123,7 @@ Between the two input framerates (30 FPS for 4K and 15 FPS for FHD), this means 
     :width: 1920 px
     :scale: 50%
 
-    The detections from the 4 tiles are aggregated to the 4K image space.
+    The detections from the 5 tiles are aggregated to the 4K image space.
 
 Tracking
 --------

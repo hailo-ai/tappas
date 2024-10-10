@@ -48,6 +48,52 @@ To run the ai_example_app application, follow these steps:
 
 You should now be able to see the video feed with the inference overlay on the screen.
 
+Extra Options
+-------------
+
+Some extra flags are available to run the application with different configurations:
+
+    .. code-block:: bash
+
+        $ ./apps/ai_example_app/ai_example_app --help
+            Usage:
+            AI pipeline app [OPTION...]
+
+            -h, --help                  Show this help
+            -t, --timeout arg           Time to run (default: 60)
+            -f, --print-fps             Print FPS
+            -l, --print-latency         Print Latency
+            -c, --config-file-path arg  Frontend Configuration Path (default: 
+                                        /home/root/apps/ai_example_app/resources/configs/frontend_config.json)
+
+Note that you have the option to change the configuration file path for the vision pipeline configurations: **--config-file-path**. 
+A second json is provided with the default that can be used to enable low-light enhancement (denoising).
+
+    .. note:: 
+        In the current configuration, the application does not automatically change 3AConfig when enabling low-light enhancement. If you
+        choose to run with this configuration, you will need ot adjust the 3AConfig manually.
+
+    If you do need to change the 3AConfig, you can copy the one provided in **/usr/lib/medialib/sensors/** (note that imx678 is chosen as the sensor type here): 
+    
+    .. code-block:: bash
+
+        $ cp /usr/lib/medialib/sensors/imx678/default/default/isp_profiles/denoise/3aconfig.json /usr/bin/3aconfig.json
+    
+    Then run the app with the new configuration:
+
+    .. code-block:: bash
+    
+            $ ./apps/ai_example_app/ai_example_app --config-file-path apps/ai_example_app/resources/configs/frontend_config_denoise.json
+
+    You can revert the 3AConfig back to the default by copying the original file back:
+
+    .. code-block:: bash
+
+        $ cp /usr/bin/3aconfig_imx678.json /usr/bin/3aconfig.json
+
+As you experiment with the application you may want to adjust the configurations through this flag.
+
+
 Application at a Glance
 =======================
 
