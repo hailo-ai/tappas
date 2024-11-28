@@ -2,7 +2,7 @@
 #include <gst/video/video.h>
 #include <gst/app/gstappsink.h>
 #include <iostream>
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 #include "apps_common.hpp"
 

@@ -7,7 +7,7 @@ frontend_update_src = ['frontend_update.cpp', '../apps_common.cpp']
 executable('frontend_update',
   frontend_update_src,
   cpp_args : hailo_lib_args,
-  include_directories: cxxopts_inc + [include_directories('../')],
+  include_directories: [include_directories('../')],
   dependencies : plugin_deps + [tappas_general_dep],
   gnu_symbol_visibility : 'default',
   install: true,

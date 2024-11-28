@@ -8,7 +8,7 @@
 #include <thread>
 #include <tl/expected.hpp>
 #include <signal.h>
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 // medialibrary includes
 #include "media_library/encoder.hpp"
@@ -16,14 +16,14 @@
 #include "media_library/signal_utils.hpp"
 
 // infra includes
-#include "infra/pipeline.hpp"
-#include "infra/ai_stage.hpp"
-#include "infra/dsp_stages.hpp"
-#include "infra/postprocess_stage.hpp"
-#include "infra/overlay_stage.hpp"
-#include "infra/udp_stage.hpp"
-#include "infra/tracker_stage.hpp"
-#include "infra/aggregator_stage.hpp"
+#include "tappas/reference_camera/pipeline.hpp"
+#include "tappas/reference_camera/ai_stage.hpp"
+#include "tappas/reference_camera/dsp_stages.hpp"
+#include "tappas/reference_camera/postprocess_stage.hpp"
+#include "tappas/reference_camera/overlay_stage.hpp"
+#include "tappas/reference_camera/udp_stage.hpp"
+#include "tappas/reference_camera/tracker_stage.hpp"
+#include "tappas/reference_camera/aggregator_stage.hpp"
 
 #define FRONTEND_CONFIG_FILE "/home/root/apps/ai_example_app/resources/configs/frontend_config.json"
 #define ENCODER_OSD_CONFIG_FILE(id) get_encoder_osd_config_file(id)

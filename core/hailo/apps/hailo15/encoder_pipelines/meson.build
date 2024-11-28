@@ -3,7 +3,7 @@
 ################################################
 
 output_path = '/encoder_pipelines'
-include_encoder_app =  hailo_general_inc + cxxopts_inc + [include_directories('../')]
+include_encoder_app =  hailo_general_inc + [include_directories('../')]
 
 encoder_appsink_tee_src = ['encoder_appsink_tee.cpp', '../apps_common.cpp']
 

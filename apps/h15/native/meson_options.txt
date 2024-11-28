@@ -1,5 +1,5 @@
 option('libargs', type : 'array', value : [])
+option('target', type : 'string', value : 'all')
 
 # APPS
 option('apps_install_dir', type : 'string', value : '')
-option('libcxxopts', type : 'string', value : '')

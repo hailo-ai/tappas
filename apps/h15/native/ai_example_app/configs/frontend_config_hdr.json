@@ -16,7 +16,19 @@
                 "width": 3840,
                 "height": 2160,
                 "framerate": 30,
-                "pool_max_buffers": 10
+                "pool_max_buffers": 30
+            },
+            {
+                "width": 1280,
+                "height": 720,
+                "framerate": 30,
+                "pool_max_buffers": 14
+            },
+            {
+                "width": 720,
+                "height": 480,
+                "framerate": 30,
+                "pool_max_buffers": 13
             },
             {
                 "width": 1920,
@@ -84,14 +96,6 @@
         "enabled": true,
         "magnification": 1.0
     },
-    "isp": {
-        "auto-configuration": false,
-        "isp_config_files_path": "/usr/bin"
-    },
-    "hdr": {
-        "enabled": false,
-        "dol": 3
-    },
     "digital_zoom": {
         "enabled": false,
         "mode": "DIGITAL_ZOOM_MODE_ROI",
@@ -129,6 +133,14 @@
     },
     "hailort": {
         "device-id": "device0"
+    },
+    "isp": {
+        "auto-configuration": false,
+        "isp_config_files_path": "/usr/bin"
+    },
+    "hdr": {
+        "enabled": true,
+        "dol": 3
     },
     "denoise": {
         "enabled": false,

@@ -74,6 +74,7 @@
     },
     "eis": {
         "enabled": false,
+        "stabilize": true,
         "eis_config_path": "/home/root/apps/resources/final_calibration.json",
         "window_size": 10,
         "rotational_smoothing_coefficient": 0.0,
@@ -81,8 +82,7 @@
         "camera_fov_factor": 1,
         "line_readout_time": 7410
     },
-    "gyro":
-    {
+    "gyro": {
         "enabled": false,
         "sensor_name": "lsm6dsr_gyro",
         "sensor_frequency": "833.000000",
@@ -106,6 +106,22 @@
             "width": 2800,
             "height": 1800
         }
+    },
+    "motion_detection": {
+        "enabled": false,
+        "resolution": {
+            "width": 640,
+            "height": 480,
+            "framerate": 30
+        },
+        "roi": {
+            "x": 200,
+            "y": 200,
+            "width": 640,
+            "height": 480
+        },
+        "sensitivity_level": "MEDIUM",
+        "threshold": 0.5
     },
     "rotation": {
         "enabled": false,

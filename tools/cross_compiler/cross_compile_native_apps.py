@@ -45,9 +45,8 @@ class H15NativeInstaller(MesonInstaller):
         usr_path = os.path.join(self._toolchain_rootfs_base_path, 'usr')
 
         rapidjson_root = f'{self._open_source_root}/rapidjson'
-        cxxopts_root = f'{self._open_source_root}/cxxopts'
 
-        required_sources = [rapidjson_root, cxxopts_root]
+        required_sources = [rapidjson_root]
 
         if any(not Path(source).is_dir() for source in required_sources):
             raise FileNotFoundError(f"One or more of the external packages are missing. Please run {TAPPAS_WORKSPACE}/scripts/build_scripts/clone_external_packages.sh")
@@ -55,7 +54,7 @@ class H15NativeInstaller(MesonInstaller):
         build_cmd = ['meson', str(self._output_build_dir), '--buildtype', self._build_type,
                      '-Dlibargs={}'.format(self.get_libargs_line(self._toolchain_rootfs_base_path)),
                      '-Dprefix={}'.format(usr_path),
-                     '-Dlibcxxopts={}'.format(cxxopts_root)]
+                     '-Dapps_install_dir=/home/root/apps']
 
         return build_cmd
 

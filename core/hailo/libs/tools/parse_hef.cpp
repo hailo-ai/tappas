@@ -6,7 +6,7 @@
 #include <typeinfo>
 #include <cstdlib>
 #include <unistd.h>
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 #include "hailo/hef.hpp"
 #include "hailo/expected.hpp"
 #include "hailo/hailort.h"

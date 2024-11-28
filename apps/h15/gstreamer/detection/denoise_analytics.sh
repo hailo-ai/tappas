@@ -7,9 +7,9 @@ function init_variables() {
     readonly RESOURCES_DIR="${CURRENT_DIR}/resources"
     readonly POSTPROCESS_DIR="/usr/lib/hailo-post-processes"
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
-    readonly DEFAULT_NETWORK_NAME="yolov5"
+    readonly DEFAULT_NETWORK_NAME="yolov8s"
     readonly DEFAULT_VIDEO_SOURCE="/dev/video0"
-    readonly DEFAULT_HEF_PATH="${RESOURCES_DIR}/yolov5m_wo_spp_60p_nv12_640.hef"
+    readonly DEFAULT_HEF_PATH="${RESOURCES_DIR}/yolov8s.hef"
     readonly DEFAULT_FRONTEND_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/denoise_analytics_frontend_config.json"
     readonly DEFAULT_ENCODER_CONFIG_FILE_PATH="$RESOURCES_DIR/configs/denoise_analytics_encoder_config.json"
     readonly DEFAULT_UDP_PORT=5000
@@ -130,3 +130,4 @@ if [ "$print_gst_launch_only" = true ]; then
 fi
 
 eval ${PIPELINE}
+

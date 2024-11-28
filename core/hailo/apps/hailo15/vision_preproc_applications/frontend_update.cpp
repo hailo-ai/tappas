@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 #include "apps_common.hpp"
 
 const char *CONFIG_FILE_1 = "/home/root/apps/basic_security_camera_streaming/resources/configs/vision_config1.json";

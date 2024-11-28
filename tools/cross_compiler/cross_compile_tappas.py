@@ -46,13 +46,12 @@ class TappasInstaller(MesonInstaller):
         usr_path = os.path.join(self._toolchain_rootfs_base_path, 'usr')
 
         rapidjson_root = f'{self._open_source_root}/rapidjson'
-        cxxopts_root = f'{self._open_source_root}/cxxopts'
 
         xtensor_root = f'{self._open_source_root}/xtensor_stack'
         xtensor_blas_root = f'{xtensor_root}/blas'
         xtensor_base_root = f'{xtensor_root}/base'
 
-        required_sources = [xtensor_blas_root, xtensor_base_root, rapidjson_root, cxxopts_root]
+        required_sources = [xtensor_blas_root, xtensor_base_root, rapidjson_root]
 
         if any(not Path(source).is_dir() for source in required_sources):
             raise FileNotFoundError(f"One or more of the external packages are missing. Please run {TAPPAS_WORKSPACE}/scripts/build_scripts/clone_external_packages.sh")
@@ -65,7 +64,6 @@ class TappasInstaller(MesonInstaller):
                      '-Dtarget={}'.format(self._build_lib),
                      '-Dlibxtensor={}'.format(xtensor_base_root),
                      '-Dlibblas={}'.format(xtensor_blas_root),
-                     '-Dlibcxxopts={}'.format(cxxopts_root),
                      '-Dlibrapidjson={}'.format(rapidjson_root),
                      '-Dinclude_unit_tests=false']
 

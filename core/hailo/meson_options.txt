@@ -19,7 +19,6 @@ option('libcatch2', type : 'string', value : '../../../open_source/catch2')
 # APPS
 option('apps_install_dir', type : 'string', value : '')
 option('install_lpr', type : 'boolean', value : true)
-option('libcxxopts', type : 'string', value : '../../open_source/cxxopts')
 
 # POST PROCESSES
 option('post_processes_install_dir', type : 'string', value : '')

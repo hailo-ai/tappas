@@ -1,7 +1,7 @@
 #include <gst/gst.h>
 #include <gst/video/video.h>
 #include <iostream>
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 #include "apps_common.hpp"
 
 static int counter=0;

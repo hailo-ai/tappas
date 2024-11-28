@@ -117,12 +117,6 @@ endif
 target = get_option('target')
 # Project Subdirectories
 
-if target in ['all','apps','libs']
-    cxxopts_inc_dir = get_option('libcxxopts')
-    # cxxopts Include Directories
-    cxxopts_inc = [include_directories(cxxopts_inc_dir, is_system: true)]
-endif
-
 if target in ['all','libs','unit_tests','plugins']
     rapidjson_inc_dir = get_option('librapidjson')
     # rapidjson Include Directories
