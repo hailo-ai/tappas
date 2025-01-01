@@ -107,7 +107,7 @@ PIPELINE="gst-launch-1.0 \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
     videoscale ! \
     queue max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hailonet hef-path=$hef_path vdevice-group-id=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$post_so qos=false ! videoconvert ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

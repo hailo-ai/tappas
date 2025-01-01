@@ -23,5 +23,5 @@ if [[ "${versions_to_ignore: -1}" == "|" ]]; then
     versions_to_ignore="${versions_to_ignore:: -1}"
 fi
 
- sudo apt-get -y --no-install-recommends install \
+sudo apt-get -y --no-install-recommends install \
      $(cat $1 | grep -v '^\s*$\|^\s*\#' | grep -Ev $versions_to_ignore | awk -F":" '{ if ($2) { print $2 } else { print $1 } }')

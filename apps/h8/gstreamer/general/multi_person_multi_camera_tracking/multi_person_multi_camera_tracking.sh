@@ -116,7 +116,7 @@ function main() {
         hailoaggregator name=agg2 \
         cropper2. ! queue name=bypess2_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! agg2. \
         cropper2. ! queue name=pre_reid_q leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$REID_HEF_PATH scheduling-algorithm=1 vdevice-key=1 ! \
+        hailonet hef-path=$REID_HEF_PATH scheduling-algorithm=1 vdevice-group-id=1 ! \
         queue name=reid_post_q leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
         hailofilter so-path=$RE_ID_POST_SO qos=false ! \
         queue name=reid_pre_agg_q leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
@@ -127,7 +127,7 @@ function main() {
         hailoaggregator name=agg1 \
         cropper1. ! queue name=bypess1_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! agg1. \
         cropper1. ! queue name=hailo_pre_detector_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-        hailonet hef-path=$HEF_PATH scheduling-algorithm=1 vdevice-key=1 ! \
+        hailonet hef-path=$HEF_PATH scheduling-algorithm=1 vdevice-group-id=1 ! \
         queue name=detector_post_q leaky=no max-size-buffers=1000 max-size-bytes=0 max-size-time=0 ! \
         hailofilter so-path=$POSTPROCESS_SO qos=false function_name=$FUNCTION_NAME config-path=$json_config_path ! \
         queue name=detector_pre_agg_q leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

@@ -68,7 +68,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.19.
+    This version is compatible with HailoRT v4.20.
 
 
 Installation
@@ -368,6 +368,10 @@ Contact information is available at `hailo.ai <https://hailo.ai/contact-us/>`_.
 
 Changelog
 ----------
+
+**v3.31.0 (December 2024)**
+
+* Known issue: detection.sh application in imx8m has some fps degradation.
 
 **v3.30.0 (October 2024)**
 

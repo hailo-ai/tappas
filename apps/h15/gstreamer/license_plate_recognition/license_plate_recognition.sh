@@ -117,7 +117,7 @@ function create_lp_detection_pipeline() {
                 agg1. \
                 cropper1. ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                    hailonet hef-path=$LICENSE_PLATE_DETECTION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
+                    hailonet hef-path=$LICENSE_PLATE_DETECTION_HEF vdevice-group-id=1 scheduling-algorithm=1 ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                     hailofilter so-path=$LICENSE_PLATE_DETECTION_POST_SO config-path=$license_plate_json_config_path function-name=$LICENSE_PLATE_DETECTION_POST_FUNC qos=false ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -130,7 +130,7 @@ function create_lp_detection_pipeline() {
                 agg2. \
                 cropper2. ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-	                hailonet hef-path=$LICENSE_PLATE_OCR_HEF vdevice-key=1 scheduling-algorithm=1 ! \
+	                hailonet hef-path=$LICENSE_PLATE_OCR_HEF vdevice-group-id=1 scheduling-algorithm=1 ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                     hailofilter so-path=$LICENSE_PLATE_OCR_POST_SO function-name=$LICENSE_PLATE_OCR_POST_FUNC qos=false ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -145,7 +145,7 @@ UDP_SINK="udpsink host=$udp_host_ip port=$udp_port"
 PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     $source_element ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet batch-size=4 hef-path=$VEHICLE_DETECTION_HEF vdevice-key=1 scheduling-algorithm=1 nms-iou-threshold=0.45 nms-score-threshold=0.3 nms-max-proposals-per-class=200 ! \
+    hailonet batch-size=4 hef-path=$VEHICLE_DETECTION_HEF vdevice-group-id=1 scheduling-algorithm=1 nms-iou-threshold=0.45 nms-score-threshold=0.3 nms-max-proposals-per-class=200 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$VEHICLE_DETECTION_POST_SO function-name=$VEHICLE_DETECTION_POST_FUNC qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

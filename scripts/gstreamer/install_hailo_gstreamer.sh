@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+cross_compile_command=""
 script_dir=$(dirname $(realpath "$0"))
 source $script_dir/../misc/checks_before_run.sh --export-only
 
@@ -67,6 +68,9 @@ function parse_args() {
             shift
         elif [ "$1" == "--compile-libgsthailo" ]; then
             COMPILE_LIBGSTHAILO=true
+        elif [ "$1" = "--cross-file" ]; then
+            cross_compile_command="$1 $2"
+            shift
         else
             echo "Unknown parameters, exiting"
             print_usage
@@ -75,18 +79,7 @@ function parse_args() {
     done
 }
 
-function handle_libgsthailo() {
-    # Compile from sources if the user selects to or the .deb has not placed it already there
-    if [ "$COMPILE_LIBGSTHAILO" = true ] || [ ! -f /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailo.so ]; then
-        ${TAPPAS_WORKSPACE}/scripts/gstreamer/compile_libgsthailo.sh --build-type $BUILD_MODE
-    fi
-}
-
 function main() {
-    if [ "$SKIP_HAILORT" = false ]; then
-        handle_libgsthailo
-    fi
-
     # Handle the build of gsthailotools
     pushd "$BUILD_DIR"
 
@@ -96,9 +89,18 @@ function main() {
         reconfigure_flag=--reconfigure
     fi
 
+
     echo "Compiling Hailo Gstreamer target $TARGET, with $num_cores_to_use cpu cores, build type $BUILD_MODE $reconfigure_flag"
 
+    echo "CC=gcc-$GCC_VERSION CXX=g++-$GCC_VERSION meson build.$BUILD_MODE $reconfigure_flag --prefix '${INSTALLATION_DIR}' --buildtype $BUILD_MODE \
+                            ${cross_compile_command} \
+                            -Dtarget=$TARGET \
+                            -Dtarget_platform=$TARGET_PLATFORM \
+                            -Dlibargs='-I/usr/include/hailo/,-I/usr/include/gstreamer-1.0/gst/hailo/' \
+                             -Dinclude_python=true -Dpython_version=$PYTHON_VERSION"
+
     CC=gcc-$GCC_VERSION CXX=g++-$GCC_VERSION meson build.$BUILD_MODE $reconfigure_flag --prefix "${INSTALLATION_DIR}" --buildtype $BUILD_MODE \
+                            ${cross_compile_command} \
                             -Dtarget=$TARGET \
                             -Dtarget_platform=$TARGET_PLATFORM \
                             -Dlibargs="-I/usr/include/hailo/,-I/usr/include/gstreamer-1.0/gst/hailo/" \

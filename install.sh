@@ -5,7 +5,9 @@ skip_hailort=false
 core_only=false
 target_platform="x86"
 compile_num_cores=""
+cross_compile_command=""
 gcc_version=12
+python_version="3"
 
 if [[ -z "$TAPPAS_WORKSPACE" ]]; then
   export TAPPAS_WORKSPACE=$(dirname "$(realpath "$0")")
@@ -22,6 +24,14 @@ readonly HAILO_USER_DIR=${HOME}/.hailo/tappas
 readonly TAPPAS_BASH_ENV=${HAILO_USER_DIR}/tappas_env
 readonly TAPPAS_VERSION=$(grep -a1 project core/hailo/meson.build | grep version | cut -d':' -f2 | tr -d "', ")
 readonly DL_REQ_DIR="${TAPPAS_WORKSPACE}/downloader/config/requirements"
+declare -A ARCH_TO_DPKG=(
+  ["x86"]="amd64"
+  ["aarch64"]="arm64"
+  ["rockchip"]="amd64"
+  ["rpi5"]="arm64"
+  ["rpi"]="arm64"
+  ["hailo15"]="arm64"
+)
 
 function print_usage() {
   echo "TAPPAS Install:"
@@ -29,11 +39,14 @@ function print_usage() {
   echo "Options:"
   echo "  --help                 Show this help"
   echo "  --skip-hailort         Skips installation of HailoRT Deb package"
-  echo "  --target-platform      Target platform [x86, rockchip, rpi(raspberry pi 4),  rpi5(raspberry pi 5), hailo15], used for downloading only required media and hef files (Default is $target_platform)"
+  echo "  --target-platform      Target platform [x86, aarch64, rockchip, rpi(raspberry pi 4),  rpi5(raspberry pi 5), hailo15], used for downloading only required media and hef files (Default is $target_platform)"
   echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
   echo "  --download-apps-data   Comma separated list (without spaces) of apps to download data for. Does not work with option '--target-platform'"
   echo "  --list-apps            Show the list of available apps"
   echo "  --core-only            Install tappas core only (no apps data)"
+  echo "  --cross-compile-arch   Which arch tappas will cross compile to."
+  echo "  --python-version       Will compile to not default python version. Python version - for example `3.11`"
+
   exit 1
 }
 
@@ -61,6 +74,12 @@ function parse_args() {
       shift
     elif [ "$1" == "--list-apps" ]; then
       list_supported_apps
+    elif [ "$1" == "--cross-compile-arch" ] && [ "$(uname -m)" != "$2" ]; then
+      cross_compile_command="--cross-file ${TAPPAS_WORKSPACE}/scripts/gstreamer/$2_cross_file.txt"
+      shift
+    elif [ "$1" == "--python-version" ]; then
+      python_version=$2
+      shift
     else
       echo "Unknown parameters, exiting"
       print_usage
@@ -84,6 +103,9 @@ function python_venv_create_and_install() {
     # if target platform is rpi5 add --system-site-packages flag to the virtualenv creation
     if [ "$target_platform" == "rpi5" ]; then
       python3 -m virtualenv --system-site-packages $VENV_PATH/$VENV_NAME
+    elif [[ ${#python_version} -gt 1 ]]; then
+      # request specifc python_version requires venv
+      python${python_version} -m venv $VENV_PATH/$VENV_NAME
     else
       python3 -m virtualenv $VENV_PATH/$VENV_NAME
     fi
@@ -106,7 +128,7 @@ function python_venv_create_and_install() {
 
 function install_hailo() {
   if [ "$skip_hailort" = false ]; then
-    yes N | sudo dpkg -i ${TAPPAS_WORKSPACE}/hailort/hailort_*_$(dpkg --print-architecture).deb
+    yes N | sudo dpkg -i ${TAPPAS_WORKSPACE}/hailort/hailort_*_${ARCH_TO_DPKG[$target_platform]}.deb
   fi
 
   if [ "$target_platform" != "x86" ]; then
@@ -125,20 +147,14 @@ function install_hailo() {
   mkdir -p $USER_SITE_DIR
   echo "$TAPPAS_WORKSPACE/core/hailo/python/" > "$USER_SITE_DIR/gsthailo.pth"
 
-  $TAPPAS_WORKSPACE/scripts/gstreamer/install_gstreamer.sh
+  $TAPPAS_WORKSPACE/scripts/gstreamer/install_gstreamer.sh --target-platform $target_platform $cross_compile_command
 
   libgsthailo_version=$(ldd /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailo.so | grep -o 'libhailort.*' | awk '{print $1}')
   libgsthailo_ver_num=${libgsthailo_version#*libhailort.so.}
   libhailort_version=$(ls /usr/lib/libhailort.so -l)
   libhailort_version_num=${libhailort_version#*libhailort.so.}
 
-  if [ ! -z $libgsthailo_ver_num ] && [ $libgsthailo_ver_num == $libhailort_version_num ]; then
-    echo "libgsthailo version was already compiled - will skip compilation"
-    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version $compile_num_cores
-  else
-    echo "found newer version of libgsthailo"
-    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version --compile-libgsthailo $compile_num_cores
-  fi
+  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version $compile_num_cores $cross_compile_command
 }
 
 function set_gcc_version(){
@@ -205,7 +221,8 @@ EOF
 function setup_pkg_config(){
   ./scripts/misc/pkg_config_setup.sh \
     --tappas-workspace ${TAPPAS_WORKSPACE} \
-    --tappas-version ${TAPPAS_VERSION}
+    --tappas-version ${TAPPAS_VERSION} \
+    --target-platform "$target_platform"
 }
 
 function _generate_list_of_supported_platforms(){

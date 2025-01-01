@@ -108,7 +108,7 @@ fi
 OBJECT_DETECTION_PIPELINE="videoscale qos=false ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$detection_hef_path scheduling-algorithm=1 scheduler-threshold=5 nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 \
-    scheduler-timeout-ms=100 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    scheduler-timeout-ms=100 vdevice-group-id=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailofilter name=detection so-path=$detection_postprocess_so qos=false function-name=yolov5 ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0"
@@ -116,7 +116,7 @@ OBJECT_DETECTION_PIPELINE="videoscale qos=false ! \
 LANDMARKS_PIPELINE="videoscale qos=false ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailonet hef-path=$pose_estimation_hef_path scheduling-algorithm=1 scheduler-threshold=5 \
-    scheduler-timeout-ms=100 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    scheduler-timeout-ms=100 vdevice-group-id=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0 ! \
     hailofilter name=pose-estimation so-path=$landmarks_postprocess_so config-path=$json_config_path \
     qos=false ! queue leaky=no max-size-buffers=10 max-size-bytes=0 max-size-time=0"

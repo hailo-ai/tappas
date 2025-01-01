@@ -114,5 +114,5 @@ that are trained on your own dataset:
   - TAPPAS changes to replace model:
 
     - Update HEF_PATH on the .sh file
-    - Update `arcface.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/apps/x86/vms/postprocesses/arcface.cpp#L19>`_
+    - Update `arcface.cpp <https://github.com/hailo-ai/tappas/blob/master/core/hailo/libs/postprocesses/recognition/arcface.cpp>`_
       with your new parameters, then recompile to create ``libface_recognition_post.so``

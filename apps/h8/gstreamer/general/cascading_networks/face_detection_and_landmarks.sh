@@ -123,13 +123,13 @@ fi
 
 FACE_DETECTION_PIPELINE="videoscale qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$detection_hef_path scheduling-algorithm=1 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hailonet hef-path=$detection_hef_path scheduling-algorithm=1 vdevice-group-id=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailofilter so-path=$detection_postprocess_so function-name=lightface qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"
 
 FACIAL_LANDMARKS_PIPELINE="queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$landmarks_hef_path scheduling-algorithm=1 vdevice-key=$DEFAULT_VDEVICE_KEY ! \
+    hailonet hef-path=$landmarks_hef_path scheduling-algorithm=1 vdevice-group-id=$DEFAULT_VDEVICE_KEY ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=facial_landmarks_merged so-path=$landmarks_postprocess_so qos=false ! \
     queue leaky=no max-size-buffers=3 max-size-bytes=0 max-size-time=0"

@@ -117,7 +117,7 @@ function create_lp_detection_pipeline() {
                 agg1. \
                 cropper1. ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                    hailonet hef-path=$LICENSE_PLATE_DETECTION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
+                    hailonet hef-path=$LICENSE_PLATE_DETECTION_HEF vdevice-group-id=1 scheduling-algorithm=1 ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                     hailofilter so-path=$LICENSE_PLATE_DETECTION_POST_SO config-path=$license_plate_json_config_path function-name=$LICENSE_PLATE_DETECTION_POST_FUNC qos=false ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -131,7 +131,7 @@ function create_lp_detection_pipeline() {
                 agg2. \
                 cropper2. ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                    hailonet hef-path=$LICENSE_PLATE_OCR_HEF vdevice-key=1 scheduling-algorithm=1 ! \
+                    hailonet hef-path=$LICENSE_PLATE_OCR_HEF vdevice-group-id=1 scheduling-algorithm=1 ! \
                     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                     hailofilter so-path=$LICENSE_PLATE_OCR_POST_SO qos=false ! \
 		    hailoexportfile location=lprnet_export.json ! \
@@ -160,7 +160,7 @@ PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     agg0. \
     cropper0. ! \
         queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    	hailonet hef-path=$VEHICLE_DETECTION_HEF vdevice-key=1 scheduling-algorithm=1 ! \
+    	hailonet hef-path=$VEHICLE_DETECTION_HEF vdevice-group-id=1 scheduling-algorithm=1 ! \
     	queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     	hailofilter so-path=$VEHICLE_DETECTION_POST_SO config-path=$car_json_config_path function-name=$VEHICLE_DETECTION_POST_FUNC qos=false ! \
     	queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

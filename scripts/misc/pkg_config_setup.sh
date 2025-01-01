@@ -14,8 +14,7 @@ readonly TAPPAS_PKG_CONFIG_DIR=${TAPPAS_INSTALLATION_DIR}/pkgconfig
 readonly TAPPAS_PKG_CONFIG_FILE_TEMPLATE="hailo_tappas.pc_template"
 readonly TAPPAS_CORE_PKG_CONFIG_FILE_TEMPLATE="hailo-tappas-core.pc_template"
 TAPPAS_PKG_CONFIG_FILE_BY_MODE=$TAPPAS_PKG_CONFIG_FILE_TEMPLATE
-readonly ARCH=$(uname -m)
-
+ARCH=$(uname -m)
 function print_usage(){
 cat << EOF
 
@@ -26,9 +25,6 @@ EOF
 }
 
 function parse_args(){
-  if [[ $# -lt 4 || $# -gt 6 ]]; then
-      print_usage
-  fi
   while test $# -gt 0; do
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
       print_usage
@@ -37,6 +33,9 @@ function parse_args(){
       shift 2
     elif [ "$1" == "--tappas-version" ]; then
       TAPPAS_VERSION=$2
+      shift 2
+    elif [ "$1" == "--target-platform" ]; then
+      ARCH=$2
       shift 2
     elif [ "$1" == "--core-only" ]; then
       TAPPAS_PKG_CONFIG_FILE_BY_MODE=$TAPPAS_CORE_PKG_CONFIG_FILE_TEMPLATE

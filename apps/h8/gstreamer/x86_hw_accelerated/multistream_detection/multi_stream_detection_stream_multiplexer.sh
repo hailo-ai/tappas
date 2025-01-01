@@ -135,7 +135,7 @@ function create_sources() {
                 videoconvert qos=false ! videoscale method=0 add-borders=false qos=false ! \
                 video/x-raw,width=640,height=640,pixel-aspect-ratio=1/1 ! \
                 queue name=hailo_pre_infer_q_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-                hailonet hef-path=$hef_path device-count=$device_count scheduling-algorithm=1 batch-size=1 vdevice-key=1 nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
+                hailonet hef-path=$hef_path device-count=$device_count scheduling-algorithm=1 batch-size=1 vdevice-group-id=1 nms-score-threshold=0.3 nms-iou-threshold=0.45 output-format-type=HAILO_FORMAT_TYPE_FLOAT32 ! \
                 queue name=hailo_postprocess0_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
                 hailofilter function-name=$network_name so-path=$POSTPROCESS_SO qos=false ! \
                 queue name=hailo_draw0_$n leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
