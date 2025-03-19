@@ -1,24 +1,6 @@
 croppers_install_dir =  post_proc_install_dir + '/cropping_algorithms/'
 
 ################################################
-# 3ddfa algorithm
-################################################
-# sources used to compile this plug-in
-face_crop_sources = [
-    'face_detection_and_landmarks/3ddfa.cpp',
-]
-
-shared_library('3ddfa',
-    face_crop_sources,
-    cpp_args : hailo_lib_args,
-    include_directories: [hailo_general_inc, hailo_mat_inc],
-    dependencies : post_deps + [opencv_dep],
-    gnu_symbol_visibility : 'default',
-    install: true,
-    install_dir: croppers_install_dir,
-)
-
-################################################
 # License Plate Recognition algorithms
 ################################################
 # sources used to compile this plug-in
