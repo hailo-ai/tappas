@@ -165,10 +165,6 @@ function install_hailo() {
   sudo cp -r $TAPPAS_WORKSPACE/core/hailo/plugins/common/	/usr/include/hailo/tappas
   sudo cp -r $TAPPAS_WORKSPACE/sources/	/usr/include/hailo/tappas/sources
   
-  # Pre-load shared libraries
-  sudo mkdir -p /etc/ld.so.preload.d
-  sudo cp -r $TAPPAS_WORKSPACE/packaging/deb/hailo_so.conf	/etc/ld.so.preload.d/
-
   # Copyright
   sudo mkdir -p /usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}
   sudo cp $TAPPAS_WORKSPACE/LICENSE	/usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}/copyright
