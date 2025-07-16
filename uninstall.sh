@@ -6,11 +6,12 @@
 set -e
 
 #############################################
-readonly INSTALLATION_DIR=/opt/hailo/tappas
+readonly INSTALLATION_DIR=/usr
 readonly HAILO_USER_DIR=${HOME}/.hailo/tappas
 readonly TAPPAS_BASH_ENV=${HAILO_USER_DIR}/tappas_env
 readonly VENV_NAME=hailo_tappas_venv
 readonly GSTREAMER_CACHE=${HOME}/.cache/gstreamer-1.0
+readonly TAPPAS_VERSION=$(grep -a1 project core/hailo/meson.build | grep version | cut -d':' -f2 | tr -d "', ")
 
 # indication that older version of Tappas (pre-3.24) exists on the host
 readonly LIB_DIR=/usr/lib/$(uname -m)-linux-gnu
@@ -27,7 +28,6 @@ readonly OLD_TAPPAS_LIBS=(
 readonly OLD_TAPPAS_FILES=(
     "${LIB_DIR}/pkgconfig/gsthailometa.pc"
     "/usr/include/gsthailometa"
-    "/usr/bin/parse_hef"
 )
 #############################################
 
@@ -47,7 +47,21 @@ function check_tappas_installed(){
 }
 
 function remove_so(){
-    sudo rm -rf ${INSTALLATION_DIR}
+    sudo rm -f ${LIB_DIR}/libhailo_*
+    sudo rm -f ${LIB_DIR}/libgsthailometa.*
+    sudo rm -rf ${LIB_DIR}/hailo/tappas
+    sudo rm -f ${LIB_DIR}/libgstintercept*
+    sudo rm -f ${LIB_DIR}/gstreamer-1.0/libgsthailotracers*
+    sudo rm -f ${LIB_DIR}/gstreamer-1.0/libgsthailotools*
+    sudo rm -f ${LIB_DIR}/gstreamer-1.0/libgstinstruments*
+}
+
+function remove_misc(){
+    sudo rm -rf ${INSTALLATION_DIR}/include/hailo/tappas
+    sudo rm -rf ${INSTALLATION_DIR}share/doc/hailo-tappas-core-${TAPPAS_VERSION}
+    sudo rm -f ${LIB_DIR}/pkgconfig/hailo-tappas-core.pc
+    sudo rm -f ${LIB_DIR}/pkgconfig/gsthailometa.pc
+    sudo rm -f /etc/ld.so.preload.d/hailo_so.conf
 }
 
 function clean_tappas_user_env(){
@@ -80,6 +94,7 @@ function main(){
     fi
 
     remove_so
+    remove_misc
     remove_tappas_venv
     clean_tappas_user_env
     check_tappas_installed && return_code=$?

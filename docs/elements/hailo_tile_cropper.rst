@@ -5,7 +5,7 @@ Hailo Tile Cropper
 Overview
 --------
 
-``HailoTileCropper`` is a derived element of `hailoCropper <hailo_cropper.rst>`_ and it is used in the `Tiling <../../apps/h8/gstreamer/general/tiling/README.rst>`_ app.
+``HailoTileCropper`` is a derived element of `hailoCropper <hailo_cropper.rst>`_.
 It overrides the default ``prepare_crops`` behaviour to return a vector of tile regions of interest, and allows splitting the incoming frame into tiles by rows and columns.
 Each tile stores their x, y, width, and height (with overlap between tiles included) in the full frame.
 Just like the base HailoCropper, the full original frame is sent to the first src pad while all the cropped images are sent to the second.

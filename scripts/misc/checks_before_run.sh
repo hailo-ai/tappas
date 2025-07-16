@@ -9,7 +9,7 @@ export_only=false
 check_vaapi=false
 no_hailo=false
 
-INSTALLATION_DIR=/opt/hailo/tappas
+INSTALLATION_DIR=/usr
 TAPPAS_LIB_PATH=${INSTALLATION_DIR}/lib/$(uname -m)-linux-gnu
 TAPPAS_GST_PLUGIN_PATH=${TAPPAS_LIB_PATH}/gstreamer-1.0
 
@@ -103,26 +103,6 @@ function check_python_packages_found() {
     check_if_python_package_found "gsthailo"    
 }
 
-function validate_hailort_version() {
-    if ! [ -x "$(command -v hailortcli)" ]; then
-        log_error "hailortcli was not found"
-        return 1
-    fi
-
-    if [ ! -f "$TAPPAS_WORKSPACE/.config" ]; then
-        log_warning "Can't validate if hailort version is supported"
-        return 0
-    fi 
-
-    hailort_version=$(hailortcli fw-control identify | grep -a "Firmware Version" | tail -n 1 | grep -aoP "(\d+.\d+)")
-    hailort_expected_version=$(cat $TAPPAS_WORKSPACE/.config | awk -F'=' '{print $2}')
-
-    if [ "$hailort_version" != "$hailort_expected_version" ]; then
-        log_warning "HailoRT version is $hailort_version, expected to be $hailort_expected_version (version was extraced using the following command: 'hailortcli fw-control identify')"
-        return 1
-    fi
-}
-
 function export_xv_image_is_supported() {
     # Check if an adapter that are accessible through the X-Video extension is found
     if xvinfo | grep -q 'no adaptors present'; then
@@ -166,7 +146,7 @@ function main() {
     functions_to_run=( export_workspaces export_xv_image_is_supported export_env_path_vars)
 
     if [ "$no_hailo" = false ]; then
-        functions_to_run+=( validate_hailo_device_connected validate_hailort_version )
+        functions_to_run+=( validate_hailo_device_connected )
     fi
 
     if [ "$check_python_packages" = true ]; then

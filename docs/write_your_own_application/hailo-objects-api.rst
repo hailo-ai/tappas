@@ -112,7 +112,8 @@ Typing enumeration for `HailoObject`_ instances.
        HAILO_MATRIX,
        HAILO_DEPTH_MASK,
        HAILO_CLASS_MASK,
-       HAILO_CONF_CLASS_MASK
+       HAILO_CONF_CLASS_MASK,
+       HAILO_USER_META
    } hailo_object_t;
 
 |
@@ -142,9 +143,6 @@ Functions
    * - ``name()``
      - std::string
      - Get the tensor name.
-   * - ``vstream_info()``
-     - hailo_vstream_info_t
-     - Get the HailoRT vstream info.
    * - ``data()``
      - uint8_t *
      - Get the tensor data pointer.
@@ -161,17 +159,40 @@ Functions
      - uint32_t
      - Get the tensor total length.
    * - ``shape()``
-     - std::vector\std::size_t\
+     - std::vector\<std::size_t\>
      - Get the tensor dimensions.
-   * - ``fix_scale(uint8_t num)``
+   * - ``nms_shape()``
+     - hailo_tensor_nms_shape_t
+     - Get the nms shape.
+   * - ``quant_info()``
+     - hailo_tensor_quant_info_t
+     - Get the quantization information.
+   * - ``format()``
+     - hailo_tensor_format_t
+     - Get the tensor format type.
+   * - ``fix_scale(T num)``
      - float
-     - Takes a quantized number and returns its dequantized value (float).
-   * - ``get(uint row, uint col, uint channel)``
-     - uint8_t
-     - Get the tensor value at this location.
-   * - ``get_full_percision(uint row, uint col, uint channel``
-     - float
-     - Get the tensor dequantized value at this location.
+     - Takes a quantized number of template type 'T' and returns its dequantized value ('float').
+   * - ``quantize(T num)``
+     - T
+     - Takes a dequantized number of template type 'T' and returns its quantized value ('T').  
+   * - |  ``get(uint row,``
+       |     ``uint col,``
+       |     ``uint channel)``
+     - | uint8_t
+     - | Get the tensor value at this location.   
+   * - | ``get_uint16(uint row,`` 
+       |            ``uint col,`` 
+       |            ``uint channel)``
+     - | uint16_t
+     - | Get the tensor value (uint16_t) at this location.
+   * - | ``get_full_percision(``
+       |     ``uint row,`` 
+       |     ``uint col,`` 
+       |     ``uint channel,`` 
+       |     ``bool is_uint16)``
+     - | float
+     - | Get the tensor dequantized value at this location.
 
 |
 |
@@ -239,36 +260,49 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 35 25 40
    :header-rows: 1
 
    * - Function
      - Return Type
      - Description
-   * - ``add_object(HailoObjectPtr obj)``
-     - void
-     - Add a `HailoObject`_ to this `HailoMainObject`_.
-   * - ``add_tensor(HailoTensorPtr tensor)``
-     - void
-     - Add a `HailoTensor`_ to this `HailoMainObject`_.
-   * - ``remove_object(HailoObjectPtr obj)``
-     - void
-     - Remove a `HailoObject`_ from this `HailoMainObject`_.
+   * - | ``add_object``
+       | ``(HailoObjectPtr obj)`` 
+     - | void
+     - | Add a `HailoObject`_ to this `HailoMainObject`_.
+   * - | ``add_tensor``
+       | ``(HailoTensorPtr tensor)``
+     - | void
+     - | Add a `HailoTensor`_ to this `HailoMainObject`_.
+   * - | ``remove_object``
+       | ``(HailoObjectPtr obj)``
+     - | void
+     - | Remove a `HailoObject`_ from this `HailoMainObject`_.
    * - ``remove_object(uint index)``
      - void
      - Remove a `HailoObject`_ from this `HailoMainObject`_ by index.
-   * - ``get_tensor(std::string name)``
-     - `HailoTensorPtr`_
-     - Get a tensor from this `HailoMainObject`_.
+   * - | ``remove_objects_typed``
+       | ``(hailo_object_t type)``
+     - | void
+     - | Removes all the objects of a given type, attached to this `HailoMainObject`_.
+   * - | ``get_tensor``
+       | ``(std::string name)``
+     - | `HailoTensorPtr`_
+     - | Get a tensor from this `HailoMainObject`_.
    * - ``has_tensors()``
      - bool
      - Checks whether there are tensors attached to this `HailoMainObject`_.
-   * - ``get_tensors()``
+   * - | ``get_tensors()``
      - | std::vector
        | \<\ `HailoTensorPtr`_\>
      - | Get a vector of the tensors attached to this `HailoMainObject`_.
-   * - | ``clear_tensors()``
-     - | void
-     - | Clear all tensors attached to this `HailoMainObject`_.
+   * - | ``get_tensors_by_name()``
+     - | std::map
+       | \<std::string, \ `HailoTensorPtr`_\> 
+     - | Get the map of tensor names to their corresponding `HailoTensorPtr`_ objects.
+   * - ``clear_tensors()``
+     - void
+     - Clear all tensors attached to this `HailoMainObject`_.
    * - | ``get_objects()``
      - | std::vector
        | \<\ `HailoObjectPtr`_\>
@@ -278,7 +312,6 @@ Functions
      - | std::vector
        | \<\ `HailoObjectPtr`_\>
      - | Get the objects of a given type, attached to this `HailoMainObject`_.
-
 
 |
 |
@@ -298,7 +331,7 @@ Constructor
 
 .. code-block:: cpp
 
-   HailoROI(HailoBBox bbox)
+   HailoROI(HailoBBox bbox, std::string stream_id = "")
 
 Functions
 ---------
@@ -316,21 +349,38 @@ Functions
    * - ``get_type()``
      - `hailo_object_t`_
      - This `HailoObject`_\ 's type: HAILO_ROI
-   * - ``add_object(HailoObjectPtr obj)``
-     - void
-     - Get the bbox of this ROI.
+   * - | ``add_object``
+       | ``(HailoObjectPtr obj)``
+     - | void
+     - | Add an object to the main object.
+   * - | ``add_unscaled_object``
+       | ``(HailoObjectPtr obj)``
+     - | void
+     - | Adds an object to the main object. Ignores any potential scaling of ROIs
    * - ``get_bbox()``
      - `HailoBBox`_
-     - Get a shared pointer to this instance.
+     - Get the bbox of this ROI.
    * - ``set_bbox(HailoBBox bbox)``
      - void
      - Set the bbox of this ROI.
    * - ``get_scaling_bbox()``
      - `HailoBBox`_
      - Get the scaling bbox of this ROI, useful in case of nested ROIs.
-   * - ``set_scaling_bbox(HailoBBox bbox)``
+   * - | ``set_scaling_bbox``
+       | ``(HailoBBox bbox)``
+     - | void
+     - | Set the scaling bbox of this ROI, useful in case of nested ROIs.
+   * - ``clear_scaling_bbox()``
      - void
-     - Set the scaling bbox of this ROI, useful in case of nested ROIs.
+     - Clear the scaling bbox of this ROI.
+   * - ``get_stream_id()``
+     - std::string
+     - Get the stream ID of this ROI.
+   * - | ``set_stream_id``
+       | ``(std::string stream_id)``
+     - | std::string
+     - | Set the stream ID of this ROI.
+     
 
 
 | 
@@ -356,12 +406,15 @@ Functions
 ---------
 
 .. list-table::
-   :widths: 30 20 50
+   :widths: 35 30 35
    :header-rows: 1
 
    * - Function
      - Return Type
      - Description
+   * - ``clone()``
+     - std::shared_ptr<`HailoObject`_\>
+     - Creates a deep copy of this `HailoDetection`_\  object.
    * - ``get_type()``
      - `hailo_object_t`_
      - This `HailoObject`_\ 's type: HAILO_DETECTION
@@ -374,6 +427,12 @@ Functions
    * - ``get_class_id()``
      - int
      - This detection's class id.
+   * - ``set_confidence(float conf)``
+     - void
+     - Sets the confidence score for this detection.
+   * - ``set_label(std::string label)``
+     - void
+     - Sets the label for this detection.
    * - ``operator<(const HailoDetection &other)``
      - bool
      - Overload < operator, compares confidences.
@@ -404,12 +463,15 @@ Functions
 ---------
 
 .. list-table::
-   :widths: 35 20 45
+   :widths: 36 30 34
    :header-rows: 1
 
    * - Function
      - Return Type
      - Description
+   * - ``clone()``
+     - std::shared_ptr<`HailoObject`_\>
+     - Creates a deep copy of this `HailoClassification`_\  object.
    * - ``get_type()``
      - `hailo_object_t`_
      - This `HailoObject`_\ 's type: HAILO_CLASSIFICATION
@@ -452,11 +514,15 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 36 30 34
    :header-rows: 1
 
    * - Function
      - Return Type
      - Description
+   * - ``clone()``
+     - std::shared_ptr<`HailoObject`_\>
+     - Creates a deep copy of this `HailoLandmarks`_\  object.
    * - ``get_type()``
      - `hailo_object_t`_
      - This `HailoObject`_\ 's type: HAILO_LANDMARKS
@@ -472,6 +538,13 @@ Functions
    * - ``get_pairs()``
      - std::vector<std::pair<int, int>>
      - vector of pairs of joints that should be connected in overlay.
+   * - ``get_threshold()``
+     - float
+     - Gets the threshold held by this Landmarks object.
+   * - | ``set_points``
+       | ``(std::vector<HailoPoint> points)``
+     - | void
+     - | Set a new vector of points to this `HailoLandmarks`_\  object.
 
 
 |
@@ -497,17 +570,24 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 20 30 50
    :header-rows: 1
 
    * - Function
      - Return Type
      - Description
+   * - ``clone()``
+     - std::shared_ptr<`HailoObject`_\>
+     - Creates a deep copy of this `HailoUniqueID`_\  object.
    * - ``get_type()``
      - `hailo_object_t`_
      - This `HailoObject`_\ 's type: HAILO_UNIQUE_ID
    * - ``get_id()``
      - int
      - Get the unique id.
+   * - ``get_mode()``
+     - int
+     - Get the mode.
 
 
 |
@@ -534,14 +614,12 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 30 20 50
    :header-rows: 1
 
    * - Function
      - Return Type
      - Description
-   * - ``get_type()``
-     - `hailo_object_t`_
-     - This `HailoObject`_\ 's type: HAILO_MASK
    * - ``get_width()``
      - int
      - get the mask width
@@ -575,6 +653,7 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 20 30 50
    :header-rows: 1
 
    * - Function
@@ -610,6 +689,7 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 20 30 50
    :header-rows: 1
 
    * - Function
@@ -645,6 +725,7 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 25 25 50
    :header-rows: 1
 
    * - Function
@@ -683,11 +764,15 @@ Functions
 ---------
 
 .. list-table::
+   :widths: 20 35 45
    :header-rows: 1
 
    * - Function
      - Return Type
      - Description
+   * - ``clone()``
+     - std::shared_ptr<`HailoObject`_\>
+     - Creates a deep copy of this `HailoMatrix`_\ object.
    * - ``get_type()``
      - `hailo_object_t`_
      - This `HailoObject`_\ 's type: HAILO_MATRIX
@@ -706,7 +791,61 @@ Functions
    * - ``shape()``
      - std::vectorstd::size_t
      - get the shape of the matrix
-   * - ``get_data_ptr()``
-     - float *
-     - get the matrix data pointer
+   * - ``get_data()``
+     - std::vector<float> 
+     - get the constant reference to the matrix data
+
+
+|
+|
+
+
+HailoUserMeta
+===================
+
+| Inherits from `HailoObject`_
+| ``HailoUserMeta`` represents a sample metadata for users. 
+| ``Shared pointer handle``\ : **HailoUserMetaPtr**  \
+| ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
+
+Constructors
+------------
+
+.. code-block:: cpp
+
+       HailoUserMeta()
+       HailoUserMeta(int user_int, std::string user_string, float user_float) : m_user_int(user_int), m_user_string(user_string), m_user_float(user_float)
+
+Functions
+---------
+
+.. list-table::
+   :widths: 45 20 35
+   :header-rows: 1
+
+   * - Function
+     - Return Type
+     - Description
+   * - ``get_type()``
+     - `hailo_object_t`_
+     - This `HailoObject`_\ 's type: HAILO_USER_META
+   * - ``get_user_float()``
+     - folat
+     - get the user-defined floating-point value in a thread-safe manner.
+   * - ``get_user_string()``
+     - std::string
+     - get the user-defined string in a thread-safe manner.
+   * - ``get_user_int()``
+     - int
+     - get the user-defined integer value in a thread-safe manner   
+   * - ``set_user_float(float user_float)``
+     - void
+     - set the user-defined floating-point value in a thread-safe manner.
+   * - ``set_user_string(std::string user_string)``
+     - void
+     - set the user-defined string in a thread-safe manner.
+   * - ``set_user_int(int user_int)``
+     - void
+     - set the user-defined integer value in a thread-safe manner.
+  
 

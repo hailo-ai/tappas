@@ -110,5 +110,3 @@ Tiling introduces two new elements:
 * ``hailotilecropper`` which splits the frame into tiles by separating the frame into rows and columns
    (given as parameters to the element).
 * ``hailotileaggregator`` which aggregates the cropped tiles and stitches them back to the original resolution.
-
-An example for the pipeline itself could be found on our `Tiling app <../../apps/h8/gstreamer/general/tiling/README.rst>`_.

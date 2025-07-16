@@ -3,7 +3,7 @@ set -e
 linux_release=$(grep '^VERSION_ID' /etc/os-release | cut -d '=' -f 2 | tr -d '"')
 version_to_ignore=""
 
-linux_releases_list=( 20.04 21.04 22.04 )
+linux_releases_list=( 20.04 21.04 22.04 24.04)
 
 if [[ ! "${linux_releases_list[*]}" =~ "${linux_release=}" ]]; then
     echo "$linux_release is not supported"

@@ -336,8 +336,8 @@ static void get_tensors_from_meta(GstBuffer *buffer, HailoROIPtr roi)
     {
         pmeta = reinterpret_cast<GstParentBufferMeta *>(meta);
         (void)gst_buffer_map(pmeta->buffer, &info, GST_MAP_READWRITE);
-        const hailo_vstream_info_t vstream_info = reinterpret_cast<GstHailoTensorMeta *>(gst_buffer_get_meta(pmeta->buffer, g_type_from_name(TENSOR_META_API_NAME)))->info;
-        roi->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(info.data), vstream_info));
+        const hailo_tensor_metadata_t tensor_meta_info = reinterpret_cast<GstHailoTensorMeta *>(gst_buffer_get_meta(pmeta->buffer, g_type_from_name(TENSOR_META_API_NAME)))->info;
+        roi->add_tensor(std::make_shared<HailoTensor>(reinterpret_cast<uint8_t *>(info.data), tensor_meta_info));
         gst_buffer_unmap(pmeta->buffer, &info);
     }
 }

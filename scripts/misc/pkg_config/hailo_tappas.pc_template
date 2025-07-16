@@ -1,4 +1,4 @@
-prefix=/opt/hailo/tappas
+prefix=/usr
 includedir=${prefix}/include
 arch=
 libdir=${prefix}/lib/${arch}-linux-gnu

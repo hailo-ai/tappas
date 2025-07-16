@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-readonly INSTALLATION_DIR=/opt/hailo/tappas
+readonly INSTALLATION_DIR=/usr
 
 # Extract GStramer version used
 GSTREAMER_VERSION=$(gst-launch-1.0 --gst-version | awk '{print $NF}' | cut -d. -f1,2)

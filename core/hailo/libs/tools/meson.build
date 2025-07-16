@@ -28,20 +28,3 @@ shared_library('stream_id_tool',
     install: true,
     install_dir: post_proc_install_dir,
 )
-
-target_platform = get_option('target_platform')
-
-if (target_platform == 'x86')
-    parse_hef_sources = [
-        'parse_hef.cpp'
-    ]
-    executable('parse_hef',
-        parse_hef_sources,
-        cpp_args : hailo_lib_args,
-        link_args : ['-lhailort'], 
-        include_directories: cxxopts_inc,
-        dependencies : post_deps,
-        gnu_symbol_visibility : 'default',
-        install: true,
-    )
-endif

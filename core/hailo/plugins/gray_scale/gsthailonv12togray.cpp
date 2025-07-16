@@ -5,7 +5,6 @@
 #include "gsthailonv12togray.hpp"
 #include "tensor_meta.hpp"
 #include "gst_hailo_meta.hpp"
-#include "hailo/hailort.h"
 #include <gst/video/video.h>
 #include <gst/gst.h>
 #include <dlfcn.h>

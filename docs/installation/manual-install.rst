@@ -2,7 +2,7 @@
 Manual Installation
 ===================
 
-The manual installation of TAPPAS requires preparation, Hailo's recommended method is to begin with ``Hailo SW Suite`` or ``Pre-built Docker image``.
+The manual installation of TAPPAS requires preparation, Hailo's recommended method is to begin with ``Hailo SW Suite``.
 This guide will instruct how to install the required components manually.
 
 .. note::
@@ -74,7 +74,6 @@ The following APT packages need to be installed, using the command below:
 * python3-virtualenv
 * python-gi-dev
 * libgirepository1.0-dev
-* gcc-12 and g++-12
 * cmake
 * libzmq3-dev
 * git
@@ -185,14 +184,6 @@ On most platforms (such as x86-based platforms), run:
     ./install.sh --skip-hailort
 
 and then, `Make sure that HailoRT works <./verify_hailoRT.rst>`_
-
-Raspberry Pi 4 has its own set of example applications, so the installation command on this platform is slightly different:
-
-.. code-block:: sh
-
-    ./install.sh --skip-hailort --target-platform rpi
-
-and then, `return to the Raspberry Pi section <./raspberry-pi-install.rst>`_
 
 On Rockchip, run: 
 

@@ -411,7 +411,7 @@ std::vector<HailoDetection> face_detection_postprocess(std::vector<HailoTensorPt
     {
         // While we're here, adapt the tensor into an xarray of float (dequantized).
         xt::xarray<uint8_t> xdata = common::get_xtensor(tensors[i]);
-        xt::xarray<float> xdata_rescaled = common::dequantize(xdata, tensors[i]->vstream_info().quant_info.qp_scale, tensors[i]->vstream_info().quant_info.qp_zp);
+        xt::xarray<float> xdata_rescaled = common::dequantize(xdata, tensors[i]->quant_info().qp_scale, tensors[i]->quant_info().qp_zp);
         // output layers are paired: boxes:classes:landmarks, boxes:classes:landmarks, boxes:classes:landmarks, etc...
         if (i % outputs_per_branch == 0)
         {

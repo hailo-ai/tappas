@@ -6,7 +6,7 @@
 #include "hailo_objects.hpp"
 #include "hailo_tensors.hpp"
 #include "gst_hailo_meta.hpp"
-#include "hailo/hailort.h"
+#include "hailo_tracker.hpp"
 
 #include <string>
 
@@ -25,10 +25,12 @@ using namespace std::string_literals;
 
 using py_descriptor_t = unsigned long;
 
-static HailoROIPtr get_roi_from_buffer(py::object py_buffer) {
+static HailoROIPtr get_roi_from_buffer(py::object py_buffer)
+{
     GstBuffer *buffer = GST_BUFFER(pygobject_get(py_buffer.ptr()));
     HailoROIPtr roi = get_hailo_main_roi(buffer, true);
-    if (roi == nullptr) {
+    if (roi == nullptr)
+    {
         throw std::runtime_error("Failed to get HailoMainObject from buffer");
     }
     return roi->shared_from_this();
@@ -240,29 +242,29 @@ public:
     hailo_object_t get_type() override { PYBIND11_OVERRIDE(hailo_object_t, HailoUserMeta, get_type); }
 };
 
-HailoTensor tensor_init(pybind11::array_t<uint8_t> data, const hailo_vstream_info_t &vstream_info)
+HailoTensor tensor_init(pybind11::array_t<uint8_t> data, const hailo_tensor_metadata_t &tensor_meta_info)
 {
-    return HailoTensor(static_cast<uint8_t *>(data.request().ptr), vstream_info);
+    return HailoTensor(static_cast<uint8_t *>(data.request().ptr), tensor_meta_info);
 }
 
-HailoTensor tensor_init16(pybind11::array_t<uint16_t> data, const hailo_vstream_info_t &vstream_info)
+HailoTensor tensor_init16(pybind11::array_t<uint16_t> data, const hailo_tensor_metadata_t &tensor_meta_info)
 {
-    return HailoTensor(static_cast<uint8_t *>(data.request().ptr), vstream_info);
+    return HailoTensor(static_cast<uint8_t *>(data.request().ptr), tensor_meta_info);
 }
 
 HailoTensor tensor_init_full(pybind11::object data, std::string name, uint height, uint width, uint features, float qp_zp, float qp_scale, int type)
 {
 
-    hailo_vstream_info_t info;
+    hailo_tensor_metadata_t info;
     info.quant_info.qp_zp = qp_zp;
     info.quant_info.qp_scale = qp_scale;
     info.shape.height = height;
     info.shape.width = width;
     info.shape.features = features;
-    info.format.type = hailo_format_type_t(type);
+    info.format.type = HailoTensorFormatType(type);
     strcpy(info.name, name.c_str());
 
-    if (type == HAILO_FORMAT_TYPE_UINT16)
+    if (info.format.type == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16)
     {
         pybind11::array_t<uint16_t> new_data(data);
         return tensor_init16(new_data, info);
@@ -326,6 +328,14 @@ PYBIND11_MODULE(hailo, m)
 
     m.def("get_hailo_roi_instances", &hailo_common::get_hailo_roi_instances,
           "Get HAILO ROI instances", "roi"_a);
+
+    m.def("remove_classifications", &hailo_common::remove_classifications, "Remove classifications of a given type from ROI", "roi"_a, "classification_type"_a);
+    m.def("has_classifications", &hailo_common::has_classifications, "Check if ROI has classifications of a given type", "roi"_a, "classification_type"_a);
+    m.def("get_hailo_classifications", &hailo_common::get_hailo_classifications, "Get classifications from ROI (optionally filtered by type)", "roi"_a, "classification_type"_a = "");
+    m.def("get_hailo_unique_id", &hailo_common::get_hailo_unique_id, "Get unique IDs from ROI", "roi"_a);
+    m.def("get_hailo_track_id", &hailo_common::get_hailo_track_id, "Get track IDs from ROI", "roi"_a);
+    m.def("get_hailo_global_id", &hailo_common::get_hailo_global_id, "Get global IDs from ROI", "roi"_a);
+    m.def("get_hailo_landmarks", &hailo_common::get_hailo_landmarks, "Get landmarks from ROI", "roi"_a);
 
     {
         py::class_<HailoPoint, std::shared_ptr<HailoPoint>>(m, "HailoPoint")
@@ -730,13 +740,15 @@ PYBIND11_MODULE(hailo, m)
                                                  {obj.height(), obj.width(), obj.features()},
                                                  {sizeof(uint8_t) * obj.features() * obj.width(), sizeof(uint8_t) * obj.features(), sizeof(uint8_t)}); })
             .def("name", &HailoTensor::name, "Name")
-            .def("vstream_info", &HailoTensor::vstream_info, "Vstream info")
             .def("data", &HailoTensor::data, "Data", py::return_value_policy::reference_internal)
             .def("width", &HailoTensor::width, "Width")
             .def("height", &HailoTensor::height, "Height")
             .def("features", &HailoTensor::features, "Features")
             .def("size", &HailoTensor::size, "Size")
             .def("shape", &HailoTensor::shape, "Shape")
+            .def("nms_shape", &HailoTensor::nms_shape, "Nms shape")
+            .def("quant_info", &HailoTensor::quant_info, "Quant info")
+            .def("format", &HailoTensor::format, "Format type")
             .def("fix_scale", &HailoTensor::fix_scale<uint16_t>, "Fix scale", "num"_a)
             .def("fix_scale", &HailoTensor::fix_scale<uint8_t>, "Fix scale", "num"_a)
             .def("get", &HailoTensor::get, "Get", "row"_a, "col"_a, "channel"_a)
@@ -754,4 +766,43 @@ PYBIND11_MODULE(hailo, m)
           "Access HailoROI from low-level py descriptor");
     m.def("get_roi_from_buffer", &get_roi_from_buffer, "A function that processes a GstBuffer and returns HailoROI");
 
+    py::class_<HailoTrackerParams>(m, "HailoTrackerParams")
+        .def(py::init<>())
+        .def_readwrite("kalman_distance", &HailoTrackerParams::kalman_distance)
+        .def_readwrite("iou_threshold", &HailoTrackerParams::iou_threshold)
+        .def_readwrite("init_iou_threshold", &HailoTrackerParams::init_iou_threshold)
+        .def_readwrite("keep_tracked_frames", &HailoTrackerParams::keep_tracked_frames)
+        .def_readwrite("keep_new_frames", &HailoTrackerParams::keep_new_frames)
+        .def_readwrite("keep_lost_frames", &HailoTrackerParams::keep_lost_frames)
+        .def_readwrite("keep_past_metadata", &HailoTrackerParams::keep_past_metadata)
+        .def_readwrite("std_weight_position", &HailoTrackerParams::std_weight_position)
+        .def_readwrite("std_weight_position_box", &HailoTrackerParams::std_weight_position_box)
+        .def_readwrite("std_weight_velocity", &HailoTrackerParams::std_weight_velocity)
+        .def_readwrite("std_weight_velocity_box", &HailoTrackerParams::std_weight_velocity_box)
+        .def_readwrite("debug", &HailoTrackerParams::debug)
+        .def_readwrite("hailo_objects_blacklist", &HailoTrackerParams::hailo_objects_blacklist);
+
+    py::class_<HailoTracker, std::unique_ptr<HailoTracker, py::nodelete>>(m, "HailoTracker")
+        .def_static("get_instance", &HailoTracker::GetInstance, py::return_value_policy::reference)
+        .def("add_jde_tracker", py::overload_cast<const std::string &, HailoTrackerParams>(&HailoTracker::add_jde_tracker), py::arg("name"), py::arg("params"))
+        .def("add_jde_tracker", py::overload_cast<const std::string &>(&HailoTracker::add_jde_tracker), py::arg("name"))
+        .def("remove_jde_tracker", &HailoTracker::remove_jde_tracker, py::arg("name"))
+        .def("get_trackers_list", &HailoTracker::get_trackers_list)
+        .def("update", &HailoTracker::update, py::arg("name"), py::arg("inputs"))
+        .def("add_object_to_track", &HailoTracker::add_object_to_track, py::arg("name"), py::arg("id"), py::arg("obj"))
+        .def("remove_classifications_from_track", &HailoTracker::remove_classifications_from_track, py::arg("name"), py::arg("track_id"), py::arg("classifier_type"))
+        .def("remove_matrices_from_track", &HailoTracker::remove_matrices_from_track, py::arg("name"), py::arg("track_id"))
+        .def("set_kalman_distance", &HailoTracker::set_kalman_distance, py::arg("name"), py::arg("new_distance"))
+        .def("set_iou_threshold", &HailoTracker::set_iou_threshold, py::arg("name"), py::arg("new_iou_thr"))
+        .def("set_init_iou_threshold", &HailoTracker::set_init_iou_threshold, py::arg("name"), py::arg("new_init_iou_thr"))
+        .def("set_keep_tracked_frames", &HailoTracker::set_keep_tracked_frames, py::arg("name"), py::arg("new_keep_tracked"))
+        .def("set_keep_new_frames", &HailoTracker::set_keep_new_frames, py::arg("name"), py::arg("new_keep_new"))
+        .def("set_keep_lost_frames", &HailoTracker::set_keep_lost_frames, py::arg("name"), py::arg("new_keep_lost"))
+        .def("set_keep_past_metadata", &HailoTracker::set_keep_past_metadata, py::arg("name"), py::arg("new_keep_past"))
+        .def("set_std_weight_position", &HailoTracker::set_std_weight_position, py::arg("name"), py::arg("new_std_weight_pos"))
+        .def("set_std_weight_position_box", &HailoTracker::set_std_weight_position_box, py::arg("name"), py::arg("new_std_weight_position_box"))
+        .def("set_std_weight_velocity", &HailoTracker::set_std_weight_velocity, py::arg("name"), py::arg("new_std_weight_vel"))
+        .def("set_std_weight_velocity_box", &HailoTracker::set_std_weight_velocity_box, py::arg("name"), py::arg("new_std_weight_velocity_box"))
+        .def("set_debug", &HailoTracker::set_debug, py::arg("name"), py::arg("new_debug"))
+        .def("set_hailo_objects_blacklist", &HailoTracker::set_hailo_objects_blacklist, py::arg("name"), py::arg("hailo_objects_blacklist_vec"));
 }
