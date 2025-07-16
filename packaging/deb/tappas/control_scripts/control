@@ -1,8 +1,0 @@
-Package: hailo-tappas-core
-Version:
-Architecture: all
-Maintainer: Hailo team <contact@hailo.ai>
-Description: This package contains the core components of the Hailo Tappas platform.
- This package includes the essential elements of the Hailo Tappas platform.
-Copyright: /usr/share/doc/tappas/copyright
-Depends: python3, ffmpeg, x11-utils, python3-dev, python3-pip, python3-setuptools, python3-virtualenv, gcc-12, g++-12, python-gi-dev, pkg-config, libcairo2-dev, libgirepository1.0-dev, libgstreamer1.0-dev, cmake, libgstreamer-plugins-base1.0-dev, libzmq3-dev, rsync, git, libgstreamer-plugins-bad1.0-dev, gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, gstreamer1.0-plugins-bad, gstreamer1.0-libav, gstreamer1.0-tools, gstreamer1.0-x, libopencv-dev, python3-opencv, rapidjson-dev
