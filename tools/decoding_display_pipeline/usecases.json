@@ -1,0 +1,82 @@
+[
+    {
+      "name": "fhd_vaapi_vaapiscale_rgba_640640",
+      "flags": "--video-prefix-path 1920x1080_video --use-vaapi --use-vaapi-scale --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA --display-resolution 640x640"
+    },
+    {
+      "name": "fhd_vaapi_vaapiscale_nv12_640640",
+      "flags": "--video-prefix-path 1920x1080_video --use-vaapi --use-vaapi-scale --min-num-of-sources 8 --max-num-of-sources 16 --format NV12 --display-resolution 640x640"
+    },
+    {
+      "name": "fhd_vaapi_norescale_rgba",
+      "flags": "--video-prefix-path 1920x1080_video --use-vaapi --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA"
+    },
+    {
+      "name": "fhd_vaapi_noscale_nv12",
+      "flags": "--video-prefix-path 1920x1080_video --use-vaapi --min-num-of-sources 8 --max-num-of-sources 16 --format NV12"
+    },
+    {
+      "name": "hd_vaapi_vaapiscale_rgba_640640",
+      "flags": "--video-prefix-path 1280x720_video --use-vaapi --use-vaapi-scale --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA --display-resolution 640x640"
+    },
+    {
+      "name": "hd_vaapi_vaapiscale_nv12_640640",
+      "flags": "--video-prefix-path 1280x720_video --use-vaapi --use-vaapi-scale --min-num-of-sources 8 --max-num-of-sources 16 --format NV12 --display-resolution 640x640"
+    },
+    {
+      "name": "hd_vaapi_noscale_rgba",
+      "flags": "--video-prefix-path 1280x720_video --use-vaapi --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA"
+    },
+    {
+      "name": "hd_vaapi_noscale_nv12",
+      "flags": "--video-prefix-path 1280x720_video --use-vaapi --min-num-of-sources 8 --max-num-of-sources 16 --format NV12"
+    },
+    {
+      "name": "640_vaapi_noscale_RGBA",
+      "flags": "--video-prefix-path 640x640_video --use-vaapi --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA"
+    },
+    {
+      "name": "640_vaapi_noscale_nv12",
+      "flags": "--video-prefix-path 640x640_video --use-vaapi --min-num-of-sources 8 --max-num-of-sources 16 --format NV12"
+    },
+    {
+      "name": "fhd_cpu_cpuscale_rgba_640640",
+      "flags": "--video-prefix-path 1920x1080_video --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA --display-resolution 640x640"
+    },
+    {
+      "name": "fhd_cpu_cpuscale_nv12_640640",
+      "flags": "--video-prefix-path 1920x1080_video --min-num-of-sources 8 --max-num-of-sources 16 --format NV12 --display-resolution 640x640"
+    },
+    {
+      "name": "fhd_cpu_norescale_rgba",
+      "flags": "--video-prefix-path 1920x1080_video --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA"
+    },
+    {
+      "name": "fhd_cpu_noscale_nv12",
+      "flags": "--video-prefix-path 1920x1080_video --min-num-of-sources 8 --max-num-of-sources 16 --format NV12"
+    },
+    {
+      "name": "hd_cpu_cpuscale_rgba_640640",
+      "flags": "--video-prefix-path 1280x720_video --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA --display-resolution 640x640"
+    },
+    {
+      "name": "hd_cpu_cpuscale_nv12_640640",
+      "flags": "--video-prefix-path 1280x720_video --min-num-of-sources 8 --max-num-of-sources 16 --format NV12 --display-resolution 640x640"
+    },
+    {
+      "name": "hd_cpu_noscale_rgba",
+      "flags": "--video-prefix-path 1280x720_video --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA"
+    },
+    {
+      "name": "hd_cpu_noscale_nv12",
+      "flags": "--video-prefix-path 1280x720_video --min-num-of-sources 8 --max-num-of-sources 16 --format NV12"
+    },
+    {
+      "name": "640_cpu_noscale_RGBA",
+      "flags": "--video-prefix-path 640x640_video --min-num-of-sources 8 --max-num-of-sources 16 --format RGBA"
+    },
+    {
+      "name": "640_cpu_noscale_nv12",
+      "flags": "--video-prefix-path 640x640_video --min-num-of-sources 8 --max-num-of-sources 16 --format NV12"
+    }
+]

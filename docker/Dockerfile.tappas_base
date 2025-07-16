@@ -1,0 +1,49 @@
+ARG ubuntu_version=20.04
+FROM ubuntu:${ubuntu_version}
+
+# Avoid used interaction on apt-get
+ENV TZ=Asia/Jerusalem DEBIAN_FRONTEND=noninteractive
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone && \
+    mkdir -p /lib/firmware /lib/udev/rules.d/ 
+
+RUN apt-get update && apt-get install -y \
+    bsdmainutils \
+    build-essential \
+    cmake \
+    dkms \
+    graphviz \
+    kmod \
+    libgraphviz-dev \
+    mokutil \
+    openssh-client \
+    sudo \
+    virtualenv \
+    rsync
+
+ENV TAPPAS_WORKSPACE=/local/workspace/tappas
+ENV INSTALLATION_DIR=/usr
+ENV TAPPAS_LIB_PATH_x86_64=${INSTALLATION_DIR}/lib/x86_64-linux-gnu
+ENV TAPPAS_LIB_PATH_aarch64=${INSTALLATION_DIR}/lib/aarch64-linux-gnu
+ENV GST_PLUGIN_PATH="${TAPPAS_LIB_PATH_x86_64}/gstreamer-1.0:${TAPPAS_LIB_PATH_aarch64}/gstreamer-1.0"
+ENV LD_LIBRARY_PATH="${TAPPAS_LIB_PATH_x86_64}:${TAPPAS_LIB_PATH_aarch64}"
+ENV PKG_CONFIG_PATH="${INSTALLATION_DIR}/pkgconfig"
+ENV USERNAME=hailo GROUPNAME=ht UID=10642 GID=10600
+
+COPY scripts/misc/add_hailort_venv_to_sudoers.sh ./tmp/add_hailort_venv_to_sudoers.sh
+RUN ./tmp/add_hailort_venv_to_sudoers.sh
+
+RUN groupadd -g ${GID} ${GROUPNAME} \
+  && useradd -m -s /bin/bash -g ${GROUPNAME} -G sudo -u ${UID} ${USERNAME} \
+  && chmod u+w /etc/sudoers \
+  && echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+  && chmod -w /etc/sudoers \
+  && echo "" > /etc/bash.bashrc \
+  && mkdir -p ${TAPPAS_WORKSPACE} \
+  && install -d -o ${UID} -g ${GID} /run/user/${UID} \
+  && chown -R ${USERNAME}:${GROUPNAME} /home/${USERNAME} /local
+
+USER ${USERNAME}
+WORKDIR ${TAPPAS_WORKSPACE}
+ENV PATH="/home/$USERNAME/.local/bin:${INSTALLATION_DIR}/bin:$PATH"
+

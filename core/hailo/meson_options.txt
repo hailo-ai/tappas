@@ -13,7 +13,7 @@ option('pybind11', type : 'string', value : '../../open_source/pybind11/')
 option('python_version', type : 'string', value : '3.6')
 
 # Unit tests
-
+option('include_unit_tests', type : 'boolean', value : false)
 option('libcatch2', type : 'string', value : '../../../open_source/catch2')
 
 # APPS

@@ -129,6 +129,9 @@ if target == 'all'
   subdir('apps')
   subdir('tracers')
 
+  if get_option('include_unit_tests')
+    subdir('unit_tests')
+  endif
 elif target == 'apps'
   subdir('metadata')
   subdir('tracking')

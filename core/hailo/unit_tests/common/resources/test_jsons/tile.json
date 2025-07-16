@@ -1,0 +1,28 @@
+{
+    "HailoROI": {
+        "HailoBBox": {
+            "xmin": 0.0,
+            "ymin": 0.0,
+            "width": 1.0,
+            "height": 1.0
+        },
+        "SubObjects": [
+            {
+                "HailoTileROI": {
+                    "index": 0,
+                    "layer": 3,
+                    "mode": 1,
+                    "overlap_x_axis": 0.10000000149011612,
+                    "overlap_y_axis": 0.20000000298023225,
+                    "HailoBBox": {
+                        "xmin": 0.0,
+                        "ymin": 0.0,
+                        "width": 0.5,
+                        "height": 0.5
+                    },
+                    "SubObjects": []
+                }
+            }
+        ]
+    }
+}

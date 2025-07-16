@@ -1,0 +1,241 @@
+/* Change background color for Bash snippets to separate them from Python snippets */
+.highlight-bash .highlight, .highlight-bash-literal, .highlight-console .highlight, .highlight-console-literal {
+    background-color: #ddeeee;
+}
+
+.hailo-logo {
+    display: block;
+    margin: 2.5em 0 2.5em 30%;
+    width: 40%;
+}
+
+.internal-users {
+    background-color: #333 !important;
+    color: white;
+}
+
+.internal-users .admonition-title {
+    background-color: black;
+}
+
+.rst-content .internal-users pre.literal-block, .rst-content .internal-users div[class^='highlight'] {
+    background-color: #555 !important;
+    border-color: #444 !important;
+}
+
+.rst-content .internal-users pre.literal-block, .rst-content .internal-users div[class^='highlight'] span {
+    color: white !important;
+}
+
+.internal-users code {
+    background-color: #333 !important;
+    border-color: #555 !important;
+}
+
+.internal-users a {
+    color: #6ab0de !important;
+}
+
+.internal-users a:visited {
+    color: #b7b !important;
+}
+
+.internal-users a code, .internal-users a:visited code {
+    color: #aaa !important;
+}
+
+.internal-users dt {
+    color: #ccc !important;
+}
+
+.rst-content .internal-users table, .rst-content .internal-users table td, .rst-content .internal-users table th {
+    border-color: #555 !important;
+    color: white !important;
+}
+
+.rst-content .internal-users table code {
+    color: white !important;
+}
+
+@font-face {
+    font-family: "Exo 2";
+    src: url("../fonts/Exo2-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Exo 2";
+    src: url("../fonts/Exo2-Bold.ttf") format("truetype");
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: "Exo 2";
+    src: url("../fonts/Exo2-Italic.ttf") format("truetype");
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "Exo 2";
+    src: url("../fonts/Exo2-BoldItalic.ttf") format("truetype");
+    font-weight: bold;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "OpenSans";
+    src: url("../fonts/OpenSans-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "OpenSans";
+    src: url("../fonts/OpenSans-Bold.ttf") format("truetype");
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: "OpenSans";
+    src: url("../fonts/OpenSans-Italic.ttf") format("truetype");
+    font-style: italic;
+}
+
+@font-face {
+    font-family: "OpenSans";
+    src: url("../fonts/OpenSans-BoldItalic.ttf") format("truetype");
+    font-weight: bold;
+    font-style: italic;
+}
+
+body, .fa, .wy-menu-vertical li span.toctree-expand,
+.wy-menu-vertical li.on a span.toctree-expand, .wy-menu-vertical li.current>a span.toctree-expand,
+.rst-content .admonition-title, .rst-content h1 .headerlink, .rst-content h2 .headerlink,
+.rst-content h3 .headerlink, .rst-content h4 .headerlink, .rst-content h5 .headerlink,
+.rst-content h6 .headerlink, .rst-content dl dt .headerlink, .rst-content p.caption .headerlink,
+.rst-content table>caption .headerlink, .rst-content .code-block-caption .headerlink,
+.rst-content tt.download span:first-child, .rst-content code.download span:first-child, .icon,
+input[type="text"], input[type="password"], input[type="email"], input[type="url"],
+input[type="date"], input[type="month"], input[type="time"], input[type="datetime"],
+input[type="datetime-local"], input[type="week"], input[type="number"], input[type="search"],
+input[type="tel"], input[type="color"] {
+    font-family: "OpenSans";
+}
+
+h1, h2, h3, h4, h5, span.caption-text, p.rubric {
+    font-family: "Exo 2";
+}
+
+dd p.rubric {
+    font-family: "OpenSans";
+}
+
+html, p {
+    font-size: 15px;
+}
+
+table p {
+    font-size: 14px !important;
+}
+
+table code {
+    font-size: 13px !important; 
+}
+
+code, .rst-content tt, .rst-content code {
+    font-size: 80%;
+}
+
+.wy-side-nav-search {
+    background-color: #0098c4;
+}
+
+.wy-menu-vertical header, .wy-menu-vertical p.caption {
+    color: #0098c4;
+}
+
+a {
+    color: #026e95;
+}
+
+.wy-nav-side {
+    background-color: #323233;
+}
+
+table ul {
+    margin-bottom: 0 !important;
+}
+
+table ul p {
+    margin-bottom: 0 !important;
+}
+
+th p {
+    margin-block-end: 0;
+}
+
+table code {
+    background-color: transparent !important;
+    border: none !important;
+    color: black !important;
+}
+
+table p:not(:last-of-type) {
+    margin-bottom: 0;
+}
+
+/* override table width restrictions */
+@media screen and (min-width: 767px) {
+
+   .wy-table-responsive table td, .wy-table-responsive table th {
+      /* !important prevents the common CSS stylesheets from overriding
+         this as on RTD they are loaded after this stylesheet */
+      white-space: normal !important;
+   }
+
+   .wy-table-responsive {
+      overflow: visible !important;
+   }
+}
+
+.wy-table, .rst-content table.docutils, .rst-content table.field-list {
+    width: 100%;
+}
+
+p.rubric {
+    font-size: 120%;
+}
+
+dd p.rubric {
+    font-size: 100%;
+}
+
+.rst-content dl:not(.docutils):not(.class):not(.exception):not(.function) dt {
+    border-top: None !important;
+}
+
+/* Adjust spacing in C++ API doc */
+dl.function dt a.reference {
+    display: inline-block;
+    padding-right: 6px;
+}
+
+dl.member dt a.reference {
+    display: inline-block;
+    padding-right: 6px;
+}
+
+dl.type dt a.reference {
+    display: inline-block;
+    padding-right: 6px;
+}
+
+#hailort-c-c-api-reference dl.function dt em.property {
+    padding-right: 0;
+}
+
+#hailort-c-c-api-reference dl.member dt em.property {
+    padding-right: 0;
+}
+
+/* Hide include lines inside C++ doc */
+#hailort-c-c-api-reference dl.struct>dd>em {
+    display: none;
+}

@@ -1,0 +1,20 @@
+{
+    "HailoROI": {
+        "HailoBBox": {
+            "xmin": 0.0,
+            "ymin": 0.0,
+            "width": 1.0,
+            "height": 1.0
+        },
+        "SubObjects": [
+            {
+                "HailoClassification": {
+                    "label": "American chameleon",
+                    "classification_type": "imagenet",
+                    "class_id": 40,
+                    "confidence": 0.7215686440467835
+                }
+            }
+        ]
+    }
+}

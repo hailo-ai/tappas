@@ -1,0 +1,26 @@
+{
+    "HailoROI": {
+        "HailoBBox": {
+            "xmin": 0.0,
+            "ymin": 0.0,
+            "width": 1.0,
+            "height": 1.0
+        },
+        "SubObjects": [
+            {
+                "HailoDetection": {
+                    "label": "debug_generated",
+                    "class_id": -1,
+                    "confidence": 0.6878613829612732,
+                    "HailoBBox": {
+                        "xmin": 0.25,
+                        "ymin": 0.25,
+                        "width": 0.5,
+                        "height": 0.5
+                    },
+                    "SubObjects": []
+                }
+            }
+        ]
+    }
+}

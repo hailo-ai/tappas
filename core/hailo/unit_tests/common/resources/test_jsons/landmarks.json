@@ -1,0 +1,41 @@
+{
+    "HailoROI": {
+        "HailoBBox": {
+            "xmin": 0.0,
+            "ymin": 0.0,
+            "width": 1.0,
+            "height": 1.0
+        },
+        "SubObjects": [
+            {
+                "HailoLandmarks": {
+                    "landmarks_type": "pose",
+                    "threshold": 0.5,
+                    "points": [
+                        {
+                            "x": 0.1,
+                            "y": 0.2,
+                            "confidence": 0.3
+                        },
+                        {
+                            "x": 0.4,
+                            "y": 0.5,
+                            "confidence": 0.6
+                        },
+                        {
+                            "x": 0.7,
+                            "y": 0.8,
+                            "confidence": 0.9
+                        }
+                    ],
+                    "pairs": [
+                        [
+                            0,
+                            2
+                        ]
+                    ]
+                }
+            }
+        ]
+    }
+}

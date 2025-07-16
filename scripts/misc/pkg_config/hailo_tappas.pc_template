@@ -15,7 +15,7 @@ tappas_mat_includedir=${tappas_workspace}/core/hailo/plugins/common
 tappas_tracking_includedir=${tappas_workspace}/core/hailo/tracking
 
 
-
+catch2_includedir=${tappas_sources}/Catch2/include
 cxxopts_includedir=${tappas_sources}/cxxopts/include
 pybind11_includedir=${tappas_sources}/pybind11/include
 rapidjson_includedir=${tappas_sources}/rapidjson/include
@@ -38,6 +38,7 @@ Cflags: -I${includedir} \
         -I${tappas_general_includedir} \
         -I${tappas_mat_includedir} \
         -I${tappas_tracking_includedir} \
+        -I${catch2_includedir} \
         -I${cxxopts_includedir} \
         -I${pybind11_includedir} \
         -I${rapidjson_includedir} \

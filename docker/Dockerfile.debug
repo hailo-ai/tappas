@@ -1,0 +1,51 @@
+FROM ubuntu:20.04 
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y vim openssh-client sudo bash lsb-release
+RUN mkdir -p /lib/firmware /lib/udev/rules.d/ /local/workspace/
+RUN apt-get update && apt-get install -y \
+    bsdmainutils \
+    build-essential \
+    cmake \
+    graphviz \
+    kmod \
+    libgraphviz-dev \
+    mokutil \
+    openssh-client \
+    sudo \
+    virtualenv \
+    rsync
+
+ENV TAPPAS_WORKSPACE=/local/workspace/hailo
+ENV USERNAME=hailo GROUPNAME=ht UID=10642 GID=10600
+
+RUN groupadd -g ${GID} ${GROUPNAME} \
+  && useradd -m -s /bin/bash -g ${GROUPNAME} -G sudo -u ${UID} ${USERNAME} \
+  && chmod u+w /etc/sudoers \
+  && echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+  && chmod -w /etc/sudoers \
+  && echo "" > /etc/bash.bashrc \
+  && chown -R ${USERNAME}:${GROUPNAME} /home/${USERNAME} /local \
+  && mkdir -p ${TAPPAS_WORKSPACE} \
+  && chown ${USERNAME}:${GROUPNAME} ${TAPPAS_WORKSPACE}
+
+USER ${USERNAME}
+WORKDIR ${TAPPAS_WORKSPACE}
+
+# Copy by default is using the root user
+COPY --chown=${USERNAME}:${GROUPNAME} . ./
+
+# Authorize SSH Host, Add the keys and set permissions
+ARG ssh_prv_key
+ARG ssh_pub_key
+
+RUN mkdir -p ~/.ssh && \
+    chmod 0700 ~/.ssh && \
+    echo "$ssh_prv_key" > ~/.ssh/id_rsa && \
+    echo "$ssh_pub_key" > ~/.ssh/id_rsa.pub && \
+    chmod 600 ~/.ssh/id_rsa && \
+    chmod 600 ~/.ssh/id_rsa.pub && \
+    ssh-keyscan 192.168.12.21 freenas > ~/.ssh/known_hosts
+
+CMD ["/bin/bash"]

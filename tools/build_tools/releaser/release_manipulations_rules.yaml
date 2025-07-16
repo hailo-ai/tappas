@@ -1,0 +1,115 @@
+---
+rm_dirs:
+  - ".git"
+  - ".vscode"
+  - "packaging"
+  - "tools/build_tools"
+  - "tools/desktop_links_generator"
+  - "core/hailo/unit_tests"
+  - "scripts/build_scripts/hailort"
+  - "scripts/misc/internals"
+  - "core/hailo/libs/postprocesses/python_bindings"
+  - "scripts/ethernet"
+
+rm_files:
+  - ".gitignore"
+  - ".dockerignore"
+  - ".pre-commit-config.yaml"
+  - "create_deb_package.sh"
+  - "bitbucket-pipelines.yml"
+  - "docker/Dockerfile.debug"
+  - "build_docker_internal.sh"
+  - "scripts/build_scripts/install_pre_commits_hooks.sh"
+  - "scripts/build_scripts/install_node.sh"
+  - "downloader/uploader.py"
+  - "apps/apps.rst"
+  - "apps/h8/gstreamer/gstreamer.rst"
+  - "apps/h8/gstreamer/general/general.rst"
+  - "docs/docs.rst"
+  - "docs/TAPPAS_Framework.rst"
+  - "docs/elements/elements.rst"
+  - "docs/installation/installation.rst"
+  - "docs/pipelines/pipelines.rst"
+  - "docs/write_your_own_application/write_your_own_application.rst"
+  - "tools/decoding_display_pipeline/multiple_decoding.sh"
+  - "tools/decoding_display_pipeline/usecases_nv12_only.json"
+  - "tools/decoding_display_pipeline/usecases.json"
+  - "core/core.rst"
+
+str_replacement:
+  - file: "docker/Dockerfile.tappas"
+    src: "COPY --chown=${USERNAME}:${GROUPNAME} core/requirements ./core/requirements"
+    to: "COPY --chown=${USERNAME}:${GROUPNAME} release/core/requirements ./core/requirements"
+
+  - file: "docker/Dockerfile.tappas"
+    src: "COPY --chown=${USERNAME}:${GROUPNAME} scripts/build_scripts/install_pkg_file.sh ./scripts/build_scripts/install_pkg_file.sh"
+    to: "COPY --chown=${USERNAME}:${GROUPNAME} release/scripts/build_scripts/install_pkg_file.sh ./scripts/build_scripts/install_pkg_file.sh"
+
+  - file: "docker/Dockerfile.tappas"
+    src: "COPY --chown=${USERNAME}:${GROUPNAME} scripts/build_scripts/install_opencv.sh ./scripts/build_scripts/"
+    to: "COPY --chown=${USERNAME}:${GROUPNAME} release/scripts/build_scripts/install_opencv.sh ./scripts/build_scripts/"
+
+  - file: "docker/Dockerfile.tappas"
+    src: "COPY --chown=${USERNAME}:${GROUPNAME} downloader ./downloader"
+    to: "COPY --chown=${USERNAME}:${GROUPNAME} release/downloader ./downloader"
+
+  - file: "docker/Dockerfile.tappas"
+    src: "COPY --chown=${USERNAME}:${GROUPNAME} core/patches ./core/patches"
+    to: "COPY --chown=${USERNAME}:${GROUPNAME} release/core/patches ./core/patches"
+
+  - file: "docker/Dockerfile.tappas"
+    src: "COPY --chown=${USERNAME}:${GROUPNAME} scripts/gstreamer/install_gstreamer.sh ./scripts/gstreamer/"
+    to: "COPY --chown=${USERNAME}:${GROUPNAME} release/scripts/gstreamer/install_gstreamer.sh ./scripts/gstreamer/"
+
+  - file: "docker/Dockerfile.tappas"
+    src: "COPY --chown=${USERNAME}:${GROUPNAME} . ./"
+    to: "COPY --chown=${USERNAME}:${GROUPNAME} release/ ./"
+
+  - file: "docker/Dockerfile.tappas_base"
+    src: "COPY scripts/misc/add_hailort_venv_to_sudoers.sh ./tmp/add_hailort_venv_to_sudoers.sh"
+    to: "COPY release/scripts/misc/add_hailort_venv_to_sudoers.sh ./tmp/add_hailort_venv_to_sudoers.sh"
+
+  - file: "scripts/misc/pkg_config/hailo_tappas.pc_template"
+    src: "catch2_includedir=${tappas_sources}/Catch2/include"
+    to: ""
+
+  - file: "scripts/misc/pkg_config/hailo_tappas.pc_template"
+    src: "        -I${catch2_includedir} \\\n"
+    to: ""
+
+  - file: "docker/Dockerfile.tappas"
+    src: |
+        # Clone Catch2 required packages
+        RUN cd ${TAPPAS_WORKSPACE}/sources && \
+            git clone --depth 1 --shallow-submodules -b v2.13.7 https://github.com/catchorg/Catch2.git && \
+            mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/catch2 && \
+            cp -r Catch2/single_include/catch2/. ${TAPPAS_WORKSPACE}/core/open_source/catch2/
+    to: ""
+
+  - file: "core/hailo/meson.build"
+    src: |2
+        if get_option('include_unit_tests')
+          subdir('unit_tests')
+        endif
+    to: ""
+
+  - file: "core/hailo/meson_options.txt"
+    src: "option('include_unit_tests', type : 'boolean', value : false)"
+    to: ""
+
+  - file: "scripts/gstreamer/install_hailo_gstreamer.sh"
+    src: "-Dinclude_unit_tests=$INCLUDE_UNIT_TESTS"
+    to: ""
+
+  - file: "core/hailo/libs/postprocesses/meson.build"
+    src: "subdir('python_bindings')"
+    to: ""
+
+  - file: "downloader/config/config.py"
+    src: |2
+                            "imx8/imx8_multistream_detection.json",
+                            "hailo15/hailo15_classification.json",
+                            "hailo15/hailo15_detection.json",
+                            "hailo15/hailo15_license_plate_recognition.json"]
+    to: |2
+                            "imx8/imx8_multistream_detection.json"]

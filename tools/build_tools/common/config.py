@@ -1,0 +1,2 @@
+FREENAS_IP = '192.168.12.21'
+FREENAS_USER = 'hailo'
