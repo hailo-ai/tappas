@@ -312,5 +312,5 @@ shared_library('face_recognition_post',
 
 
 if get_option('include_python')
-    subdir('python_bindings')
+    
 endif

@@ -35,10 +35,7 @@ REQUIREMENTS_FILES = ["general/cascading_networks.json",
                       "imx8/imx8_depth_estimation.json",
                       "imx8/imx8_detection.json",
                       "imx8/imx8_license_plate_recognition.json",
-                      "imx8/imx8_multistream_detection.json",
-                      "hailo15/hailo15_classification.json",
-                      "hailo15/hailo15_detection.json",
-                      "hailo15/hailo15_license_plate_recognition.json"]
+                      "imx8/imx8_multistream_detection.json"]
 
 # Used during the download to decide what the source / destination is dynamically
 RESERVED_DOWNLOADER_KEYWORDS = {

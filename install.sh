@@ -119,9 +119,9 @@ function python_venv_create_and_install() {
   # if rpi5 (core_only) is set dont download apps data (TAPPAS Core mode)
   if [ "$core_only" = false ]; then
     if [[ ${apps_to_set} ]]; then
-      python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform --apps-list $apps_to_set
+      python3 $TAPPAS_WORKSPACE/downloader/internal_main.py $target_platform --apps-list $apps_to_set
     else
-      python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform
+      python3 $TAPPAS_WORKSPACE/downloader/internal_main.py $target_platform
     fi
   fi
 }
