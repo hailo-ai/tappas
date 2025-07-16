@@ -79,7 +79,3 @@ After installing TAPPAS and HailoRT, it is recommended to enable the RGA HW acce
     # In order for the changes to take effect,reboot the machine
     sudo reboot
 
-
-Run TAPPAS Applications
------------------------
-To read further on this subject and obtain more details about each application enter `This section <../../apps/h8/gstreamer/rockchip/README.rst>`_

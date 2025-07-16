@@ -30,16 +30,13 @@ The profiling tool provides 3 general features that can be used to debug the pip
 Install
 -------
 
-The docker image already contains GstShark! If the user decides to not use the TAPPAS Docker image, our suggestion is to follow RidgeRun tutorial: `GstShark <https://developer.ridgerun.com/wiki/index.php?title=GstShark>`_
+Follow RidgeRun tutorial: `GstShark <https://developer.ridgerun.com/wiki/index.php?title=GstShark>`_
 
 Bash Shortcuts
 --------------
       
-.. note::
-    These shortcuts are only available if the Docker TAPPAS installation is being used, otherwise, please refer to the following section: `Using GstShark in yocto-compiled images`_
+Please refer to the following section: `Using GstShark in yocto-compiled images`_
 
-
-As part of the TAPPAS creation of the Docker image, some convenient shortcuts are copied to GstShark:
 
 .. code-block:: sh
 

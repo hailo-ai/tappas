@@ -10,7 +10,7 @@ Overview
 From the first src we push the original frame that the detections were cropped from.
 
 By default, ``HailoCropper`` receives a video frame that has detections (means a previous ``HailoNet`` + ``HailoFilter`` ran) on it's sinkpad. For each detection it creates a cropped image (using a specific algorithm to create a scaled image with the same aspect ratio).
-This is used by the cascading networks app `Face Landmarks based on Face Detection <../../apps/h8/gstreamer/general/cascading_networks/README.rst>`_.
+This is used by the cascading networks app Face Landmarks based on Face Detection.
 
 Derived classes can override the default ``prepare_crops`` behaviour and decide where to crop and how many times.
 `hailotilecropper <hailo_tile_cropper.rst>`_ element does this exact thing when splitting the frame into tiles by rows and columns.

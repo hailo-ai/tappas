@@ -131,8 +131,9 @@ public:
             _layers.reserve(_tensors.size());
             for (std::size_t i = 0; i < _tensors.size(); i++)
             {
-                hailo_format_type_t format = _tensors[i]->vstream_info().format.type;
-                _layers.push_back(std::make_shared<Yolov5OL>(_tensors[i], params->anchors_vec[i], sigmoid, params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
+                HailoTensorFormatType format = _tensors[i]->format().type;
+                _layers.push_back(std::make_shared<Yolov5OL>(_tensors[i], params->anchors_vec[i], sigmoid, params->label_offset,
+                    format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
             }
 
             params->check_params_logic(get_num_classes());
@@ -163,8 +164,9 @@ public:
 
             for (std::size_t i = 0; i < _tensors.size(); i++)
             {
-                hailo_format_type_t format = _tensors[i]->vstream_info().format.type;
-                _layers.push_back(std::make_shared<Yolov3OL>(_tensors[i], params->anchors_vec[i], sigmoid, params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
+                HailoTensorFormatType format = _tensors[i]->format().type;
+                _layers.push_back(std::make_shared<Yolov3OL>(_tensors[i], params->anchors_vec[i], sigmoid, params->label_offset,
+                    format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
             }
         }
         params->check_params_logic(get_num_classes());
@@ -193,8 +195,9 @@ public:
 
             for (std::size_t i = 0; i < _tensors.size(); i++)
             {
-                hailo_format_type_t format = _tensors[i]->vstream_info().format.type;
-                _layers.push_back(std::make_shared<TinyYolov4OL>(_tensors[i], params->anchors_vec[i], sigmoid, params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
+                HailoTensorFormatType format = _tensors[i]->format().type;
+                _layers.push_back(std::make_shared<TinyYolov4OL>(_tensors[i], params->anchors_vec[i], sigmoid, params->label_offset,
+                    format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
             }
         }
         params->check_params_logic(get_num_classes());
@@ -215,25 +218,25 @@ public:
         if (_roi->has_tensors())
         {
             bool sigmoid = (params->output_activation == "sigmoid");
-            hailo_format_type_t format;
+            HailoTensorFormatType format;
             auto anchors = params->anchors_vec;
             m_image_width = _roi->get_tensor("yolov4_leaky/conv110_centers")->width() * 32;
             m_image_height = _roi->get_tensor("yolov4_leaky/conv110_centers")->height() * 32;
 
-            format = _roi->get_tensor("yolov4_leaky/conv110_centers")->vstream_info().format.type;
+            format = _roi->get_tensor("yolov4_leaky/conv110_centers")->format().type;
             _layers.push_back(std::make_shared<Yolov4OL>(_roi->get_tensor("yolov4_leaky/conv110_centers"), _roi->get_tensor("yolov4_leaky/conv110_scales"),
                                                          _roi->get_tensor("yolov4_leaky/conv110_obj"), _roi->get_tensor("yolov4_leaky/conv110_probs"),
-                                                         anchors[0], params->label_offset, sigmoid, format == HAILO_FORMAT_TYPE_UINT16));
+                                                         anchors[0], params->label_offset, sigmoid, format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
 
-            format = _roi->get_tensor("yolov4_leaky/conv103_centers")->vstream_info().format.type;
+            format = _roi->get_tensor("yolov4_leaky/conv103_centers")->format().type;
             _layers.push_back(std::make_shared<Yolov4OL>(_roi->get_tensor("yolov4_leaky/conv103_centers"), _roi->get_tensor("yolov4_leaky/conv103_scales"),
                                                          _roi->get_tensor("yolov4_leaky/conv103_obj"), _roi->get_tensor("yolov4_leaky/conv103_probs"),
-                                                         anchors[1], params->label_offset, sigmoid, format == HAILO_FORMAT_TYPE_UINT16));
+                                                         anchors[1], params->label_offset, sigmoid, format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
 
-            format = _roi->get_tensor("yolov4_leaky/conv95_centers")->vstream_info().format.type;
+            format = _roi->get_tensor("yolov4_leaky/conv95_centers")->format().type;
             _layers.push_back(std::make_shared<Yolov4OL>(_roi->get_tensor("yolov4_leaky/conv95_centers"), _roi->get_tensor("yolov4_leaky/conv95_scales"),
                                                          _roi->get_tensor("yolov4_leaky/conv95_obj"), _roi->get_tensor("yolov4_leaky/conv95_probs"),
-                                                         anchors[2], params->label_offset, sigmoid, format == HAILO_FORMAT_TYPE_UINT16));
+                                                         anchors[2], params->label_offset, sigmoid, format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
 
             params->check_params_logic(get_num_classes());
         }
@@ -252,21 +255,21 @@ public:
     {
         if (_roi->has_tensors())
         {
-            hailo_format_type_t format;
+            HailoTensorFormatType format;
             m_image_width = _roi->get_tensor("yolox_l_leaky/conv130")->width() * 32;
             m_image_height = _roi->get_tensor("yolox_l_leaky/conv130")->height() * 32;
 
-            format = _roi->get_tensor("yolox_l_leaky/conv130")->vstream_info().format.type;
+            format = _roi->get_tensor("yolox_l_leaky/conv130")->format().type;
             _layers.push_back(std::make_shared<YoloXOL>(_roi->get_tensor("yolox_l_leaky/conv130"), _roi->get_tensor("yolox_l_leaky/conv131"),
-                                                        _roi->get_tensor("yolox_l_leaky/conv129"), params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
+                                                        _roi->get_tensor("yolox_l_leaky/conv129"), params->label_offset, format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
 
-            format = _roi->get_tensor("yolox_l_leaky/conv113")->vstream_info().format.type;
+            format = _roi->get_tensor("yolox_l_leaky/conv113")->format().type;
             _layers.push_back(std::make_shared<YoloXOL>(_roi->get_tensor("yolox_l_leaky/conv113"), _roi->get_tensor("yolox_l_leaky/conv114"),
-                                                        _roi->get_tensor("yolox_l_leaky/conv112"), params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
+                                                        _roi->get_tensor("yolox_l_leaky/conv112"), params->label_offset, format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
 
-            format = _roi->get_tensor("yolox_l_leaky/conv95")->vstream_info().format.type;
+            format = _roi->get_tensor("yolox_l_leaky/conv95")->format().type;
             _layers.push_back(std::make_shared<YoloXOL>(_roi->get_tensor("yolox_l_leaky/conv95"), _roi->get_tensor("yolox_l_leaky/conv96"),
-                                                        _roi->get_tensor("yolox_l_leaky/conv94"), params->label_offset, format == HAILO_FORMAT_TYPE_UINT16));
+                                                        _roi->get_tensor("yolox_l_leaky/conv94"), params->label_offset, format == HailoTensorFormatType::HAILO_FORMAT_TYPE_UINT16));
             params->check_params_logic(get_num_classes());
         }
     };

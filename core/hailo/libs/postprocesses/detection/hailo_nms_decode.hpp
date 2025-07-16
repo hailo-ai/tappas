@@ -6,7 +6,6 @@
 #include <string>
 #include <iostream>
 #include <cstring>
-#include "hailo/hailort.h"
 #include "hailo_objects.hpp"
 #include "common/structures.hpp"
 #include "common/nms.hpp"
@@ -24,7 +23,7 @@ private:
     float _detection_thr;
     uint _max_boxes;
     bool _filter_by_score;
-    const hailo_vstream_info_t _vstream_info;
+    const hailo_tensor_nms_shape_t _nms_shape;
 
     common::hailo_bbox_float32_t dequantize_hailo_bbox(const auto *bbox_struct)
     {
@@ -62,10 +61,10 @@ private:
 
 public:
     HailoNMSDecode(HailoTensorPtr tensor, std::map<uint8_t, std::string> &labels_dict, float detection_thr = DEFAULT_THRESHOLD, uint max_boxes = DEFAULT_MAX_BOXES, bool filter_by_score = false)
-        : _nms_output_tensor(tensor), labels_dict(labels_dict), _detection_thr(detection_thr), _max_boxes(max_boxes), _filter_by_score(filter_by_score), _vstream_info(tensor->vstream_info())
+        : _nms_output_tensor(tensor), labels_dict(labels_dict), _detection_thr(detection_thr), _max_boxes(max_boxes), _filter_by_score(filter_by_score), _nms_shape(tensor->nms_shape())
     {
         // making sure that the network's output is indeed an NMS type, by checking the order type value included in the metadata
-        if ((HAILO_FORMAT_ORDER_HAILO_NMS != _vstream_info.format.order) && (HAILO_FORMAT_ORDER_HAILO_NMS_BY_CLASS != _vstream_info.format.order))
+        if (!tensor->format().is_nms)
             throw std::invalid_argument("Output tensor " + _nms_output_tensor->name() + " is not an NMS type");
     };
 
@@ -109,8 +108,8 @@ public:
 
         std::vector<HailoDetection> _objects;
         _objects.reserve(_max_boxes);
-        uint32_t max_bboxes_per_class = _vstream_info.nms_shape.max_bboxes_per_class;
-        uint32_t num_of_classes = _vstream_info.nms_shape.number_of_classes;
+        uint32_t max_bboxes_per_class = _nms_shape.max_bboxes_per_class;
+        uint32_t num_of_classes = _nms_shape.number_of_classes;
         size_t buffer_offset = 0;
         uint8_t *buffer = _nms_output_tensor->data();
         for (size_t class_id = 0; class_id < num_of_classes; class_id++)
@@ -129,9 +128,9 @@ public:
                 if (std::is_same<T, uint16_t>::value)
                 {
                     // output type (T) is uint16, so we need to do dequantization before parsing
-                    hailo_bbox_float32_t *bbox = (hailo_bbox_float32_t *)(&buffer[buffer_offset]);
+                    common::hailo_bbox_float32_t *bbox = (common::hailo_bbox_float32_t *)(&buffer[buffer_offset]);
                     parse_bbox_to_detection_object(*bbox, class_id + 1, _objects);
-                    buffer_offset += sizeof(hailo_bbox_float32_t);
+                    buffer_offset += sizeof(common::hailo_bbox_float32_t);
                 }
                 else
                 {

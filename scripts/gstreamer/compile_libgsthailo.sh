@@ -3,7 +3,7 @@
 set -e
 
 BUILD_TYPE=Release
-INSTALLATION_DIR=/opt/hailo/tappas
+INSTALLATION_DIR=/usr
 
 
 function print_usage() {

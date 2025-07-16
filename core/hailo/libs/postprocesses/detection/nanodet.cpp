@@ -64,7 +64,7 @@ std::pair<std::vector<xt::xarray<float>>, xt::xarray<float>> get_boxes_and_score
     for (uint i=0; i < tensors.size(); i++)
     {
         // Extract and dequantize the layer
-        auto layer = common::dequantize(common::get_xtensor(tensors[i]), tensors[i]->vstream_info().quant_info.qp_scale, tensors[i]->vstream_info().quant_info.qp_zp);
+        auto layer = common::dequantize(common::get_xtensor(tensors[i]), tensors[i]->quant_info().qp_scale, tensors[i]->quant_info().qp_zp);
         int num_proposals = layer.shape(0)*layer.shape(1);
 
         // From the layer extract the scores

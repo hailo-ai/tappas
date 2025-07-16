@@ -4,7 +4,6 @@
  **/
 #include "gsthailoexportfile.hpp"
 #include "gst_hailo_meta.hpp"
-#include "hailo/hailort.h"
 #include <chrono>
 #include <cstdio>
 #include <ctime>

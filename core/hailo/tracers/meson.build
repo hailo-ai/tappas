@@ -38,5 +38,5 @@ shared_library('gsthailotracers',
     version: meson.project_version(),
     install: true,
     c_args : ['-DGST_USE_UNSTABLE_API'],
-    install_dir: get_option('libdir') + '/gstreamer-1.0/',
+    install_dir: install_dir + '/gstreamer-1.0/',
 )

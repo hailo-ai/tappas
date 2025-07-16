@@ -9,8 +9,6 @@
 
 set -e
 
-readonly TAPPAS_INSTALLATION_DIR=/opt/hailo/tappas
-readonly TAPPAS_PKG_CONFIG_DIR=${TAPPAS_INSTALLATION_DIR}/pkgconfig
 readonly TAPPAS_PKG_CONFIG_FILE_TEMPLATE="hailo_tappas.pc_template"
 readonly TAPPAS_CORE_PKG_CONFIG_FILE_TEMPLATE="hailo-tappas-core.pc_template"
 TAPPAS_PKG_CONFIG_FILE_BY_MODE=$TAPPAS_PKG_CONFIG_FILE_TEMPLATE
@@ -36,6 +34,18 @@ function parse_args(){
       shift 2
     elif [ "$1" == "--target-platform" ]; then
       ARCH=$2
+      case "$ARCH" in
+        x86|x86_64)
+          ARCH="x86_64"
+          ;;
+        rpi5|rockchip|aarch64|rpi)
+          ARCH="aarch64"
+          ;;
+        *)
+          echo "Unknown target platform: $ARCH"
+          print_usage
+          ;;
+      esac
       shift 2
     elif [ "$1" == "--core-only" ]; then
       TAPPAS_PKG_CONFIG_FILE_BY_MODE=$TAPPAS_CORE_PKG_CONFIG_FILE_TEMPLATE
@@ -48,7 +58,7 @@ function parse_args(){
 }
 
 function prepare_pkg_config_dir(){
-  sudo rm -rf ${TAPPAS_PKG_CONFIG_DIR}
+  sudo rm -rf ${TAPPAS_PKG_CONFIG_DIR}/hailo-tappas-core.pc
   sudo mkdir -p ${TAPPAS_PKG_CONFIG_DIR}
 }
 
@@ -65,6 +75,8 @@ function copy_pc_file(){
 }
 
 function main(){
+  TAPPAS_INSTALLATION_DIR=/usr/lib/${ARCH}-linux-gnu
+  TAPPAS_PKG_CONFIG_DIR=${TAPPAS_INSTALLATION_DIR}/pkgconfig
   prepare_pkg_config_dir
   pushd $(dirname $0)
   update_pc_file

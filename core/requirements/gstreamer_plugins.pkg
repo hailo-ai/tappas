@@ -55,3 +55,10 @@ libzmq3-dev
 22.04:gstreamer1.0-plugins-good
 22.04:gcc-12 
 22.04:g++-12
+
+24.04:python3-gst-1.0
+24.04:python3-dev
+24.04:python3-cairo-dev
+24.04:gstreamer1.0-plugins-good
+24.04:gcc-12
+24.04:g++-12

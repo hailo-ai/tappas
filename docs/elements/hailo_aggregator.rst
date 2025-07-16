@@ -13,8 +13,8 @@ HailoAggregator also performs a 'flattening' functionality on the detection meta
 As an example:
 
 
-* `Face Landmarks based on Face Detection <../../apps/h8/gstreamer/general/cascading_networks/README.rst>`_ - HailoCropper crops each face detection -> HailoNet + FaceLandmarks post for each face -> HailoAggregator aggregates the frames back.
-* `Tiling <../../apps/h8/gstreamer/general/tiling/README.rst>`_ - `hailotilecropper <hailo_tile_cropper.rst>`_ crops the image to tiles -> HailoNet + Detection post for each tile -> HailoAggregator aggregates the frames back and 'flatten` the detection objects in the metadata.
+* Face Landmarks based on Face Detection - HailoCropper crops each face detection -> HailoNet + FaceLandmarks post for each face -> HailoAggregator aggregates the frames back.
+* Tiling - `hailotilecropper <hailo_tile_cropper.rst>`_ crops the image to tiles -> HailoNet + Detection post for each tile -> HailoAggregator aggregates the frames back and 'flatten` the detection objects in the metadata.
 
 HailoAggregator exports two methods to extend or override in derived elements:
 

@@ -17,7 +17,7 @@ fi
 readonly GST_HAILO_BUILD_MODE='release'
 readonly VENV_NAME='hailo_tappas_venv'
 readonly VENV_PATH="$(pwd)"
-readonly INSTALLATION_DIR=/opt/hailo/tappas
+readonly INSTALLATION_DIR=/usr
 readonly TAPPAS_LIB_PATH=${INSTALLATION_DIR}/lib/$(uname -m)-linux-gnu
 readonly TAPPAS_GST_PLUGIN_PATH=${TAPPAS_LIB_PATH}/gstreamer-1.0
 readonly HAILO_USER_DIR=${HOME}/.hailo/tappas
@@ -30,22 +30,22 @@ declare -A ARCH_TO_DPKG=(
   ["rockchip"]="amd64"
   ["rpi5"]="arm64"
   ["rpi"]="arm64"
-  ["hailo15"]="arm64"
 )
 
 function print_usage() {
+  echo $python_version
   echo "TAPPAS Install:"
   echo ""
   echo "Options:"
   echo "  --help                 Show this help"
   echo "  --skip-hailort         Skips installation of HailoRT Deb package"
-  echo "  --target-platform      Target platform [x86, aarch64, rockchip, rpi(raspberry pi 4),  rpi5(raspberry pi 5), hailo15], used for downloading only required media and hef files (Default is $target_platform)"
+  echo "  --target-platform      Target platform [x86, aarch64, rockchip, rpi(raspberry pi 4),  rpi5(raspberry pi 5)], used for downloading only required media and hef files (Default is $target_platform)"
   echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
   echo "  --download-apps-data   Comma separated list (without spaces) of apps to download data for. Does not work with option '--target-platform'"
   echo "  --list-apps            Show the list of available apps"
   echo "  --core-only            Install tappas core only (no apps data)"
   echo "  --cross-compile-arch   Which arch tappas will cross compile to."
-  echo "  --python-version       Will compile to not default python version. Python version - for example `3.11`"
+  echo "  --python-version       Will compile to not default python version. Python version - for example '3.11'"
 
   exit 1
 }
@@ -138,7 +138,7 @@ function install_hailo() {
     pip3 install -e ${TAPPAS_WORKSPACE}/tools/trace_analyzer/dot_visualizer
     mkdir -p ${TAPPAS_WORKSPACE}/scripts/bash_completion.d
     activate-global-python-argcomplete --dest=${TAPPAS_WORKSPACE}/scripts/bash_completion.d
-    echo ". $TAPPAS_WORKSPACE/scripts/bash_completion.d/python-argcomplete" >> ${TAPPAS_BASH_ENV}
+    echo ". $TAPPAS_WORKSPACE/scripts/bash_completion.d/_python-argcomplete" >> ${TAPPAS_BASH_ENV}
   fi
   # Add GstHailo to the known paths
   # Note, extracting the user site should support both within and without a venv
@@ -155,6 +155,20 @@ function install_hailo() {
   libhailort_version_num=${libhailort_version#*libhailort.so.}
 
   ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version $compile_num_cores $cross_compile_command
+  
+  # Install source files
+  sudo mkdir -p /usr/include/hailo/tappas/sources
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/libs/postprocesses/	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/general/	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/tracking/	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/metadata/	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/plugins/common/	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/sources/	/usr/include/hailo/tappas/sources
+  
+  # Copyright
+  sudo mkdir -p /usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}
+  sudo cp $TAPPAS_WORKSPACE/LICENSE	/usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}/copyright
+
 }
 
 function set_gcc_version(){
@@ -220,9 +234,10 @@ EOF
 
 function setup_pkg_config(){
   ./scripts/misc/pkg_config_setup.sh \
-    --tappas-workspace ${TAPPAS_WORKSPACE} \
+    --tappas-workspace "null" \
     --tappas-version ${TAPPAS_VERSION} \
-    --target-platform "$target_platform"
+    --core-only true \
+    --target-platform ${target_platform}
 }
 
 function _generate_list_of_supported_platforms(){

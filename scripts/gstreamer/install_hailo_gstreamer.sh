@@ -14,7 +14,7 @@ PYTHON_VERSION=$(python3 --version | awk '{print $2}' | awk -F'.' '{print $1"."$
 TARGET="all"
 TARGET_PLATFORM="x86"
 GCC_VERSION="12"
-INSTALLATION_DIR=/opt/hailo/tappas
+INSTALLATION_DIR=/usr
 
 # Occupy all the cores could sometimes freeze the PC
 num_cores_to_use=$(($(nproc)/2))

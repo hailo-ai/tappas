@@ -39,9 +39,9 @@ namespace common
     xt::xarray<float> get_xtensor_float(HailoTensorPtr &tensor)
     {
         // Adapt a HailoTensorPtr to an xarray (quantized)
-        auto vstream_info = tensor->vstream_info();
+        auto quant_info = tensor->quant_info();
         xt::xarray<uint8_t> xtensor = get_xtensor(tensor);
-        return dequantize(xtensor, vstream_info.quant_info.qp_scale, vstream_info.quant_info.qp_zp);
+        return dequantize(xtensor, quant_info.qp_scale, quant_info.qp_zp);
     }
     /**
      * @brief Get the only the tensors (vector) from a map of string->tensor.

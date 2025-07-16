@@ -5,7 +5,7 @@ Hailo Tile Aggregator
 Overview
 --------
 
-``HailoTileAggregator`` is a derived element of `hailoAggregator <hailo_aggregator.rst>`_ and it is used in the `Tiling <../../apps/h8/gstreamer/general/tiling/README.rst>`_ app.
+``HailoTileAggregator`` is a derived element of `hailoAggregator <hailo_aggregator.rst>`_.
 A complement to the `HailoTileCropper <hailo_tile_cropper.rst>`_\ , the two elements work together to form a versatile tiling apps.
 
 The element extends two methods of the parent element:

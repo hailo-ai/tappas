@@ -77,12 +77,6 @@ In order to generate a Yocto toolchain, use this following command
    # Generate the Toolchain
    bitbake -c do_populate_sdk <image name>
 
-Copy the ``toolchain`` directory to the container using ``docker cp``
-
-.. code-block:: sh
-
-   docker cp toolchain hailo_tappas_container:/local/workspace/tappas
-
 Components
 ----------
 

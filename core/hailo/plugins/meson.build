@@ -49,20 +49,7 @@ dl_dep = meson.get_compiler('c').find_library('dl', required : false)
 # ZMQ dep
 zmq_dep = dependency('libzmq', method : 'pkg-config')
 gsthailotools_deps = plugin_deps + [meta_dep, dl_dep, opencv_dep, tracker_dep, zmq_dep]
-if get_option('target_platform') == 'hailo15'
-    medialibrary_dep = dependency('hailo_media_library_common', method : 'pkg-config', required:true)
-    gstmedialibrary_utils_dep = dependency('gstmedialibutils', method : 'pkg-config', required:false)
-    dsp_dep = meson.get_compiler('c').find_library('libhailodsp', required: true, dirs: sysroot + '/usr/lib/')
-    
-    plugin_sources += [
-        'dsp/upload2/gsthailoupload2.cpp',
-        'dsp/gsthailovideoscale.cpp'
-    ]
-
-    gsthailotools_deps += [dsp_dep, gstmedialibrary_utils_dep, medialibrary_dep]
-    common_args += ['-DHAILO15_TARGET']
-    hailo_link_args += sysroot_arg
-elif get_option('target_platform') == 'imx8' 
+if get_option('target_platform') == 'imx8'
     common_args += ['-DIMX8_TARGET']
 endif
 
@@ -79,7 +66,7 @@ shared_library('gsthailotools',
     gnu_symbol_visibility : 'default',
     version: meson.project_version(),
     install: true,
-    install_dir: get_option('libdir') + '/gstreamer-1.0/',
+    install_dir: install_dir + '/gstreamer-1.0/',
 )
 
 
@@ -104,7 +91,7 @@ shared_library('gsthailopython',
     dependencies : plugin_deps + [fs_dep, python_dep, meta_dep, dl_dep] + gx_deps,
     gnu_symbol_visibility : 'default',
     install: true,
-    install_dir: get_option('libdir') + '/gstreamer-1.0/',
+    install_dir: install_dir + '/gstreamer-1.0/',
 )
 
 ################################################
@@ -118,7 +105,7 @@ hailo_python_sources = [
 python_installation.extension_module('hailo',
     hailo_python_sources,
     include_directories: [hailo_general_inc],
-    dependencies : [pybind_dep, meta_dep, plugin_deps, pygobj_dep],
+    dependencies : [pybind_dep, meta_dep, plugin_deps, pygobj_dep, tracker_dep],
     link_language : 'cpp',
     override_options: ['cpp_rtti=true'],
     gnu_symbol_visibility : 'default',

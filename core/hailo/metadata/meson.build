@@ -13,7 +13,7 @@ meta_lib = shared_library('gsthailometa',
     gnu_symbol_visibility : 'default',
     version: meson.project_version(),
     install: true,
-    install_dir: get_option('libdir'),
+    install_dir: install_dir,
 )
 
 meta_dep = declare_dependency(
@@ -25,7 +25,8 @@ pkgc.generate(name: 'gsthailometa',
               libraries: meta_lib,
               subdirs: '.',
               version: meson.project_version(),
-              description: 'Meta plugin for GStreamer Hailo'
+              description: 'Meta plugin for GStreamer Hailo',
+              install_dir: install_dir + '/pkgconfig/'
 )
 
     

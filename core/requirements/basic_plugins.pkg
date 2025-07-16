@@ -34,3 +34,7 @@ jq
 22.04:python3-dev
 22.04:python3-pip
 22.04:python3-setuptools
+
+24.04:python3-dev
+24.04:python3-pip
+24.04:python3-setuptools

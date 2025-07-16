@@ -2,8 +2,6 @@
 Compiling Your Code
 ===================
 
-When building the ``TAPPAS`` `Docker <../installation/docker-install.rst>`_ (or `installing natively <../installation/manual-install.rst>`_\ ), all of the ``TAPPAS`` source files are compiled and ready to use. If however you want to add your own additions (\ `for example, a new postprocess <write-your-own-postprocess.rst>`_\ ) or make other changes, it will be necessary to recompile the sources. This guide covers the build system used in ``TAPPAS`` and how to compile the project.
-
 The Meson Build System
 ----------------------
 

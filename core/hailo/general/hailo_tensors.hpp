@@ -8,7 +8,7 @@
  **/
 
 #pragma once
-#include "hailo/hailort.h"
+#include "hailo/hailo_gst_tensor_metadata.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,17 +16,18 @@
 class HailoTensor
 {
 private:
-    uint8_t *m_data;                     // Pointer to the data of the tensor.
-    hailo_vstream_info_t m_vstream_info; // Pointer to vstream info.
-    std::string m_name;                  // Name of output tensor.
+    uint8_t *m_data;                            // Pointer to the data of the tensor.
+    hailo_tensor_metadata_t m_tensor_meta_info; // tensor metadata info.
+    std::string m_name;                         // Name of output tensor.
 public:
     /**
      * @brief Construct a new Hailo Tensor object
      *
      * @param data - Pointer to the tensor output.
-     * @param vstream_info - pointer to info about the output, represented as hailo_vstream_info_t.
+     * @param tensor_meta_info - info about the output, represented as hailo_tensor_metadata_t.
      */
-    HailoTensor(uint8_t *data, const hailo_vstream_info_t &vstream_info) : m_data(data), m_vstream_info(vstream_info), m_name(m_vstream_info.name){};
+    HailoTensor(uint8_t *data, const hailo_tensor_metadata_t &tensor_meta_info) :
+        m_data(data), m_tensor_meta_info(tensor_meta_info), m_name(m_tensor_meta_info.name) {};
     // Destructor
     ~HailoTensor() = default;
     // Copy constructor
@@ -39,25 +40,33 @@ public:
     {
         return m_name;
     }
-    hailo_vstream_info_t &vstream_info()
-    {
-        return m_vstream_info;
-    }
     uint8_t *data()
     {
         return m_data;
     }
-    const uint32_t width() { return m_vstream_info.shape.width; }
-    const uint32_t height() { return m_vstream_info.shape.height; }
-    const uint32_t features() { return m_vstream_info.shape.features; }
+    const uint32_t width() { return m_tensor_meta_info.shape.width; }
+    const uint32_t height() { return m_tensor_meta_info.shape.height; }
+    const uint32_t features() { return m_tensor_meta_info.shape.features; }
     const uint32_t size() const
     {
-        return m_vstream_info.shape.width * m_vstream_info.shape.height * m_vstream_info.shape.features;
+        return m_tensor_meta_info.shape.width * m_tensor_meta_info.shape.height * m_tensor_meta_info.shape.features;
     }
     std::vector<std::size_t> shape()
     {
         std::vector<std::size_t> shape = {height(), width(), features()};
         return shape;
+    }
+    hailo_tensor_nms_shape_t nms_shape()
+    {
+        return m_tensor_meta_info.nms_shape;
+    }
+    hailo_tensor_quant_info_t quant_info()
+    {
+        return m_tensor_meta_info.quant_info;
+    }
+    hailo_tensor_format_t format()
+    {
+        return m_tensor_meta_info.format;
     }
 
     // Methods:
@@ -70,7 +79,7 @@ public:
     template <typename T>  
     float fix_scale(T num)
     {
-        return (float(num) - m_vstream_info.quant_info.qp_zp) * m_vstream_info.quant_info.qp_scale;
+        return (float(num) - m_tensor_meta_info.quant_info.qp_zp) * m_tensor_meta_info.quant_info.qp_scale;
     }
 
     /**
@@ -82,7 +91,7 @@ public:
     template <typename T>  
     T quantize(T num)
     {
-        return T((float(num) / m_vstream_info.quant_info.qp_scale)  + m_vstream_info.quant_info.qp_zp);
+        return T((float(num) / m_tensor_meta_info.quant_info.qp_scale)  + m_tensor_meta_info.quant_info.qp_zp);
     }
 
     /**
@@ -96,15 +105,15 @@ public:
      */
     uint8_t get(uint row, uint col, uint channel)
     {
-        uint width = m_vstream_info.shape.width;
-        uint features = m_vstream_info.shape.features;
+        uint width = m_tensor_meta_info.shape.width;
+        uint features = m_tensor_meta_info.shape.features;
         int pos = (width * features) * row + features * col + channel;
         return m_data[pos];
     }
     uint16_t get_uint16(uint row, uint col, uint channel)
     {
-        uint width = m_vstream_info.shape.width;
-        uint features = m_vstream_info.shape.features;
+        uint width = m_tensor_meta_info.shape.width;
+        uint features = m_tensor_meta_info.shape.features;
         int pos = (width * features) * row + features * col + channel;
         uint16_t *data_uint16 = (uint16_t *)m_data;
         return data_uint16[pos];

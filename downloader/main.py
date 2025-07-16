@@ -8,7 +8,7 @@ import sys
 import boto3
 from botocore.exceptions import ClientError
 
-from common import Downloader, Platform, parse_downloader_args
+from common import Downloader, parse_downloader_args
 from config import config
 from s3_amazon_downloader import S3AmazonDownloader
 

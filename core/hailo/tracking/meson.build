@@ -12,7 +12,7 @@ tracker_lib = shared_library('hailo_tracker',
     gnu_symbol_visibility : 'default',
     version: meson.project_version(),
     install: true,
-    install_dir: get_option('libdir'),
+    install_dir: install_dir,
 )
 
 tracker_dep = declare_dependency(

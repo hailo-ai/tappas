@@ -395,12 +395,12 @@ std::vector<HailoDetection> centerpose_postprocess(HailoROIPtr roi,
 
         // Now that we have our top k features, we can rescale them to dequantize
         topk_scores_rescaled = common::dequantize(topk_scores,
-                                                  center_heatmap->vstream_info().quant_info.qp_scale, center_heatmap->vstream_info().quant_info.qp_zp);
+                                                  center_heatmap->quant_info().qp_scale, center_heatmap->quant_info().qp_zp);
         xt::xarray<float> topk_center_offset_rescaled = common::dequantize(topk_center_offset,
-                                                                           center_offset->vstream_info().quant_info.qp_scale, center_offset->vstream_info().quant_info.qp_zp);
+                                                                           center_offset->quant_info().qp_scale, center_offset->quant_info().qp_zp);
 
         topk_center_wh_rescaled = common::dequantize(topk_center_wh,
-                                                     center_width_height->vstream_info().quant_info.qp_scale, center_width_height->vstream_info().quant_info.qp_zp);
+                                                     center_width_height->quant_info().qp_scale, center_width_height->quant_info().qp_zp);
 
         // Build up the detection boxes
         bboxes = build_boxes_centerpose(topk_scores_rescaled,
@@ -423,12 +423,12 @@ std::vector<HailoDetection> centerpose_postprocess(HailoROIPtr roi,
 
         // Now that we have our top k features, we can rescale them to dequantize
         topk_scores_rescaled = common::dequantize(topk_scores,
-                                                  center_heatmap->vstream_info().quant_info.qp_scale, center_heatmap->vstream_info().quant_info.qp_zp);
+                                                  center_heatmap->quant_info().qp_scale, center_heatmap->quant_info().qp_zp);
         xt::xarray<float> topk_center_offset_rescaled = common::dequantize(topk_center_offset,
-                                                                           center_offset->vstream_info().quant_info.qp_scale, center_offset->vstream_info().quant_info.qp_zp);
+                                                                           center_offset->quant_info().qp_scale, center_offset->quant_info().qp_zp);
 
         topk_center_wh_rescaled = common::dequantize(topk_center_wh,
-                                                     center_width_height->vstream_info().quant_info.qp_scale, center_width_height->vstream_info().quant_info.qp_zp);
+                                                     center_width_height->quant_info().qp_scale, center_width_height->quant_info().qp_zp);
 
         // Build up the detection boxes
         bboxes = build_boxes_centerpose(topk_scores_rescaled,
@@ -450,14 +450,14 @@ std::vector<HailoDetection> centerpose_postprocess(HailoROIPtr roi,
         auto top_k_joint_heatmap = top_k_joints_uint16(joint_heatmap, k); // Returns both the top scores and their indices
         topk_joint_heatmap_indices = top_k_joint_heatmap.first;           // Separate out the top score indices
         topk_joint_score_rescaled = common::dequantize(top_k_joint_heatmap.second,
-                                                       joint_heatmap->vstream_info().quant_info.qp_scale, joint_heatmap->vstream_info().quant_info.qp_zp);
+                                                       joint_heatmap->quant_info().qp_scale, joint_heatmap->quant_info().qp_zp);
     }
     else
     {
         auto top_k_joint_heatmap = top_k_joints(joint_heatmap, k); // Returns both the top scores and their indices
         topk_joint_heatmap_indices = top_k_joint_heatmap.first;    // Separate out the top score indices
         topk_joint_score_rescaled = common::dequantize(top_k_joint_heatmap.second,
-                                                       joint_heatmap->vstream_info().quant_info.qp_scale, joint_heatmap->vstream_info().quant_info.qp_zp);
+                                                       joint_heatmap->quant_info().qp_scale, joint_heatmap->quant_info().qp_zp);
     }
     // The indices are in respect to an array of shape {435200}, so we will need to calculate the proper (x,y)
     topk_joint_heatmap_indices = topk_joint_heatmap_indices % (joint_heatmap->width() * joint_heatmap->height());
@@ -473,7 +473,7 @@ std::vector<HailoDetection> centerpose_postprocess(HailoROIPtr roi,
 
     // Now that we have our top k joints, we can rescale them to dequantize
     xt::xarray<float> topk_keypoints_rescaled = common::dequantize(topk_keypoints,
-                                                                   joint_center_offset->vstream_info().quant_info.qp_scale, joint_center_offset->vstream_info().quant_info.qp_zp);
+                                                                   joint_center_offset->quant_info().qp_scale, joint_center_offset->quant_info().qp_zp);
 
     // These are just the offsets within the 160x160 grid, we still need to add the indices
     // Current shape of topk_keypoints_rescaled is { 20, 34 }, so we need to reshape to --> { 20, 17, 2 }
