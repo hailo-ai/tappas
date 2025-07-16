@@ -45,7 +45,7 @@ function print_usage() {
   echo "  --list-apps            Show the list of available apps"
   echo "  --core-only            Install tappas core only (no apps data)"
   echo "  --cross-compile-arch   Which arch tappas will cross compile to."
-  echo "  --python-version       Will compile to not default python version. Python version - for example `3.11`"
+  echo "  --python-version       Will compile to not default python version. Python version - for example '3.11'"
 
   exit 1
 }
