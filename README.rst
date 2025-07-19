@@ -128,6 +128,15 @@ For the Raspberry Pi 5 applications, go to
     * This application example does not include any architecture-specific accelerator usage,
       and therefore will provide the easiest way to run an application, but with sub-optimal performance.
 
+.. important::
+   The models provided when installing from GitHub are for Hailo-8 devices.
+   For Hailo-10H devices, please download the models from the
+   `Hailo Model Zoo <https://hailo.ai/developer-zone/model-zoo/>`_ and place them in the ``apps/h8/gstreamer/general/detection/resources/`` directory:
+    * `yolov8m <https://hailo-model-zoo.s3.eu-west-2.amazonaws.com/ModelZoo/Compiled/v5.0.0/hailo15h/yolov8m.hef>`_
+    * `ssd_mobilenet_v1 <https://hailo-model-zoo.s3.eu-west-2.amazonaws.com/ModelZoo/Compiled/v5.0.0/hailo15h/ssd_mobilenet_v1.hef>`_
+    * `nanodet <https://hailo-model-zoo.s3.eu-west-2.amazonaws.com/ModelZoo/Compiled/v5.0.0/hailo15h/nanodet_repvgg.hef>`_
+    * There specific compilation of yolov5m (yolov5m_wo_spp_60p.hef) provided for this application, isn't provided for Hailo-10H devices.
+   
 .. note::
     Running application examples requires a direct connection to a monitor.
 
@@ -155,3 +164,4 @@ Changelog
 * Added support for Ubuntu 24.04
 * Added support for Python 3.12
 * This release supports both HailoRT v4.22.0 (Hailo-8) and HailoRT v5.0.0 (Hailo-10)
+* Known issue: When installing via GitHub, only Hailo-8 models are downloaded.

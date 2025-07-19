@@ -92,15 +92,21 @@ endif
 
 # Library Arguments
 hailo_lib_args = get_option('libargs')
+target_platform = get_option('target_platform')
 arch = host_machine.cpu_family()
+arch_dir = arch + '-linux-gnu/'
+
+if target_platform == 'imx8'
+  arch_dir = ''
+endif
 
 post_proc_install_dir = get_option('post_processes_install_dir')
 if post_proc_install_dir == ''
   # By default install for x86 workspace
-  post_proc_install_dir = '/usr/lib/' + arch + '-linux-gnu/hailo/tappas/post_processes'
+  post_proc_install_dir = '/usr/lib/' + arch_dir + 'hailo/tappas/post_processes'
 endif
 
-install_dir = '/usr/lib/' + arch + '-linux-gnu'
+install_dir = '/usr/lib/' + arch_dir
 
 target = get_option('target')
 # Project Subdirectories
