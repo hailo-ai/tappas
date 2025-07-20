@@ -1,10 +1,8 @@
 apps_install_dir = get_option('apps_install_dir')
-target_platform = get_option('target_platform')
 install_lpr = get_option('install_lpr')
-arch = host_machine.cpu_family()
 if apps_install_dir == ''
   # By default install for x86 workspace
-  apps_install_dir = '/usr/lib/' + arch + '-linux-gnu/hailo/tappas/apps'
+  apps_install_dir = '/usr/lib/' + arch_dir + 'hailo/tappas/apps'
 endif
 
 thread_deps = [dependency('threads')]

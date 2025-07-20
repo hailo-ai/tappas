@@ -155,7 +155,7 @@ function install_hailo() {
   libhailort_version_num=${libhailort_version#*libhailort.so.}
 
   ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version $compile_num_cores $cross_compile_command
-  
+
   # Install source files
   sudo mkdir -p /usr/include/hailo/tappas/sources
   sudo cp -r $TAPPAS_WORKSPACE/core/hailo/libs/postprocesses/	/usr/include/hailo/tappas
@@ -164,7 +164,7 @@ function install_hailo() {
   sudo cp -r $TAPPAS_WORKSPACE/core/hailo/metadata/	/usr/include/hailo/tappas
   sudo cp -r $TAPPAS_WORKSPACE/core/hailo/plugins/common/	/usr/include/hailo/tappas
   sudo cp -r $TAPPAS_WORKSPACE/sources/	/usr/include/hailo/tappas/sources
-  
+
   # Copyright
   sudo mkdir -p /usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}
   sudo cp $TAPPAS_WORKSPACE/LICENSE	/usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}/copyright
@@ -192,7 +192,7 @@ function check_systems_requirements(){
 function verify_that_hailort_found_if_needed() {
   if [ "$target_platform" != "x86" ]; then
     hailort_sources_dir="$TAPPAS_WORKSPACE/hailort/sources"
-    if [ ! -d "$hailort_sources_dir" ]; then 
+    if [ ! -d "$hailort_sources_dir" ]; then
       echo "HailoRT sources directory not found ($hailort_sources_dir), Please follow our manual installation guide"
       exit 1
     fi
