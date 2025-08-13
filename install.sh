@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-skip_hailort=false
 core_only=false
 target_platform="x86"
 compile_num_cores=""
@@ -54,8 +53,6 @@ function parse_args() {
   while test $# -gt 0; do
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
       print_usage
-    elif [ "$1" == "--skip-hailort" ]; then
-      skip_hailort=true
     elif [ "$1" == "--core-only" ]; then
       core_only=true
     elif [ "$1" == "--target-platform" ]; then
@@ -117,7 +114,8 @@ function python_venv_create_and_install() {
   pip3 install -r $TAPPAS_WORKSPACE/core/requirements/gstreamer_requirements.txt
   pip3 install -r $TAPPAS_WORKSPACE/downloader/requirements.txt
   # if rpi5 (core_only) is set dont download apps data (TAPPAS Core mode)
-  if [ "$core_only" = false ]; then
+
+  if [ "$core_only" = false  || "$target_platform" != "rpi5" ]; then
     if [[ ${apps_to_set} ]]; then
       python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform --apps-list $apps_to_set
     else
@@ -126,10 +124,21 @@ function python_venv_create_and_install() {
   fi
 }
 
-function install_hailo() {
-  if [ "$skip_hailort" = false ]; then
-    yes N | sudo dpkg -i ${TAPPAS_WORKSPACE}/hailort/hailort_*_${ARCH_TO_DPKG[$target_platform]}.deb
+function check_hailort_installed() {
+  hailort_version=$(dpkg -l | awk '/^ii[[:space:]]+hailort[[:space:]]/ {print $3}')
+
+  if [ -n "$hailort_version" ]; then
+    echo "[info] HailoRT is installed!"
+    echo "[info] HailoRT version: $hailort_version"
+    return 0
   fi
+
+  echo "HailoRT is not installed. Please, follow our manual HailoRT installation guide."
+  exit 1
+}
+
+function install_hailo() {
+  check_hailort_installed
 
   if [ "$target_platform" != "x86" ]; then
     echo "Skipping run_app tool on non x86 target platform..."
@@ -196,6 +205,8 @@ function verify_that_hailort_found_if_needed() {
       echo "HailoRT sources directory not found ($hailort_sources_dir), Please follow our manual installation guide"
       exit 1
     fi
+  else 
+    echo "HailoRT is running in x86 system"
   fi
 }
 
