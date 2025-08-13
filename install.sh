@@ -191,7 +191,7 @@ function check_systems_requirements(){
 
 function verify_that_hailort_found_if_needed() {
   if [ "$target_platform" != "x86" ]; then
-    hailort_sources_dir="$TAPPAS_WORKSPACE/hailort/sources"
+    hailort_sources_dir="$TAPPAS_WORKSPACE/sources"
     if [ ! -d "$hailort_sources_dir" ]; then
       echo "HailoRT sources directory not found ($hailort_sources_dir), Please follow our manual installation guide"
       exit 1
