@@ -70,7 +70,7 @@ function clean_tappas_user_env(){
 
 function remove_tappas_venv(){
     pushd $(dirname $0) > /dev/null
-    rm -rf ${VENV_NAME}
+    sudo rm -rf ${VENV_NAME}
 }
 
 function remove_old_tappas_files(){

@@ -1,0 +1,25 @@
+{
+  "path": "apps/detection/resources",
+  "requirements": [
+    {
+      "bucket": "model_zoo",
+      "source": "yolov8m.hef",
+      "destination": "yolov8m.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "yolov5m_wo_spp.hef",
+      "destination": "yolov5m_wo_spp.hef"
+    },
+    {
+      "bucket": "model_zoo",
+      "source": "ssd_mobilenet_v1.hef",
+      "destination": "ssd_mobilenet_v1.hef"
+    },
+    {
+      "bucket": "tappas",
+      "source": "general/media/detection.mp4",
+      "destination": "detection.mp4"
+    }
+  ]
+}

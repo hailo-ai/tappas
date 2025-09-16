@@ -7,6 +7,7 @@
 #include "hailo_nms_decode.hpp"
 
 static const std::string DEFAULT_SSD_OUTPUT_LAYER = "ssd_mobilenet_v1/nms1";
+static const std::string DEFAULT_SSD_H10_OUTPUT_LAYER = "ssd_mobilenet_v1/ssd_nms_postprocess";
 static const std::string DEFAULT_SSD_MERGED_OUTPUT_LAYER = "ssd_mobilenet_v1_no_alls/nms1";
 static const std::string DEFAULT_SSD_VISDRONE_OUTPUT_LAYER = "ssd_mobilenet_v1_visdrone/nms1";
 
@@ -26,6 +27,11 @@ static void mobilenet_ssd_base(HailoROIPtr roi, const std::string output_layer, 
 void mobilenet_ssd(HailoROIPtr roi)
 {
     mobilenet_ssd_base(roi, DEFAULT_SSD_OUTPUT_LAYER, common::coco_ninety_classes);
+}
+
+void mobilenet_ssd_h10(HailoROIPtr roi)
+{
+    mobilenet_ssd_base(roi, DEFAULT_SSD_H10_OUTPUT_LAYER, common::coco_ninety_classes);
 }
 
 void mobilenet_ssd_merged(HailoROIPtr roi)

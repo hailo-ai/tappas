@@ -9,6 +9,7 @@
 __BEGIN_DECLS
 void filter(HailoROIPtr roi);
 void mobilenet_ssd(HailoROIPtr roi);
+void mobilenet_ssd_h10(HailoROIPtr roi);
 void mobilenet_ssd_merged(HailoROIPtr roi);
 void mobilenet_ssd_visdrone(HailoROIPtr roi);
 __END_DECLS
