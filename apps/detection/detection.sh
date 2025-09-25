@@ -37,11 +37,7 @@ function init_variables() {
 
     print_gst_launch_only=false
     additional_parameters=""
-    stats_element=""
-    debug_stats_export=""
     sync_pipeline=false
-    device_id_prop=""
-    tappas_gui_mode=false
 }
 
 function print_help_if_needed() {
@@ -64,7 +60,6 @@ function print_usage() {
     echo "  -i INPUT --input INPUT     Set the input source (default $input_source)"
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
-    echo "  --print-device-stats       Print the power and temperature measured"
     echo "  --tcp-address              Used for TAPPAS GUI, switchs the sink to TCP client"
     exit 0
 }
@@ -105,11 +100,6 @@ function parse_args() {
             shift
         elif [ "$1" = "--print-gst-launch" ]; then
             print_gst_launch_only=true
-        elif [ "$1" = "--print-device-stats" ]; then
-            hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
-            device_id_prop="device_id=$hailo_bus_id"
-            stats_element="hailodevicestats $device_id_prop"
-            debug_stats_export="GST_DEBUG=hailodevicestats:5"
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
             additional_parameters="-v | grep -e hailo_display -e hailodevicestats"
@@ -146,14 +136,14 @@ else
     source_element="filesrc location=$input_source name=src_0 ! decodebin"
 fi
 
-PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
+PIPELINE="gst-launch-1.0 \
     $source_element ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoscale qos=false n-threads=2 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert n-threads=2 qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size $thresholds_str ! \
+    hailonet hef-path=$hef_path batch-size=$batch_size $thresholds_str ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
