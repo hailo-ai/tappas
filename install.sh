@@ -6,7 +6,6 @@ core_only=false
 target_platform="x86"
 compile_num_cores=""
 cross_compile_command=""
-gcc_version=12
 python_version="3"
 
 if [[ -z "$TAPPAS_WORKSPACE" ]]; then
@@ -45,7 +44,7 @@ function print_usage() {
   echo "  --list-apps            Show the list of available apps"
   echo "  --core-only            Install tappas core only (no apps data)"
   echo "  --cross-compile-arch   Which arch tappas will cross compile to."
-  echo "  --python-version       Will compile to not default python version. Python version - for example '3.11'"
+  echo "  --python-version       Will compile to not default python version. Python version - for example '3.12'"
 
   exit 1
 }
@@ -119,9 +118,9 @@ function python_venv_create_and_install() {
   # if rpi5 (core_only) is set dont download apps data (TAPPAS Core mode)
   if [ "$core_only" = false ]; then
     if [[ ${apps_to_set} ]]; then
-      python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform --apps-list $apps_to_set
+      python3 $TAPPAS_WORKSPACE/downloader/main.py --apps-list $apps_to_set
     else
-      python3 $TAPPAS_WORKSPACE/downloader/main.py $target_platform
+      python3 $TAPPAS_WORKSPACE/downloader/main.py
     fi
   fi
 }
@@ -154,36 +153,25 @@ function install_hailo() {
   libhailort_version=$(ls /usr/lib/libhailort.so -l)
   libhailort_version_num=${libhailort_version#*libhailort.so.}
 
-  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform --gcc-version $gcc_version $compile_num_cores $cross_compile_command
+  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores $cross_compile_command
 
   # Install source files
   sudo mkdir -p /usr/include/hailo/tappas/sources
-  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/libs/postprocesses/	/usr/include/hailo/tappas
-  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/general/	/usr/include/hailo/tappas
-  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/tracking/	/usr/include/hailo/tappas
-  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/metadata/	/usr/include/hailo/tappas
-  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/plugins/common/	/usr/include/hailo/tappas
-  sudo cp -r $TAPPAS_WORKSPACE/sources/	/usr/include/hailo/tappas/sources
-
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/libs/postprocesses/*	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/general/*	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/tracking/*	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/metadata/*	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/core/hailo/plugins/common/*	/usr/include/hailo/tappas
+  sudo cp -r $TAPPAS_WORKSPACE/sources/*	/usr/include/hailo/tappas/sources
+  
   # Copyright
   sudo mkdir -p /usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}
   sudo cp $TAPPAS_WORKSPACE/LICENSE	/usr/share/doc/hailo-tappas-core-${TAPPAS_VERSION}/copyright
 
 }
 
-function set_gcc_version(){
-  if [ "$target_platform" == "rpi" ] || [ "$target_platform" == "rockchip" ]; then
-    gcc_version=9
-  else
-    ubuntu_version=$(lsb_release -r | awk '{print $2}' | awk -F'.' '{print $1}')
-    if [ $ubuntu_version -eq 20 ]; then
-        gcc_version=9
-    fi
-  fi
-}
-
 function check_systems_requirements(){
-  GCC_VERSION=$gcc_version ./check_system_requirements.sh
+  ./check_system_requirements.sh
   if [ "$?" != "0"  ]; then
     exit 1
   fi
@@ -284,7 +272,6 @@ function list_supported_apps(){
 
 function main() {
   uninstall
-  set_gcc_version
   check_systems_requirements
   verify_that_hailort_found_if_needed
   python_venv_create_and_install

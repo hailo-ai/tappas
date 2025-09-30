@@ -1,7 +1,7 @@
 # Project Declaration
 
 project('gst-hailo-tools', 'c', 'cpp',
-        version : '5.0.0',
+        version : '5.1.0',
         default_options : [ 'buildtype=release',
                             'c_std=c11', 'cpp_std=c++17']
        )
@@ -96,8 +96,15 @@ target_platform = get_option('target_platform')
 arch = host_machine.cpu_family()
 arch_dir = arch + '-linux-gnu/'
 
-if target_platform == 'imx8'
+
+if target_platform in ['x86', 'x86_64']
+  arch = 'x86_64'
+elif target_platform in ['rpi', 'rpi5', 'rockchip', 'aarch64']
+  arch = 'aarch64'
+elif target_platform == 'imx8'
   arch_dir = ''
+else
+  error('Unknown target platform: ' + target_platform)  
 endif
 
 post_proc_install_dir = get_option('post_processes_install_dir')

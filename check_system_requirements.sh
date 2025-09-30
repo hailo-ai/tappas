@@ -8,10 +8,6 @@ readonly log_found="V$log_boundary"
 readonly log_missing="X$log_boundary"
 readonly log_warning=" $log_boundary"
 
-if [ -z "$GCC_VERSION" ]; then
-    echo GCC version not set
-    exit 1
-fi
 
 declare -a apt_reqs
 
@@ -21,25 +17,23 @@ apt_reqs[2]='python3-dev'
 apt_reqs[3]='python3-pip'
 apt_reqs[4]='python3-setuptools'
 apt_reqs[5]='libgirepository'
-apt_reqs[6]="gcc-$GCC_VERSION"
-apt_reqs[7]="g++-$GCC_VERSION"
-apt_reqs[8]='python-gi-dev'
-apt_reqs[9]='pkg-config'
-apt_reqs[10]='libcairo2-dev'
-apt_reqs[11]='libgirepository1.0-dev'
-apt_reqs[12]='libgstreamer1.0-dev'
-apt_reqs[13]='cmake'
-apt_reqs[14]='libgstreamer-plugins-base1.0-dev'
-apt_reqs[15]='libzmq3-dev'
-apt_reqs[16]='rsync'
-apt_reqs[17]='git'
-apt_reqs[18]='libgstreamer-plugins-bad1.0-dev'
-apt_reqs[19]='gstreamer1.0-plugins-base'
-apt_reqs[20]='gstreamer1.0-plugins-good'
-apt_reqs[21]='gstreamer1.0-plugins-bad'
-apt_reqs[22]='gstreamer1.0-libav'
-apt_reqs[23]='gstreamer1.0-tools'
-apt_reqs[24]='gstreamer1.0-x'
+apt_reqs[6]='python-gi-dev'
+apt_reqs[7]='pkg-config'
+apt_reqs[8]='libcairo2-dev'
+apt_reqs[9]='libgirepository1.0-dev'
+apt_reqs[10]='libgstreamer1.0-dev'
+apt_reqs[11]='cmake'
+apt_reqs[12]='libgstreamer-plugins-base1.0-dev'
+apt_reqs[13]='libzmq3-dev'
+apt_reqs[14]='rsync'
+apt_reqs[15]='git'
+apt_reqs[16]='libgstreamer-plugins-bad1.0-dev'
+apt_reqs[17]='gstreamer1.0-plugins-base'
+apt_reqs[18]='gstreamer1.0-plugins-good'
+apt_reqs[19]='gstreamer1.0-plugins-bad'
+apt_reqs[20]='gstreamer1.0-libav'
+apt_reqs[21]='gstreamer1.0-tools'
+apt_reqs[22]='gstreamer1.0-x'
 
 
 declare -a pkg_config_reqs

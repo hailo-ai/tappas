@@ -1,7 +1,9 @@
-PyGObject==3.42.0
+PyGObject==3.42.0; python_version < "3.12"
+PyGObject==3.50.0; python_version >= "3.12"
 gobject==0.1.0
 pycairo==1.20.1
 numpy==1.23.3; python_version < "3.12"
 numpy==1.26.4; python_version >= "3.12"
-pandas==1.5.2
+pandas==1.5.2; python_version < "3.12"
+pandas==2.3.1; python_version >= "3.12"
 plotly==5.9.0

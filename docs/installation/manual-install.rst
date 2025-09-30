@@ -78,12 +78,18 @@ The following APT packages need to be installed, using the command below:
 * libzmq3-dev
 * git
 * rsync
+* gcc (>= gcc-9)
+* g++ (>= g++-9)
+
 
 To install the above packages, run the following command:
 
 .. code-block:: sh
     
     sudo apt-get install -y rsync ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-12 g++-12 cmake git libzmq3-dev
+
+.. note::
+    The gcc and g++ version depends on the OS support. The versions shown in the example (gcc-12, g++-12) are recommended, but ensure the version is at least gcc-9 and g++-9 or higher.
 
 The following packages are required as well, and their installation instructions can be viewed from the links below:
 

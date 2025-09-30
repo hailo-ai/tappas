@@ -30,13 +30,13 @@ We would begin by creating soft-links for files in three common resolution:
 
 ```sh
 # 640x640 Video
-./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/h8/gstreamer/resources/mp4/detection.mp4 --output-prefix 640x640_video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/resources/mp4/detection.mp4 --output-prefix 640x640_video
 
 # 1280x720 Video
-./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/h8/gstreamer/resources/mp4/instance_segmentation.mp4 --output-prefix 1280x720_video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/resources/mp4/instance_segmentation.mp4 --output-prefix 1280x720_video
 
 # 1920x1080 Video
-./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/h8/gstreamer/resources/mp4/lpr_ayalon.mp4 --output-prefix 1920x1080_video
+./create_soft_links.sh --num-of-copies 10 --input $TAPPAS_WORKSPACE/apps/resources/mp4/lpr_ayalon.mp4 --output-prefix 1920x1080_video
 ```
 
 ## Running the benchmarks
