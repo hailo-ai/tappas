@@ -28,7 +28,6 @@ class Arch(Enum):
 
 class Target(Enum):
     IMX8 = 'imx8'
-    HAILO15 = 'hailo15'
 
     def __str__(self):
         return self.value

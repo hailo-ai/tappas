@@ -3,7 +3,7 @@
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
 
-#include "common/image.hpp"
+#include "image.hpp"
 
 size_t get_size(GstCaps *caps)
 {

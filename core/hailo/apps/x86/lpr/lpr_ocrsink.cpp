@@ -16,10 +16,10 @@
 #include "hailo_cv_singleton.hpp"
 #include "hailo_tracker.hpp"
 #include "image.hpp"
+#include "hailomat_internal.hpp"
 
 // Open source includes
 #include <opencv2/opencv.hpp>
-#include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/core.hpp>
 
@@ -109,7 +109,7 @@ void catalog_rgb_mat(std::string text, cv::Mat &mat)
 
 void catalog_license_plate(std::string label, float confidence, HailoBBox license_plate_box, std::shared_ptr<HailoMat> hmat, HailoROIPtr crop_roi)
 {
-    cv::Mat &mat = hmat->get_matrices()[0];
+    cv::Mat &mat = get_cv_matrices(*hmat)[0];
     // Prepare the cropped license plate and text
     std::string text = label + " " + std::to_string((int)(confidence * 100)) + "%";
     cv::Rect rect;
@@ -120,7 +120,7 @@ void catalog_license_plate(std::string label, float confidence, HailoBBox licens
     if (rect.width == 0 || rect.height == 0)
         return;
 
-    std::vector<cv::Mat> cropped_image_vec = hmat->crop(crop_roi); // this crashes the app
+    std::vector<cv::Mat> cropped_image_vec = hmat->crop(crop_roi)->get_matrices(); // this crashes the app
 
     switch (hmat->get_type())
     {

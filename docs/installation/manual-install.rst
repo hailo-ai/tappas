@@ -6,7 +6,7 @@ The manual installation of TAPPAS requires preparation, Hailo's recommended meth
 This guide will instruct how to install the required components manually.
 
 .. note::
-    Only Ubuntu 20.04 and 22.04 are supported
+    Only Ubuntu 22.04 and 24.04 are supported
 
 
 Hailort Installation
@@ -78,6 +78,7 @@ The following APT packages need to be installed, using the command below:
 * libzmq3-dev
 * git
 * rsync
+* pkg-config
 * gcc (>= gcc-9)
 * g++ (>= g++-9)
 
@@ -86,7 +87,7 @@ To install the above packages, run the following command:
 
 .. code-block:: sh
     
-    sudo apt-get install -y rsync ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-12 g++-12 cmake git libzmq3-dev
+    sudo apt-get install -y rsync ffmpeg x11-utils python3-dev python3-pip python3-setuptools python3-virtualenv python-gi-dev libgirepository1.0-dev gcc-12 g++-12 cmake git libzmq3-dev pkg-config
 
 .. note::
     The gcc and g++ version depends on the OS support. The versions shown in the example (gcc-12, g++-12) are recommended, but ensure the version is at least gcc-9 and g++-9 or higher.
@@ -215,6 +216,50 @@ Remove old ``libgsthailotools.so``
    rm /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0/libgsthailotools.so
 
 and then, `TAPPAS installation section`_
+
+
+TAPPAS Python Package Compilation
+---------------------------------
+
+To compile the TAPPAS Python package, run the following command:
+
+.. code-block:: sh
+
+    cd packaging/wheel
+    ./build_wheel.sh --tappas-dir <tappas_root>
+
+then the wheel will be built in the <tappas_root>/build directory.    
+
+.. note::
+    Ensure that you have completed the manual installation of TAPPAS before compiling the Python package.
+
+TAPPAS Python Package Installation
+----------------------------------
+
+To install the TAPPAS Python package, run the following command:
+
+.. code-block:: sh
+
+    pip3 install build/hailo_tappas_core_python_binding-<tappas_version>-py3-none-any.whl
+
+To verify that the TAPPAS Python package is installed correctly, run the following command:
+
+.. code-block:: sh
+
+    pip3 show hailo-tappas-core-python-binding
+
+If the package is installed correctly, the output will be:
+
+.. code-block:: sh
+
+    Name: hailo-tappas-core-python-binding
+    Version: <tappas_version>
+    Summary: Python binding for tappas
+    Home-page: https://hailo.ai/
+    Author: Hailo team
+    Author-email: contact@hailo.ai
+    ... (output may vary)
+
 
 Troubleshooting
 ---------------

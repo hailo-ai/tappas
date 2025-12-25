@@ -57,8 +57,8 @@ function parse_args() {
           ARCH_DIR=""
           ;;
         *)
-          echo "Unknown target platform: $ARCH"
-          print_usage
+          echo "Unknown target platform: $2"
+          exit 1
           ;;
       esac
       shift

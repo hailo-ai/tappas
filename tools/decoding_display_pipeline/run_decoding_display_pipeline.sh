@@ -2,10 +2,6 @@
 set -e
 
 function init_variables() {
-    # Assure all check are ready before running the pipeline
-    script_dir=$(dirname $(realpath "$0"))
-    source $script_dir/../../scripts/misc/checks_before_run.sh --no-hailo
-
     decode_element="decodebin"
     num_of_src=4
     num_of_buffers=500
@@ -136,8 +132,6 @@ function main() {
     init_variables $@
     parse_args $@
     post_parse_args
-    script_dir=$(dirname $(realpath "$0"))
-    source $script_dir/../../scripts/misc/checks_before_run.sh $check_vaapi --no-hailo
     create_sources
 
     pipeline="gst-launch-1.0 \

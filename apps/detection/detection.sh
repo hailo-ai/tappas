@@ -1,11 +1,57 @@
 #!/bin/bash
 set -e
 
+function export_xv_image_is_supported() {
+    # Check if an adapter that are accessible through the X-Video extension is found
+    if xvinfo | grep -q 'no adaptors present'; then
+        echo "No XV adaptors found, using ximagesink instead"
+        export XV_SUPPORTED=false
+    else
+        export XV_SUPPORTED=true
+    fi
+}
+
+function add_vaapi_fakedriver() {
+    export LIBVA_DRIVER_NAME=fakedriver
+}
+
+function export_ld_library_path(){
+    TAPPAS_LIB_PATH=/usr/lib/$(uname -m)-linux-gnu
+    ! [[ -n $LD_LIBRARY_PATH && $LD_LIBRARY_PATH =~ ${TAPPAS_LIB_PATH} ]] && \
+        export LD_LIBRARY_PATH="${TAPPAS_LIB_PATH}:${LD_LIBRARY_PATH}"
+    return 0
+}
+
+function export_gst_plugin_path(){
+    TAPPAS_GST_PLUGIN_PATH=/usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0
+    ! [[ -n $GST_PLUGIN_PATH && $GST_PLUGIN_PATH =~ ${TAPPAS_GST_PLUGIN_PATH} ]] && \
+        export GST_PLUGIN_PATH="${TAPPAS_GST_PLUGIN_PATH}:${GST_PLUGIN_PATH}"
+    return 0
+}
+
+function validate_hailo_device_connected() {
+    devices_count=`lspci -d 1e60: | wc -l`
+
+    if (( $devices_count == 0 )); then
+        echo "No Hailo devices found. Please connect the device and try again"
+        return 1
+    fi
+}
+
 function init_variables() {
     print_help_if_needed $@
 
     script_dir=$(dirname $(realpath "$0"))
-    source $script_dir/../../scripts/misc/checks_before_run.sh
+
+    export_xv_image_is_supported
+    add_vaapi_fakedriver
+    export_ld_library_path
+    export_gst_plugin_path
+    validate_hailo_device_connected
+    return_code=$?
+    if [ $return_code -ne 0 ]; then
+        exit $return_code
+    fi
 
     readonly POSTPROCESS_DIR="/usr/lib/$(uname -m)-linux-gnu/hailo/tappas/post_processes"
     readonly RESOURCES_DIR_ROOT="$script_dir/resources"
@@ -37,7 +83,11 @@ function init_variables() {
 
     print_gst_launch_only=false
     additional_parameters=""
+    stats_element=""
+    debug_stats_export=""
     sync_pipeline=false
+    device_id_prop=""
+    tappas_gui_mode=false
 }
 
 function print_help_if_needed() {
@@ -60,6 +110,7 @@ function print_usage() {
     echo "  -i INPUT --input INPUT     Set the input source (default $input_source)"
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
+    echo "  --print-device-stats       Print the power and temperature measured"
     echo "  --tcp-address              Used for TAPPAS GUI, switchs the sink to TCP client"
     exit 0
 }
@@ -100,6 +151,11 @@ function parse_args() {
             shift
         elif [ "$1" = "--print-gst-launch" ]; then
             print_gst_launch_only=true
+        elif [ "$1" = "--print-device-stats" ]; then
+            hailo_bus_id=$(hailortcli scan | awk '{ print $NF }' | tail -n 1)
+            device_id_prop="device_id=$hailo_bus_id"
+            stats_element="hailodevicestats $device_id_prop"
+            debug_stats_export="GST_DEBUG=hailodevicestats:5"
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
             additional_parameters="-v | grep -e hailo_display -e hailodevicestats"
@@ -136,14 +192,14 @@ else
     source_element="filesrc location=$input_source name=src_0 ! decodebin"
 fi
 
-PIPELINE="gst-launch-1.0 \
+PIPELINE="${debug_stats_export} gst-launch-1.0 ${stats_element} \
     $source_element ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoscale qos=false n-threads=2 ! video/x-raw, pixel-aspect-ratio=1/1 ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     videoconvert n-threads=2 qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-    hailonet hef-path=$hef_path batch-size=$batch_size $thresholds_str ! \
+    hailonet hef-path=$hef_path $device_id_prop batch-size=$batch_size $thresholds_str ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
     hailofilter function-name=$network_name so-path=$postprocess_so config-path=$json_config_path qos=false ! \
     queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \

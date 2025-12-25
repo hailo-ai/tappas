@@ -2,7 +2,6 @@ libtool
 bison 
 flex 
 gnuplot 
-libblas-dev 
 liblapack-dev 
 gstreamer-1.0 
 gstreamer1.0-dev 

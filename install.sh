@@ -7,6 +7,7 @@ target_platform="x86"
 compile_num_cores=""
 cross_compile_command=""
 python_version="3"
+static_opencv_flag=false
 
 if [[ -z "$TAPPAS_WORKSPACE" ]]; then
   export TAPPAS_WORKSPACE=$(dirname "$(realpath "$0")")
@@ -45,6 +46,7 @@ function print_usage() {
   echo "  --core-only            Install tappas core only (no apps data)"
   echo "  --cross-compile-arch   Which arch tappas will cross compile to."
   echo "  --python-version       Will compile to not default python version. Python version - for example '3.12'"
+  echo "  --static-opencv        Link OpenCV statically (reduces external dependencies)"
 
   exit 1
 }
@@ -79,6 +81,8 @@ function parse_args() {
     elif [ "$1" == "--python-version" ]; then
       python_version=$2
       shift
+    elif [ "$1" == "--static-opencv" ]; then
+      static_opencv_flag=true
     else
       echo "Unknown parameters, exiting"
       print_usage
@@ -111,10 +115,15 @@ function python_venv_create_and_install() {
     source ${VENV_PATH}/$VENV_NAME/bin/activate
   fi
   # Install pip packages & Call the downloader script
+  if [[ -n "$cross_compile_command" ]]; then
+    ORIGINAL_PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
+    unset PKG_CONFIG_PATH
+  fi
   pip3 install --upgrade pip 'setuptools<=66.0.0'
   pip3 install -r $TAPPAS_WORKSPACE/core/requirements/requirements.txt
   pip3 install -r $TAPPAS_WORKSPACE/core/requirements/gstreamer_requirements.txt
   pip3 install -r $TAPPAS_WORKSPACE/downloader/requirements.txt
+
   # if rpi5 (core_only) is set dont download apps data (TAPPAS Core mode)
   if [ "$core_only" = false ]; then
     if [[ ${apps_to_set} ]]; then
@@ -122,6 +131,10 @@ function python_venv_create_and_install() {
     else
       python3 $TAPPAS_WORKSPACE/downloader/main.py
     fi
+  fi
+
+  if [[ -n "$cross_compile_command" ]]; then
+    export PKG_CONFIG_PATH="$ORIGINAL_PKG_CONFIG_PATH"
   fi
 }
 
@@ -152,9 +165,11 @@ function install_hailo() {
   libgsthailo_ver_num=${libgsthailo_version#*libhailort.so.}
   libhailort_version=$(ls /usr/lib/libhailort.so -l)
   libhailort_version_num=${libhailort_version#*libhailort.so.}
-
-  ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores $cross_compile_command
-
+  if [ "$static_opencv_flag" == true ]; then
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores $cross_compile_command --static-opencv
+  else
+    ${TAPPAS_WORKSPACE}/scripts/gstreamer/install_hailo_gstreamer.sh --build-mode $GST_HAILO_BUILD_MODE --target-platform $target_platform $compile_num_cores $cross_compile_command
+  fi
   # Install source files
   sudo mkdir -p /usr/include/hailo/tappas/sources
   sudo cp -r $TAPPAS_WORKSPACE/core/hailo/libs/postprocesses/*	/usr/include/hailo/tappas
@@ -225,7 +240,8 @@ function setup_pkg_config(){
     --tappas-workspace "null" \
     --tappas-version ${TAPPAS_VERSION} \
     --core-only true \
-    --target-platform ${target_platform}
+    --target-platform ${target_platform} \
+    --static-opencv $static_opencv_flag
 }
 
 function _generate_list_of_supported_platforms(){

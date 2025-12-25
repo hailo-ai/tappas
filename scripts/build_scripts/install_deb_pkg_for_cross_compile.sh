@@ -195,7 +195,6 @@ urls=(
     "http://ports.ubuntu.com/pool/main/e/e2fsprogs/libcom-err2_1.46.5-2ubuntu1_arm64.deb"
     "http://ports.ubuntu.com/pool/main/k/krb5/libkrb5support0_1.19.2-2_arm64.deb"
 
-    "http://ports.ubuntu.com/pool/main/l/lapack/libblas3_3.10.0-2ubuntu1_arm64.deb"
     "http://ports.ubuntu.com/pool/main/l/lapack/liblapack3_3.10.0-2ubuntu1_arm64.deb"
     "http://ports.ubuntu.com/pool/universe/a/arpack/libarpack2_3.8.0-1_arm64.deb"
     "http://ports.ubuntu.com/pool/main/g/gcc-12/libgfortran5_12-20220319-1ubuntu1_arm64.deb"
@@ -292,7 +291,6 @@ sudo cp -r $extract_dir/usr/lib/aarch64-linux-gnu/* $lib_dir/
 sudo cp -r $extract_dir/usr/lib/*so* $lib_dir/
 sudo cp -r $extract_dir/lib/aarch64-linux-gnu/* $lib_dir/
 sudo cp -r /usr/lib/aarch64-linux-gnu/pkgconfig/mit-krb5/* /usr/lib/aarch64-linux-gnu/pkgconfig/
-sudo cp -r $extract_dir/usr/lib/aarch64-linux-gnu/blas/* $lib_dir/
 sudo cp -r $extract_dir/usr/lib/aarch64-linux-gnu/lapack/* $lib_dir/
 
 python_extract_dir="/tmp/python_debian_packages_dir"
@@ -306,6 +304,14 @@ python_urls=(
     "http://ports.ubuntu.com/pool/universe/p/python3.11/libpython3.11-dev_3.11.0~rc1-1~22.04_arm64.deb"
     "http://ports.ubuntu.com/pool/universe/p/python3.11/libpython3.11_3.11.0~rc1-1~22.04_arm64.deb"
     "http://ports.ubuntu.com/pool/universe/p/python3.11/python3.11-minimal_3.11.0~rc1-1~22.04_arm64.deb"
+    # python 3.12
+    "http://ports.ubuntu.com/pool/main/p/python3.12/libpython3.12-dev_3.12.3-1_arm64.deb"
+    "http://ports.ubuntu.com/pool/main/p/python3.12/libpython3.12-minimal_3.12.3-1_arm64.deb"
+    "http://ports.ubuntu.com/pool/main/p/python3.12/python3.12-minimal_3.12.3-1_arm64.deb"
+    # python 3.13
+    "http://ports.ubuntu.com/pool/main/p/python3.13/libpython3.13-dev_3.13.7-1_arm64.deb"
+    "http://ports.ubuntu.com/pool/main/p/python3.13/libpython3.13-minimal_3.13.7-1_arm64.deb"
+    "http://ports.ubuntu.com/pool/main/p/python3.13/python3.13-minimal_3.13.7-1_arm64.deb"
 )
 
 # Download, extract, and copy libraries
@@ -415,4 +421,50 @@ sudo cp -r $python_extract_dir/usr/include/aarch64-linux-gnu/python3.8/pyconfig.
 sudo cp -r $python_extract_dir/usr/lib/* /usr/lib/
 sudo cp -r $python_extract_dir/usr/include/python3.8/* /usr/include/python3.8/
 sudo cp -r $python_extract_dir/usr/bin/aarch64-linux-gnu-python3.8-config /usr/bin/
+
+# python 3.12
+sudo mkdir /usr/include/aarch64-linux-gnu/python3.12/
+py312_packages=(
+  "python3.12-minimal:arm64"
+  "libpython3.12-dev:arm64"
+  "libpython3.12:arm64"
+)
+# Download and extract each package
+for package in "${py312_packages[@]}"; do
+    # Download the package
+    sudo apt-get download "$package"
+done
+
+# Extract the downloaded .deb files
+for deb_file in *python3.12*.deb; do
+    dpkg -x "$deb_file" "$python_extract_dir"
+done
+
+sudo cp -r $python_extract_dir/usr/include/aarch64-linux-gnu/python3.12/pyconfig.h /usr/include/aarch64-linux-gnu/python3.12/
+sudo cp -r $python_extract_dir/usr/lib/* /usr/lib/
+sudo cp -r $python_extract_dir/usr/include/python3.12/* /usr/include/python3.12/
+sudo cp -r $python_extract_dir/usr/bin/aarch64-linux-gnu-python3.12-config /usr/bin/
+
+# python 3.13
+sudo mkdir /usr/include/aarch64-linux-gnu/python3.13/
+py313_packages=(
+  "python3.13-minimal:arm64"
+  "libpython3.13-dev:arm64"
+  "libpython3.13:arm64"
+)
+# Download and extract each package
+for package in "${py313_packages[@]}"; do
+    # Download the package
+    sudo apt-get download "$package"
+done
+
+# Extract the downloaded .deb files
+for deb_file in *python3.13*.deb; do
+    dpkg -x "$deb_file" "$python_extract_dir"
+done
+
+sudo cp -r $python_extract_dir/usr/include/aarch64-linux-gnu/python3.13/pyconfig.h /usr/include/aarch64-linux-gnu/python3.13/
+sudo cp -r $python_extract_dir/usr/lib/* /usr/lib/
+sudo cp -r $python_extract_dir/usr/include/python3.13/* /usr/include/python3.13/
+sudo cp -r $python_extract_dir/usr/bin/aarch64-linux-gnu-python3.13-config /usr/bin/
 echo "Debian packages finished installed."

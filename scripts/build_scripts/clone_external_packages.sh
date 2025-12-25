@@ -5,21 +5,18 @@
   pushd ${TAPPAS_WORKSPACE}/sources
 
   git clone --depth 1 --shallow-submodules -b 0.24.0 https://github.com/xtensor-stack/xtensor.git
-  git clone --depth 1 --shallow-submodules -b 0.20.0 https://github.com/xtensor-stack/xtensor-blas.git
   git clone --depth 1 --shallow-submodules -b 0.7.3 https://github.com/xtensor-stack/xtl.git
   git clone --depth 1 --shallow-submodules -b v3.0.0 https://github.com/jarro2783/cxxopts.git
-  git clone --depth 1 --shallow-submodules -b v2.11.0 https://github.com/pybind/pybind11.git
+  git clone --depth 1 --shallow-submodules -b v2.13.6 https://github.com/pybind/pybind11.git
   git clone --depth 1 --shallow-submodules -b master https://github.com/Tencent/rapidjson.git
 
 
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/base
-  mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/blas
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/cxxopts
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/rapidjson
   mkdir -p ${TAPPAS_WORKSPACE}/core/open_source/pybind11
 
   cp -r xtensor/include/. ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/base
-  cp -r xtensor-blas/include/. ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/blas
   cp -r xtl/include/. ${TAPPAS_WORKSPACE}/core/open_source/xtensor_stack/base
   cp -r cxxopts/include/. ${TAPPAS_WORKSPACE}/core/open_source/cxxopts
   cp -r rapidjson/include/. ${TAPPAS_WORKSPACE}/core/open_source/rapidjson
