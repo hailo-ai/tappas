@@ -7,9 +7,9 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.23.0%20%7C%205.1.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.23.0%20%7C%205.2.0-green
    :target: https://github.com/hailo-ai/hailort
-   :alt: HailoRT 4.23.0 | 5.1.0
+   :alt: HailoRT 4.23.0 | 5.2.0
    :height: 20
 
 
@@ -61,7 +61,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.23.0 for Hailo-8 devices, and with HailoRT v5.1.0 for Hailo-10H devices.
+    This version is compatible with HailoRT v4.23.0 for Hailo-8 devices, and with HailoRT v5.2.0 for Hailo-10H devices.
 
 
 Installation
@@ -128,10 +128,9 @@ For the Raspberry Pi 5 applications, go to
     * This application example does not include any architecture-specific accelerator usage,
       and therefore will provide the easiest way to run an application, but with sub-optimal performance.
 
+
 .. note::
     Running application examples requires a direct connection to a monitor.
-
-
 
 
 ----
@@ -147,6 +146,15 @@ Contact information is available at `hailo.ai <https://hailo.ai/contact-us/>`_.
 
 Changelog
 ----------
+
+**v5.2.0 (December 2025)**
+
+* Added ``--static-opencv`` option to ``install.sh`` for static OpenCV linking.
+* Added Python wheel builder for TAPPAS Python binding package
+* Updated pybind11 to support NumPy 2.x
+* Removed Hailo-15 support and related code
+* This release supports both HailoRT v4.23.0 (Hailo-8) and HailoRT v5.2.0 (Hailo-10H)
+
 
 **v5.1.0 (October 2025)**
 

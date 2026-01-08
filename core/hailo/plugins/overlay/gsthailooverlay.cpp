@@ -4,14 +4,10 @@
  **/
 #include <gst/gst.h>
 #include <gst/video/video.h>
-#include <opencv2/opencv.hpp>
 #include "overlay/gsthailooverlay.hpp"
 #include "common/image.hpp"
-#include "overlay/overlay.hpp"
+#include "overlay.hpp"
 #include "gst_hailo_meta.hpp"
-#ifdef HAILO15_TARGET
-#include "buffer_utils.hpp"
-#endif
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailooverlay_debug_category);
 #define GST_CAT_DEFAULT gst_hailooverlay_debug_category
@@ -236,7 +232,6 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     GstFlowReturn status = GST_FLOW_ERROR;
     GstHailoOverlay *hailooverlay = GST_HAILO_OVERLAY(trans);
     GstCaps *caps;
-    cv::Mat mat;
     HailoROIPtr hailo_roi;
     GST_DEBUG_OBJECT(hailooverlay, "transform_ip");
 
@@ -245,17 +240,8 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     GstVideoInfo *info = gst_video_info_new();
     gst_video_info_from_caps(info, caps);
 
-#ifdef HAILO15_TARGET
-    if (!dma_buffer_sync_start(buffer))
-    {
-        GST_CAT_ERROR(GST_CAT_DEFAULT, "Failed to sync buffer");
-        gst_caps_unref(caps);
-        return GST_FLOW_ERROR;
-    }
-#else
     GstMapInfo map;
     gst_buffer_map(buffer, &map, GST_MAP_READWRITE);
-#endif
 
     std::shared_ptr<HailoMat> hmat = get_mat_by_format(buffer, info, hailooverlay->line_thickness, hailooverlay->font_thickness);
     gst_video_info_free(info);
@@ -280,13 +266,6 @@ gst_hailooverlay_transform_ip(GstBaseTransform *trans,
     status = GST_FLOW_OK;
 cleanup:
     gst_caps_unref(caps);
-#ifdef HAILO15_TARGET
-    if (!dma_buffer_sync_end(buffer))
-    {
-        GST_CAT_ERROR(GST_CAT_DEFAULT, "Failed to sync buffer end");
-    }
-#else    
     gst_buffer_unmap(buffer, &map);
-#endif
     return status;
 }

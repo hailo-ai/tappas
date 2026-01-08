@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include "re_id.hpp"
+#include "opencv_utils.hpp"
 
 #define PERSON_LABEL "person"
 #define MIN_RATIO (1.7f)
@@ -15,60 +16,10 @@
 #define MAX_X (0.95f)
 #define TRACK_DELAY (5)
 #define MIN_QUALITY (400)
-#define RE_ID_NETWORK_SIZE (cv::Size(128, 256))
+#define RE_ID_NETWORK_WIDTH 128
+#define RE_ID_NETWORK_HEIGHT 256
+
 std::map<int, int> track_counter;
-
-/**
- * @brief Returns the quaility estimation of the person's crop.
- *
- * @param image  -  cv::Mat
- *        The original image.
- *
- * @param roi  -  HailoBBox
- *        The Bounding box of the person to calculate quality estimation on.
- *
- * @return float
- *         The quality estimation of the person.
- */
-float quality_estimation(const cv::Mat &image, const HailoBBox &roi)
-{
-    // Crop the center of the roi from the image, avoid cropping out of bounds
-    int cropped_xmin = CLAMP((image.cols * roi.xmin()), 0, image.cols);
-    int cropped_ymin = CLAMP((image.rows * roi.ymin()), 0, image.rows);
-    int cropped_xmax = CLAMP((image.cols * roi.xmax()), cropped_xmin, image.cols);
-    int cropped_ymax = CLAMP((image.rows * roi.ymax()), cropped_ymin, image.rows);
-    int cropped_width = cropped_xmax - cropped_xmin;
-    int cropped_height = cropped_ymax - cropped_ymin;
-
-    // If it is not too small then we can make the crop
-    cv::Rect center_crop(cropped_xmin, cropped_ymin, cropped_width, cropped_height);
-    cv::Mat cropped_image = image(center_crop);
-
-    // Resize the frame
-    cv::Mat resized_image;
-    cv::resize(cropped_image, resized_image, RE_ID_NETWORK_SIZE, 0, 0, cv::INTER_LINEAR);
-
-    // Convert to grayscale
-    cv::Mat gray_image;
-    cv::cvtColor(resized_image, gray_image, cv::COLOR_RGB2GRAY);
-
-    // Compute the Laplacian of the gray image
-    cv::Mat laplacian_image;
-    cv::Laplacian(gray_image, laplacian_image, CV_64F);
-
-    // Calculate the quality of person
-    cv::Scalar mean, stddev;
-    cv::meanStdDev(laplacian_image, mean, stddev, cv::Mat());
-    float quality = stddev.val[0] * stddev.val[0];
-
-    // Release resources
-    resized_image.release();
-    cropped_image.release();
-    gray_image.release();
-    laplacian_image.release();
-
-    return quality;
-}
 
 HailoUniqueIDPtr get_tracking_id(HailoDetectionPtr detection)
 {
@@ -86,7 +37,7 @@ HailoUniqueIDPtr get_tracking_id(HailoDetectionPtr detection)
 /**
  * @brief Returns a vector of HailoROIPtr to crop and resize.
  *
- * @param image The original picture (cv::Mat).
+ * @param image The original picture (std::shared_ptr<HailoMat>)
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
@@ -117,7 +68,7 @@ std::vector<HailoROIPtr> create_crops(std::shared_ptr<HailoMat> image, HailoROIP
             else
             {
                 auto bbox = detection->get_bbox();
-                float quality = quality_estimation(image->get_matrices()[0], bbox);
+                float quality = OpenCVUtils::quality_estimation_reid(image, bbox, RE_ID_NETWORK_WIDTH, RE_ID_NETWORK_HEIGHT);
                 float ratio = (bbox.height() * image->height()) / (bbox.width() * image->width());
                 if (ratio > MIN_RATIO && ratio < MAX_RATIO &&
                     bbox.height() > MIN_HEIGHT && bbox.height() < MAX_HEIGHT &&

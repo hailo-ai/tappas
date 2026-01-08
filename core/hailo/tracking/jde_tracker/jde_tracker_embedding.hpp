@@ -6,6 +6,7 @@
 
 // General cpp includes
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>

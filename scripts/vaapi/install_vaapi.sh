@@ -1,8 +1,11 @@
 #!/bin/bash
 set -e
 
-script_dir=$(dirname $(realpath "$0"))
-source $script_dir/../misc/checks_before_run.sh --export-only
+if [[ -z "$TAPPAS_WORKSPACE" ]]; then
+    SCRIPT_DIR=$(dirname $(realpath $0))
+    export TAPPAS_WORKSPACE=$(readlink -f $SCRIPT_DIR/../../)
+    echo "No TAPPAS_WORKSPACE in environment found, using the default one $TAPPAS_WORKSPACE"
+fi
 
 RED='\033[1;31m'
 YELLOW='\033[1;33m'

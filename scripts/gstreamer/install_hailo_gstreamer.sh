@@ -2,14 +2,18 @@
 set -e
 
 cross_compile_command=""
-script_dir=$(dirname $(realpath "$0"))
-source $script_dir/../misc/checks_before_run.sh --export-only
+if [[ -z "$TAPPAS_WORKSPACE" ]]; then
+    SCRIPT_DIR=$(dirname $(realpath $0))
+    export TAPPAS_WORKSPACE=$(readlink -f $SCRIPT_DIR/../../)
+    echo "No TAPPAS_WORKSPACE in environment found, using the default one $TAPPAS_WORKSPACE"
+fi
 
 BUILD_DIR="$TAPPAS_WORKSPACE/core/hailo"
 BUILD_MODE=release
 SKIP_HAILORT=false
 COMPILE_LIBGSTHAILO=false
 INCLUDE_UNIT_TESTS=true
+STATIC_OPENCV=false
 PYTHON_VERSION=$(python3 --version | awk '{print $2}' | awk -F'.' '{print $1"."$2}')
 TARGET="all"
 TARGET_PLATFORM="x86"
@@ -29,8 +33,9 @@ function print_usage() {
     echo "  --python-version       Python version"
     echo "  --compile-libgsthailo  Compile libgsthailo instead of copying it from the release"
     echo "  --skip-unit-tests      Skip compilation of unit tests"
+    echo "  --static-opencv        Link OpenCV statically (reduces external dependencies)"
     echo "  --target               Tappas build target [all, plugins, libs, apps] (default = all)"
-    echo "  --target-platform      Target platform, used for installing only required media and hef files [x86, arm, hailo15] (Default is $TARGET_PLATFORM)"
+    echo "  --target-platform      Target platform, used for installing only required media and hef files [x86, arm] (Default is $TARGET_PLATFORM)"
     echo "  --compile-num-of-cores Number of cpu cores to compile with (more cores makes the compilation process faster, but may cause 'out of swap memory' issue on weak machines)"
     exit 1
 }
@@ -63,6 +68,8 @@ function parse_args() {
             shift
         elif [ "$1" == "--compile-libgsthailo" ]; then
             COMPILE_LIBGSTHAILO=true
+        elif [ "$1" == "--static-opencv" ]; then
+            STATIC_OPENCV=true
         elif [ "$1" = "--cross-file" ]; then
             cross_compile_command="$1 $2"
             shift
@@ -92,14 +99,14 @@ function main() {
                             -Dtarget=$TARGET \
                             -Dtarget_platform=$TARGET_PLATFORM \
                             -Dlibargs='-I/usr/include/hailo/,-I/usr/include/gstreamer-1.0/gst/hailo/' \
-                             -Dinclude_python=true -Dpython_version=$PYTHON_VERSION"
+                             -Dstatic_opencv=$STATIC_OPENCV -Dinclude_python=true -Dpython_version=$PYTHON_VERSION"
 
     CC=gcc CXX=g++ meson build.$BUILD_MODE $reconfigure_flag --prefix "${INSTALLATION_DIR}" --buildtype $BUILD_MODE \
                             ${cross_compile_command} \
                             -Dtarget=$TARGET \
                             -Dtarget_platform=$TARGET_PLATFORM \
                             -Dlibargs="-I/usr/include/hailo/,-I/usr/include/gstreamer-1.0/gst/hailo/" \
-                             -Dinclude_python=true -Dpython_version=$PYTHON_VERSION
+                             -Dstatic_opencv=$STATIC_OPENCV -Dinclude_python=true -Dpython_version=$PYTHON_VERSION
 
     if [[ -f "build.$BUILD_MODE/.ninja_log" ]]; then
         # Solve permission bug

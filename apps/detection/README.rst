@@ -6,7 +6,7 @@ Overview
 --------
 
 ``detection.sh`` demonstrates detection on one video file source and verifies Hailo’s configuration.
- This is done by running a ``single-stream object detection pipeline`` on top of GStreamer using the Hailo-8 device.
+This is done by running a ``single-stream object detection pipeline`` on top of GStreamer using the Hailo-8 or Hailo-10H device.
 
 Options
 -------
@@ -23,11 +23,6 @@ Options
 * ``--show-fps``  is an optional flag that enables printing FPS on screen.
 * ``--print-gst-launch`` is a flag that prints the ready gst-launch command without running it.
 * ``--print-device-stats`` prints the power and temperature measured on the Hailo device.
-
-Configuration
--------------
-
-In case the selected network is yolo, the app post process parameters can be configured by a json file located in $TAPPAS_WORKSPACE/apps/detection/resources/configs
 
 Supported Networks
 ------------------

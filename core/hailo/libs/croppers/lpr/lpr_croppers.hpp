@@ -4,10 +4,7 @@
 **/
 #pragma once
 #include <vector>
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/core.hpp>
+#include <memory>
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
 #include "hailomat.hpp"

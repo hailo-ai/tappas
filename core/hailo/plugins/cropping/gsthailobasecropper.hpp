@@ -35,11 +35,6 @@ struct _GstHailoBaseCropper
     gboolean drop_uncropped_buffers;
     uint internal_offset;
     uint cropping_period;
-    #ifdef HAILO15_TARGET
-    bool use_dsp;
-    guint bufferpool_max_size;
-    guint bufferpool_min_size;
-    #endif
     GstBufferPool *buffer_pool;
     uint num_streams_to_filter = 0;
     GstPad *sinkpad, *srcpad_crop, *srcpad_main;

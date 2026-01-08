@@ -87,7 +87,7 @@ bool track_update(HailoDetectionPtr detection, bool use_track_update)
 /**
  * @brief Returns a vector of Person detections to crop and resize.
  *
- * @param image The original picture (cv::Mat).
+ * @param image The original picture (std::shared_ptr<HailoMat>)
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
@@ -111,7 +111,7 @@ std::vector<HailoROIPtr> person_crop(std::shared_ptr<HailoMat> image, HailoROIPt
 /**
  * @brief Returns an adjusted HailoBBox acordding to 3ddfa cropping algorithm.
  *
- * @param image The original picture (cv::Mat).
+ * @param image The original picture (std::shared_ptr<HailoMat>).
  * @param roi The ROI to modify
  * @return HailoBBox Adjusted HailoBBox to crop.
  * @note Original algorithm at https://github.com/cleardusk/3DDFA_V2/blob/9fdbea1eb97f762221f71f5c76f08f52296c6704/utils/functions.py#L85
@@ -185,7 +185,7 @@ HailoDetectionPtr clone_detection_object(HailoDetectionPtr detection)
 /**
  * @brief Returns a vector of face detections to crop and resize.
  *
- * @param image The original picture (cv::Mat).
+ * @param image The original picture (std::shared_ptr<HailoMat>).
  * @param roi The main ROI of this picture.
  * @param track_update update track every X frames.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.

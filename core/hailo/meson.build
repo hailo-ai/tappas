@@ -1,7 +1,7 @@
 # Project Declaration
 
 project('gst-hailo-tools', 'c', 'cpp',
-        version : '5.1.0',
+        version : '5.2.0',
         default_options : [ 'buildtype=release',
                             'c_std=c11', 'cpp_std=c++17']
        )
@@ -18,15 +18,14 @@ endif
 
 # Include Directories
 hailo_general_inc = [include_directories('./general')]
-hailo_mat_inc = [include_directories('./plugins/common/')]
+common_args = ['-DHAVE_CONFIG_H']
+if get_option('target_platform') == 'imx8'
+    common_args += ['-DIMX8_TARGET']
+endif
 
 # Xtensor Include Directories
 xtensor_base_inc = include_directories(get_option('libxtensor'), is_system: true)
 xtensor_inc = [xtensor_base_inc]
-if get_option('include_blas')
-  xtensor_blas_inc = include_directories(get_option('libblas'), is_system: true)
-  xtensor_inc += [xtensor_blas_inc]
-endif
 
 # Extra Compiler Arguments
 xtensor_args = []  # '-mavx2', '-ffast-math' --> TODO: Causes arm issues
@@ -43,8 +42,6 @@ gst_app_dep = dependency('gstreamer-app-1.0', version : gst_req,
 gstvideo_dep = dependency('gstreamer-video-1.0', version : gst_req,
   fallback : ['gst-plugins-base', 'video_dep'])
 
-# Opencv Dependencies
-opencv_dep = dependency('opencv4', version : '>= 4.0', method : 'pkg-config')
 
 if get_option('include_python')
     # GObject dependencies
@@ -76,19 +73,6 @@ endif
 # Plugin Dependencies
 plugin_deps = [gst_dep, gst_base_dep, gstvideo_dep, gst_app_dep]
 post_deps = []
-
-if get_option('include_blas')
-  is_ub20 = run_command('lsb_release', '-r').stdout().contains('20.04')
-  if is_ub20
-    libblas_dep = dependency('blas', version :'== 3.9.0')
-    liblapack_dep = dependency('lapack', version :'== 3.9.0')
-  else
-    libblas_dep = dependency('blas', version :'== 3.7.1')
-    liblapack_dep = dependency('lapack', version :'== 3.7.1')
-  endif
-  post_deps += [libblas_dep, liblapack_dep]
-  plugin_deps += [libblas_dep, liblapack_dep]
-endif
 
 # Library Arguments
 hailo_lib_args = get_option('libargs')
@@ -134,8 +118,44 @@ endif
 libs_postprocesses_dep = declare_dependency(
   include_directories: [include_directories('./libs/postprocesses')])
 
+# OpenCV dependency configuration
+tbb_dep = dependency('tbb', required: false)
+gl_dep = dependency('gl', required: false)
+# Opencv Dependencies
+
+if get_option('static_opencv')
+    # Minimal static OpenCV dependency (only core + imgproc + calib3d) for hailo_opencv_utils
+    # This avoids pulling in features2d, flann, imgcodecs which add unnecessary size
+    # We link the static .a files directly to ensure static linking
+    opencv_minimal_dep = declare_dependency(
+        compile_args: ['-I/usr/local/include/opencv4'],
+        link_args: [
+            '-Wl,--gc-sections',
+            '-Wl,--as-needed',
+            # Static OpenCV libraries (order matters - imgproc depends on core)
+            '/usr/local/lib/libopencv_calib3d.a',
+            '/usr/local/lib/libopencv_imgproc.a',
+            '/usr/local/lib/libopencv_core.a',
+            # 3rdparty static libraries
+            '/usr/local/lib/opencv4/3rdparty/libzlib.a',
+            # System libraries
+            '-ldl', '-lm', '-lpthread', '-lrt'
+        ]
+    )
+    opencv_dep = opencv_minimal_dep
+    opencv_helper_extra_cpp_args = ['-ffunction-sections', '-fdata-sections']
+    opencv_helper_extra_link_args = ['-Wl,--gc-sections', '-Wl,--as-needed']
+else
+    # Dynamic OpenCV dependency (default)
+    opencv_dep = dependency('opencv4', version : '>= 4.0', method : 'pkg-config')
+    opencv_helper_extra_cpp_args = []
+    opencv_helper_extra_link_args = []
+endif
+
+subdir('metadata')
+subdir('general')
+
 if target == 'all'
-  subdir('metadata')
   subdir('tracking')
   subdir('plugins')
   subdir('libs')
@@ -143,17 +163,14 @@ if target == 'all'
   subdir('tracers')
 
 elif target == 'apps'
-  subdir('metadata')
   subdir('tracking')
   subdir(target)
 elif target == 'plugins'
-  subdir('metadata')
   subdir('tracking')
   subdir(target)
 elif target == 'libs'
   subdir('tracking')
   subdir(target)
 elif target == 'tracers'
-  subdir('metadata')
   subdir(target)
 endif

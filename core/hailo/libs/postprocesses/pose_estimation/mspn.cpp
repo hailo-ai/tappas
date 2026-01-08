@@ -9,6 +9,7 @@
 
 #include "mspn.hpp"
 #include "common/tensors.hpp"
+#include "opencv_utils.hpp"
 #include "json_config.hpp"
 
 #include "rapidjson/document.h"
@@ -16,9 +17,6 @@
 #include "rapidjson/error/en.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/schema.h"
-
-// Open source includes
-#include <opencv2/opencv.hpp>
 
 #include "xtensor/xarray.hpp"
 #include "xtensor/xoperation.hpp"
@@ -30,7 +28,7 @@
 // MSPN NETWORK SPECIFIC PARAMETERS
 #define SCORE_THRESHOLD 0.2
 #define KERNEL_SIZE 5
-#define EPS 1e-12
+#define EPS 1e-12f
 
 #if __GNUC__ > 8
 #include <filesystem>
@@ -43,42 +41,6 @@ namespace fs = std::experimental::filesystem;
 const std::vector<std::pair<int, int>> centerpose_joint_pairs =
     {
         {0, 1}, {1, 3}, {0, 2}, {2, 4}, {5, 6}, {5, 7}, {7, 9}, {6, 8}, {8, 10}, {5, 11}, {6, 12}, {11, 12}, {11, 13}, {12, 14}, {13, 15}, {14, 16}};
-
-/**
- * @brief performs gaussian blur on heatmaps
- *
- * @param heatmaps the tensor containing the heatmaps
- * @param num_joints the number of joints of the skeleton
- * @param width the width of the image
- * @param height the height of the image
- */
-void gaussian_blur(xt::xarray<float> &heatmaps, int num_joints, int width, int height)
-{
-    if (KERNEL_SIZE % 2 == 0)
-    {
-        throw std::runtime_error("Kernel size must be odd");
-    }
-
-    int border = floor((KERNEL_SIZE - 1) / 2);
-
-    int j;
-    for (j = 0; j < num_joints; j++)
-    {
-        xt::xarray<float> sliced_view = xt::view(heatmaps, j, xt::all(), xt::all());
-        xt::xarray<float> origin_max = xt::amax(sliced_view);
-        cv::Mat dr = cv::Mat::zeros(height + 2 * border, width + 2 * border, CV_32F);
-        cv::Mat sliced_view_mat(sliced_view.shape()[0], sliced_view.shape()[1], CV_32F, sliced_view.data(), 0);
-        cv::copyMakeBorder(sliced_view_mat, dr, border, border, border, border, cv::BORDER_CONSTANT, 0);
-        cv::Mat gaussian_image;
-        cv::GaussianBlur(dr, gaussian_image, cv::Size(KERNEL_SIZE, KERNEL_SIZE), 0);
-        cv::Mat sliced_view_mat2(sliced_view.shape()[0], sliced_view.shape()[1], CV_32F, sliced_view.data(), 0);
-        cv::Mat gaussian_image_roi = gaussian_image(cv::Rect(border, border, width, height));
-        gaussian_image_roi.copyTo(sliced_view_mat2);
-        float new_max = std::max(xt::amax(sliced_view)(0), (float)EPS);
-        xt::xarray<float> sliced_view_mul = sliced_view * (origin_max / new_max);
-        sliced_view = sliced_view_mul;
-    }
-}
 
 /**
  * @brief Get the max predictions
@@ -161,7 +123,7 @@ void mspn_postprocess(HailoROIPtr roi, const float score_threshold, bool perform
 
     if (perform_gaussian_blur)
     {
-        gaussian_blur(heatmaps, num_joints, width, height);
+        OpenCVUtils::gaussian_blur(heatmaps.data(), num_joints, width, height, KERNEL_SIZE, EPS);
     }
 
     xt::xarray<float> preds = get_max_predictions(heatmaps, num_joints, width, height);

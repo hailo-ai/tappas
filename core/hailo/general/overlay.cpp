@@ -18,6 +18,7 @@
 #include "overlay.hpp"
 #include "overlay_utils.hpp"
 #include "hailo_common.hpp"
+#include "hailomat_internal.hpp"
 
 #define SPACE " "
 #define TEXT_CLS_FONT_SCALE_FACTOR (0.0025f)
@@ -25,13 +26,13 @@
 #define TEXT_DEFAULT_HEIGHT (0.1f)
 #define TEXT_FONT_FACTOR (0.12f)
 #define MINIMAL_BOX_WIDTH_FOR_TEXT (10)
-#define LANDMARKS_COLOR (cv::Scalar(255, 0, 0))
-#define NO_GLOBAL_ID_COLOR (cv::Scalar(255, 0, 0))
-#define GLOBAL_ID_COLOR (cv::Scalar(0, 255, 0))
-#define DEFAULT_DETECTION_COLOR (cv::Scalar(255, 255, 255))
+#define LANDMARKS_COLOR (hailo_scalar_t(255, 0, 0))
+#define NO_GLOBAL_ID_COLOR (hailo_scalar_t(255, 0, 0))
+#define GLOBAL_ID_COLOR (hailo_scalar_t(0, 255, 0))
+#define DEFAULT_DETECTION_COLOR (hailo_scalar_t(255, 255, 255))
 #define DEFAULT_TILE_COLOR (2)
 #define NULL_COLOR_ID ((size_t)NULL_CLASS_ID)
-#define DEFAULT_COLOR (cv::Scalar(255, 255, 255))
+#define DEFAULT_COLOR (hailo_scalar_t(255, 255, 255))
 // Transformations were taken from https://stackoverflow.com/questions/17892346/how-to-convert-rgb-yuv-rgb-both-ways.
 #define RGB2Y(R, G, B) CLIP((0.257 * (R) + 0.504 * (G) + 0.098 * (B)) + 16)
 #define RGB2U(R, G, B) CLIP((-0.148 * (R)-0.291 * (G) + 0.439 * (B)) + 128)
@@ -40,27 +41,52 @@
 #define DEPTH_MIN_DISTANCE 0.5
 #define DEPTH_MAX_DISTANCE 3
 
-static const std::vector<cv::Scalar> tile_layer_color_table = {
-    cv::Scalar(0, 0, 255), cv::Scalar(200, 100, 120), cv::Scalar(255, 0, 0), cv::Scalar(120, 0, 0), cv::Scalar(0, 0, 120)};
+//=============================================================================
+// Internal conversion helpers
+//=============================================================================
 
-static const std::vector<cv::Scalar> color_table = {
-    cv::Scalar(255, 0, 0), cv::Scalar(0, 255, 0), cv::Scalar(0, 0, 255), cv::Scalar(255, 255, 0), cv::Scalar(0, 255, 255),
-    cv::Scalar(255, 0, 255), cv::Scalar(255, 170, 0), cv::Scalar(255, 0, 170), cv::Scalar(0, 255, 170), cv::Scalar(170, 255, 0),
-    cv::Scalar(170, 0, 255), cv::Scalar(0, 170, 255), cv::Scalar(255, 85, 0), cv::Scalar(85, 255, 0), cv::Scalar(0, 255, 85),
-    cv::Scalar(0, 85, 255), cv::Scalar(85, 0, 255), cv::Scalar(255, 0, 85), cv::Scalar(255, 255, 255)};
+static inline cv::Point to_cv_point(const hailo_point_t& p) {
+    return cv::Point(p.x, p.y);
+}
 
-static cv::Scalar get_color(size_t color_id)
+static inline cv::Rect to_cv_rect(const hailo_rect_t& r) {
+    return cv::Rect(r.x, r.y, r.width, r.height);
+}
+
+static inline cv::Scalar to_cv_scalar(const hailo_scalar_t& s) {
+    return cv::Scalar(s.val[0], s.val[1], s.val[2], s.val[3]);
+}
+
+// Helper to convert rgb_color_t to hailo_scalar_t
+static inline hailo_scalar_t to_hailo_scalar(const rgb_color_t& c) {
+    return hailo_scalar_t(c[0], c[1], c[2]);
+}
+
+//=============================================================================
+// Color tables
+//=============================================================================
+
+static const std::vector<hailo_scalar_t> tile_layer_color_table = {
+    hailo_scalar_t(0, 0, 255), hailo_scalar_t(200, 100, 120), hailo_scalar_t(255, 0, 0), hailo_scalar_t(120, 0, 0), hailo_scalar_t(0, 0, 120)};
+
+static const std::vector<rgb_color_t> color_table = {
+    rgb_color_t(255, 0, 0), rgb_color_t(0, 255, 0), rgb_color_t(0, 0, 255), rgb_color_t(255, 255, 0), rgb_color_t(0, 255, 255),
+    rgb_color_t(255, 0, 255), rgb_color_t(255, 170, 0), rgb_color_t(255, 0, 170), rgb_color_t(0, 255, 170), rgb_color_t(170, 255, 0),
+    rgb_color_t(170, 0, 255), rgb_color_t(0, 170, 255), rgb_color_t(255, 85, 0), rgb_color_t(85, 255, 0), rgb_color_t(0, 255, 85),
+    rgb_color_t(0, 85, 255), rgb_color_t(85, 0, 255), rgb_color_t(255, 0, 85), rgb_color_t(255, 255, 255)};
+
+static hailo_scalar_t get_color(size_t color_id)
 {
-    cv::Scalar color;
+    hailo_scalar_t color;
     if (NULL_COLOR_ID == color_id)
         color = DEFAULT_COLOR;
     else
-        color = indexToColor(color_id);
+        color = to_hailo_scalar(indexToColor(color_id));
 
     return color;
 }
 
-cv::Scalar indexToColor(size_t index)
+rgb_color_t indexToColor(size_t index)
 {
     return color_table[index % color_table.size()];
 }
@@ -79,7 +105,7 @@ static overlay_status_t draw_classification(HailoMat &mat, HailoROIPtr roi, std:
     int roi_ymin = bbox.ymin() * mat.native_height();
     int roi_width = mat.native_width() * bbox.width();
     int roi_height = mat.native_height() * bbox.height();
-    auto text_position = cv::Point(roi_xmin, roi_ymin + (TEXT_DEFAULT_HEIGHT * number_of_classifications * roi_height) + log(roi_height));
+    auto text_position = hailo_point_t(roi_xmin, roi_ymin + (TEXT_DEFAULT_HEIGHT * number_of_classifications * roi_height) + log(roi_height));
     double font_scale = TEXT_CLS_FONT_SCALE_FACTOR * roi_width;
     font_scale = (font_scale < MINIMUM_TEXT_CLS_FONT_SCALE) ? MINIMUM_TEXT_CLS_FONT_SCALE : font_scale;
     mat.draw_text(text, text_position, font_scale, get_color(color_id));
@@ -119,8 +145,8 @@ static overlay_status_t draw_landmarks(HailoMat &hmat, HailoLandmarksPtr landmar
             uint x2 = ((points.at(pair.second).x() * bbox.width()) + bbox.xmin()) * hmat.native_width();
             uint y2 = ((points.at(pair.second).y() * bbox.height()) + bbox.ymin()) * hmat.native_height();
 
-            cv::Point joint1 = cv::Point(x1, y1);
-            cv::Point joint2 = cv::Point(x2, y2);
+            hailo_point_t joint1(x1, y1);
+            hailo_point_t joint2(x2, y2);
 
             thickness = (bbox.width() < 0.05) ? 1 : 2;
             hmat.draw_line(joint1, joint2, get_color(4), thickness, cv::LINE_4);
@@ -133,23 +159,23 @@ static overlay_status_t draw_landmarks(HailoMat &hmat, HailoLandmarksPtr landmar
             uint x = ((point.x() * bbox.width()) + bbox.xmin()) * hmat.native_width();
             uint y = ((point.y() * bbox.height()) + bbox.ymin()) * hmat.native_height();
             // Draw the keypoint (multiply x,y values by the sizes of the frame)
-            auto center = cv::Point(x, y);
-            hmat.draw_ellipse(center, {R, R}, 0, 0, 360, get_color(7), landmark_point_radius);
+            auto center = hailo_point_t(x, y);
+            hmat.draw_ellipse(center, hailo_size_t(R, R), 0, 0, 360, get_color(7), landmark_point_radius);
         }
     }
     return OVERLAY_STATUS_OK;
 }
 
-static cv::Rect get_rect(HailoMat &mat, HailoDetectionPtr detection, HailoROIPtr roi)
+static hailo_rect_t get_rect(HailoMat &mat, HailoDetectionPtr detection, HailoROIPtr roi)
 {
     HailoBBox roi_bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
     auto detection_bbox = detection->get_bbox();
 
-    auto bbox_min = cv::Point(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * mat.native_width(),
+    auto bbox_min = hailo_point_t(((detection_bbox.xmin() * roi_bbox.width()) + roi_bbox.xmin()) * mat.native_width(),
                               ((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * mat.native_height());
-    auto bbox_max = cv::Point(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * mat.native_width(),
+    auto bbox_max = hailo_point_t(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * mat.native_width(),
                               ((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * mat.native_height());
-    return cv::Rect(bbox_min, bbox_max);
+    return hailo_rect_t(bbox_min, bbox_max);
 }
 
 static std::string get_detection_text(HailoDetectionPtr detection, bool show_confidence = true)
@@ -173,10 +199,10 @@ static std::string get_detection_text(HailoDetectionPtr detection, bool show_con
 static overlay_status_t draw_tile(HailoMat &mat, HailoTileROIPtr tile)
 {
     auto bbox = tile->get_bbox();
-    auto bbox_min = cv::Point(bbox.xmin() * mat.width(), bbox.ymin() * mat.height());
-    auto bbox_max = cv::Point(bbox.xmax() * mat.width(), bbox.ymax() * mat.height());
-    cv::Rect rect(bbox_min, bbox_max);
-    cv::Scalar color;
+    auto bbox_min = hailo_point_t(bbox.xmin() * mat.width(), bbox.ymin() * mat.height());
+    auto bbox_max = hailo_point_t(bbox.xmax() * mat.width(), bbox.ymax() * mat.height());
+    hailo_rect_t rect(bbox_min, bbox_max);
+    hailo_scalar_t color;
     uint tile_layer = tile->get_layer();
     if (tile_layer < tile_layer_color_table.size())
         color = tile_layer_color_table[tile_layer];
@@ -194,14 +220,14 @@ static overlay_status_t draw_id(HailoMat &mat, HailoUniqueIDPtr &hailo_id, Hailo
     std::string id_text = std::to_string(hailo_id->get_id());
 
     auto bbox = roi->get_bbox();
-    auto bbox_min = cv::Point(bbox.xmin() * mat.native_width(), bbox.ymin() * mat.native_height());
-    auto bbox_max = cv::Point(bbox.xmax() * mat.native_width(), bbox.ymax() * mat.native_height());
+    auto bbox_min = hailo_point_t(bbox.xmin() * mat.native_width(), bbox.ymin() * mat.native_height());
+    auto bbox_max = hailo_point_t(bbox.xmax() * mat.native_width(), bbox.ymax() * mat.native_height());
     auto bbox_width = bbox_max.x - bbox_min.x;
     auto color = get_color(NULL_CLASS_ID);
 
     // Calculating the font size according to the box width.
     double font_scale = TEXT_FONT_FACTOR * log(bbox_width);
-    auto text_position = cv::Point(bbox_min.x + log(bbox_width), bbox_max.y - log(bbox_width));
+    auto text_position = hailo_point_t(bbox_min.x + log(bbox_width), bbox_max.y - log(bbox_width));
     // Draw the class and confidence text
     mat.draw_text(id_text, text_position, font_scale, color);
     return OVERLAY_STATUS_OK;
@@ -324,7 +350,7 @@ static overlay_status_t draw_conf_class_mask(cv::Mat &image_planes, HailoConfCla
     cv::Mat destinationROI;
     calc_destination_roi_and_resize_mask(destinationROI, image_planes, roi, mask, resized_mask_data, mask->get_data(), CV_32F);
 
-    cv::Scalar mask_color = indexToColor(mask->get_class_id());
+    cv::Scalar mask_color = to_cv_scalar(to_hailo_scalar(indexToColor(mask->get_class_id())));
 
     if (mask_overlay_n_threads > 0)
         cv::setNumThreads(mask_overlay_n_threads);
@@ -339,7 +365,10 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
 {
     overlay_status_t ret = OVERLAY_STATUS_UNINITIALIZED;
     uint number_of_classifications = 0;
-    cv::Mat &mat = hmat.get_matrices()[0];
+    
+    // Get the cv::Mat from the implementation for mask operations
+    cv::Mat &mat = hmat.get_impl()->get(0);
+    
     for (auto obj : roi->get_objects())
     {
         switch (obj->get_type())
@@ -348,7 +377,7 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
         {
             HailoDetectionPtr detection = std::dynamic_pointer_cast<HailoDetection>(obj);
 
-            cv::Scalar color = NO_GLOBAL_ID_COLOR;
+            hailo_scalar_t color = NO_GLOBAL_ID_COLOR;
             std::string text = "";
             if (local_gallery)
             {
@@ -369,7 +398,7 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
             hmat.draw_rectangle(rect, color);
 
             // Draw text
-            auto text_position = cv::Point(rect.x - log(rect.width), rect.y - log(rect.width));
+            auto text_position = hailo_point_t(rect.x - log(rect.width), rect.y - log(rect.width));
             float font_scale = TEXT_FONT_FACTOR * log(rect.width);
             hmat.draw_text(text, text_position, font_scale, color);
 
@@ -457,8 +486,8 @@ void face_blur(HailoMat &hmat, HailoROIPtr roi)
             auto ymin = std::clamp<int>(((detection_bbox.ymin() * roi_bbox.height()) + roi_bbox.ymin()) * hmat.native_height(), 0, hmat.native_height());
             auto xmax = std::clamp<int>(((detection_bbox.xmax() * roi_bbox.width()) + roi_bbox.xmin()) * hmat.native_width(), 0, hmat.native_width());
             auto ymax = std::clamp<int>(((detection_bbox.ymax() * roi_bbox.height()) + roi_bbox.ymin()) * hmat.native_height(), 0, hmat.native_height());
-            auto rect = cv::Rect(cv::Point(xmin, ymin), cv::Point(xmax, ymax));
-            hmat.blur(rect, cv::Size(13, 13));
+            auto rect = hailo_rect_t(hailo_point_t(xmin, ymin), hailo_point_t(xmax, ymax));
+            hmat.blur(rect, hailo_size_t(13, 13));
 
             // Remove landmarks from the ROI before overlaying the blurred face
             roi->remove_objects_typed(HAILO_LANDMARKS);

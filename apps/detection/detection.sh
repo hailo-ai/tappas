@@ -1,11 +1,57 @@
 #!/bin/bash
 set -e
 
+function export_xv_image_is_supported() {
+    # Check if an adapter that are accessible through the X-Video extension is found
+    if xvinfo | grep -q 'no adaptors present'; then
+        echo "No XV adaptors found, using ximagesink instead"
+        export XV_SUPPORTED=false
+    else
+        export XV_SUPPORTED=true
+    fi
+}
+
+function add_vaapi_fakedriver() {
+    export LIBVA_DRIVER_NAME=fakedriver
+}
+
+function export_ld_library_path(){
+    TAPPAS_LIB_PATH=/usr/lib/$(uname -m)-linux-gnu
+    ! [[ -n $LD_LIBRARY_PATH && $LD_LIBRARY_PATH =~ ${TAPPAS_LIB_PATH} ]] && \
+        export LD_LIBRARY_PATH="${TAPPAS_LIB_PATH}:${LD_LIBRARY_PATH}"
+    return 0
+}
+
+function export_gst_plugin_path(){
+    TAPPAS_GST_PLUGIN_PATH=/usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0
+    ! [[ -n $GST_PLUGIN_PATH && $GST_PLUGIN_PATH =~ ${TAPPAS_GST_PLUGIN_PATH} ]] && \
+        export GST_PLUGIN_PATH="${TAPPAS_GST_PLUGIN_PATH}:${GST_PLUGIN_PATH}"
+    return 0
+}
+
+function validate_hailo_device_connected() {
+    devices_count=`lspci -d 1e60: | wc -l`
+
+    if (( $devices_count == 0 )); then
+        echo "No Hailo devices found. Please connect the device and try again"
+        return 1
+    fi
+}
+
 function init_variables() {
     print_help_if_needed $@
 
     script_dir=$(dirname $(realpath "$0"))
-    source $script_dir/../../scripts/misc/checks_before_run.sh
+
+    export_xv_image_is_supported
+    add_vaapi_fakedriver
+    export_ld_library_path
+    export_gst_plugin_path
+    validate_hailo_device_connected
+    return_code=$?
+    if [ $return_code -ne 0 ]; then
+        exit $return_code
+    fi
 
     readonly POSTPROCESS_DIR="/usr/lib/$(uname -m)-linux-gnu/hailo/tappas/post_processes"
     readonly RESOURCES_DIR_ROOT="$script_dir/resources"

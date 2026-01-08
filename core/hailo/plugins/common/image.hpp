@@ -16,6 +16,7 @@
 #pragma once
 
 #include <gst/video/video.h>
+#include <opencv2/opencv.hpp>
 #include "hailomat.hpp"
 #include "hailo_objects.hpp"
 

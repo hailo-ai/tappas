@@ -12,17 +12,13 @@
 #include <map>
 #include <typeinfo>
 #include "common/image.hpp"
+#include "hailomat_internal.hpp"
 #include "cropping/gsthailobasecropper.hpp"
 #include "gst_hailo_cropping_meta.hpp"
 #include "gst_hailo_stream_meta.hpp"
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
 #include "gst_hailo_meta.hpp"
-#ifdef HAILO15_TARGET
-#include "buffer_utils.hpp"
-#include "media_library/dsp_utils.hpp"
-#include "gsthailodspbufferpoolutils.hpp"
-#endif
 
 GST_DEBUG_CATEGORY_STATIC(gst_hailo_basecropper_debug);
 #define GST_CAT_DEFAULT gst_hailo_basecropper_debug
@@ -34,10 +30,6 @@ enum
     PROP_DROP_UNCROPPED_BUFFERS,
     PROP_CROPPING_PERIOD,
     PROP_FILTER_STREAMS,
-#ifdef HAILO15_TARGET
-    PROP_USE_DSP,
-    PROP_POOL_SIZE,
-#endif
 };
 
 static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE("sink",
@@ -81,12 +73,6 @@ static gboolean gst_hailo_basecropper_decide_allocation(GstHailoBaseCropper *hai
 
 static GstBuffer *gst_hailo_basecropper_allocate_new_buffer(GstHailoBaseCropper *hailo_basecropper, size_t buffer_size);
 
-#ifdef HAILO15_TARGET
-static gboolean dsp_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, cv::Rect crop_rect, std::shared_ptr<HailoMat> resized_image,
-                                    GstBuffer *input_buffer, GstVideoInfo *input_video_info, GstBuffer *output_buffer, GstVideoInfo *output_video_info);
-static gboolean gst_hailo_basecropper_propose_allocation(GstHailoBaseCropper *hailo_basecropper, GstPad *pad, GstQuery *query);
-#endif
-
 static void
 gst_hailo_basecropper_class_init(GstHailoBaseCropperClass *klass)
 {
@@ -121,18 +107,6 @@ gst_hailo_basecropper_class_init(GstHailoBaseCropperClass *klass)
                                                                              (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)),
                                                          (GParamFlags)(G_PARAM_READWRITE | GST_PARAM_CONTROLLABLE | G_PARAM_STATIC_STRINGS)));
 
-#ifdef HAILO15_TARGET
-    g_object_class_install_property(gobject_class, PROP_USE_DSP,
-                                    g_param_spec_boolean("use-dsp", "Use DSP",
-                                                         "Whether to use DSP for cropping. Default true.", true,
-                                                         (GParamFlags)(GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
-    g_object_class_install_property(gobject_class, PROP_POOL_SIZE,
-                                    g_param_spec_uint("pool-size", "Pool Size",
-                                                      "Size of the pool of buffers to use for cropping. Default 10",
-                                                      1, G_MAXINT, 10,
-                                                      (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY)));
-#endif
-
     gst_element_class_add_pad_template(gstelement_class,
                                        gst_static_pad_template_get(&main_src_factory));
     gst_element_class_add_pad_template(gstelement_class,
@@ -164,11 +138,6 @@ gst_hailo_basecropper_init(GstHailoBaseCropper *hailo_basecropper)
     gst_pad_set_query_function(hailo_basecropper->srcpad_crop, GST_DEBUG_FUNCPTR(gst_hailo_basecropper_src_query));
 
 // Set default values.
-#ifdef HAILO15_TARGET
-    hailo_basecropper->use_dsp = true;
-    hailo_basecropper->bufferpool_max_size = 10;
-    hailo_basecropper->bufferpool_min_size = 1;
-#endif
     hailo_basecropper->use_internal_offset = false;
     hailo_basecropper->internal_offset = 0;
     hailo_basecropper->cropping_period = 1;
@@ -179,19 +148,6 @@ gst_hailo_basecropper_init(GstHailoBaseCropper *hailo_basecropper)
     for (uint i = 0; i < GST_HAILO_CROPPER_MAX_FILTER_STREAMS; i++)
         hailo_basecropper->filter_streams[i] = "";
 }
-
-#ifdef HAILO15_TARGET
-static gboolean
-gst_hailo_basecropper_propose_allocation(GstHailoBaseCropper *hailo_basecropper, GstPad *pad, GstQuery *query)
-{
-    gboolean ret = gst_pad_peer_query(hailo_basecropper->srcpad_main, query);
-    if (!ret)
-        GST_DEBUG_OBJECT(hailo_basecropper, "Peer query allocation failed");
-    gst_query_add_allocation_meta(query, GST_VIDEO_META_API_TYPE, NULL);
-
-    return true;
-}
-#endif
 
 static void gst_hailo_basecropper_dispose(GObject *object)
 {
@@ -213,23 +169,6 @@ gst_hailo_basecropper_decide_allocation(GstHailoBaseCropper *hailo_basecropper, 
 {
     gboolean ret = TRUE;
 
-#ifdef HAILO15_TARGET
-    if (!hailo_basecropper->use_dsp)
-        return ret;
-
-    GST_DEBUG_OBJECT(hailo_basecropper, "Performing decide allocation");
-
-    GstElement *element = GST_ELEMENT_CAST(hailo_basecropper);
-    hailo_basecropper->buffer_pool = gst_create_hailo_dsp_bufferpool_from_allocation_query(element, query, hailo_basecropper->bufferpool_min_size, hailo_basecropper->bufferpool_max_size, 0);
-    if (hailo_basecropper->buffer_pool == NULL)
-    {
-        GST_ERROR_OBJECT(hailo_basecropper, "Decide Allocation - Failed to create buffer pool");
-        return FALSE;
-    }
-
-    GST_INFO_OBJECT(hailo_basecropper, "Decide allocation - hailo buffer pool created");
-
-#endif
     return ret;
 }
 
@@ -302,14 +241,6 @@ gst_hailo_basecropper_set_property(GObject *object, guint prop_id,
     case PROP_FILTER_STREAMS:
         set_filter_streams(hailo_basecropper, value);
         break;
-#ifdef HAILO15_TARGET
-    case PROP_USE_DSP:
-        hailo_basecropper->use_dsp = g_value_get_boolean(value);
-        break;
-    case PROP_POOL_SIZE:
-        hailo_basecropper->bufferpool_max_size = g_value_get_uint(value);
-        break;
-#endif
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -336,14 +267,6 @@ gst_hailo_basecropper_get_property(GObject *object, guint prop_id,
     case PROP_FILTER_STREAMS:
         get_filter_streams(hailo_basecropper, value);
         break;
-#ifdef HAILO15_TARGET
-    case PROP_USE_DSP:
-        g_value_set_boolean(value, hailo_basecropper->use_dsp);
-        break;
-    case PROP_POOL_SIZE:
-        g_value_set_uint(value, hailo_basecropper->bufferpool_max_size);
-        break;
-#endif
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -446,13 +369,7 @@ gst_hailo_basecropper_sink_query(GstPad *pad,
     case GST_QUERY_ALLOCATION:
     {
         GST_DEBUG_OBJECT(hailo_basecropper, "Received allocation query from sinkpad in hailo_basecropper");
-#ifdef HAILO15_TARGET
-        ret = gst_hailo_basecropper_propose_allocation(hailo_basecropper, pad, query);
-        if (!ret)
-            GST_DEBUG_OBJECT(hailo_basecropper, "Failed to query peer srcpad_main");
-#else
         ret = gst_pad_query_default(pad, parent, query);
-#endif
         break;
     }
     case GST_QUERY_ACCEPT_CAPS:
@@ -551,146 +468,17 @@ gst_hailo_basecropper_sink_event(GstPad *pad, GstObject *parent,
     return ret;
 }
 
-#ifdef HAILO15_TARGET
-dsp_interpolation_type_t get_dsp_interpolation_type_from_cv(GstHailoBaseCropper *hailo_basecropper, cv::InterpolationFlags interpolation)
-{
-    switch (interpolation)
-    {
-    case cv::INTER_NEAREST:
-        return INTERPOLATION_TYPE_NEAREST_NEIGHBOR;
-    case cv::INTER_LINEAR:
-        return INTERPOLATION_TYPE_BILINEAR;
-    case cv::INTER_AREA:
-        return INTERPOLATION_TYPE_AREA;
-    case cv::INTER_CUBIC:
-        return INTERPOLATION_TYPE_BICUBIC;
-    default:
-        GST_ERROR_OBJECT(hailo_basecropper, "Unsupported interpolation type %d", interpolation);
-        std::cerr << "Unsupported interpolation type " << interpolation << std::endl;
-        return INTERPOLATION_TYPE_BILINEAR;
-    }
-}
-#endif
-
 static GstBuffer *gst_hailo_basecropper_allocate_new_buffer(GstHailoBaseCropper *hailo_basecropper, size_t buffer_size)
 {
     GstBuffer *output_buffer = NULL;
-
-#ifdef HAILO15_TARGET
-    if (hailo_basecropper->use_dsp)
-    {
-        if (!hailo_basecropper->buffer_pool)
-        {
-            GST_ERROR_OBJECT(hailo_basecropper, "DSP buffer allocation requested form pool - but buffer pool is not initialized");
-            return NULL;
-        }
-        GstFlowReturn ret = GST_FLOW_OK;
-        ret = gst_buffer_pool_acquire_buffer(GST_BUFFER_POOL(hailo_basecropper->buffer_pool), &output_buffer, NULL);
-        if (ret != GST_FLOW_OK)
-        {
-            GST_ERROR_OBJECT(hailo_basecropper, "Failed to acquire buffer from pool");
-            return NULL;
-        }
-    }
-    else
-    {
-        output_buffer = gst_buffer_new_allocate(NULL, buffer_size, NULL);
-    }
-#else
     output_buffer = gst_buffer_new_allocate(NULL, buffer_size, NULL);
-#endif
-
     return output_buffer;
 }
-
-#ifdef HAILO15_TARGET
-static gboolean dsp_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, cv::Rect crop_rect, std::shared_ptr<HailoMat> resized_image,
-                                    GstBuffer *input_buffer, GstVideoInfo *input_video_info, GstBuffer *output_buffer, GstVideoInfo *output_video_info)
-{
-    dsp_utils::crop_resize_dims_t crop_resize_dims = {
-        .perform_crop = 1,
-        .crop_start_x = (size_t)crop_rect.x,
-        .crop_end_x = (size_t)crop_rect.x + crop_rect.width,
-        .crop_start_y = (size_t)crop_rect.y,
-        .crop_end_y = (size_t)crop_rect.y + crop_rect.height,
-        .destination_width = (size_t)resized_image->native_width(),
-        .destination_height = (size_t)resized_image->native_height(),
-    };
-
-    int input_width = GST_VIDEO_INFO_WIDTH(input_video_info);
-    int input_height = GST_VIDEO_INFO_HEIGHT(input_video_info);
-
-    // Map input and output buffers to GstVideoFrame
-    GstVideoFrame input_video_frame;
-    if (!gst_video_frame_map(&input_video_frame, input_video_info, input_buffer, GST_MAP_READ))
-    {
-        GST_ERROR_OBJECT(hailo_basecropper, "Cannot map input buffer to frame");
-        throw std::runtime_error("Cannot map input buffer to frame");
-    }
-
-    if (!gst_buffer_is_writable(output_buffer))
-    {
-        GST_ERROR_OBJECT(hailo_basecropper, "Output buffer is not writable");
-        throw std::runtime_error("Output buffer is not writable");
-    }
-
-    GstVideoFrame output_video_frame;
-    if (!gst_video_frame_map(&output_video_frame, output_video_info, output_buffer, GST_MAP_READWRITE))
-    {
-        GST_ERROR_OBJECT(hailo_basecropper, "Cannot map output buffer to frame");
-        throw std::runtime_error("Cannot map output buffer to frame");
-    }
-    GstVideoFormat format = GST_VIDEO_FRAME_FORMAT(&input_video_frame);
-
-    // If the crop rect is the same as the input image (whole buffer), we request a resize only
-    if (crop_rect.x == 0 && crop_rect.y == 0 && crop_rect.width == input_width && crop_rect.height == input_height)
-    {
-        crop_resize_dims.perform_crop = 0;
-        GST_DEBUG_OBJECT(hailo_basecropper, "DSP Resize (Format: %d): Input Width: %d, Height: %d. \
-                                            Resize target Width: %ld Height: %ld",
-                         format, input_width, input_height,
-                         crop_resize_dims.destination_width, crop_resize_dims.destination_height);
-    }
-    else
-    {
-        GST_DEBUG_OBJECT(hailo_basecropper, "DSP Crop + Resize (Format: %d): Input Width: %d, Height: %d. \
-                                            Target Crop shape X: %d Y: %d Width: %d Height: %d. and Resize target Width: %ld Height: %ld",
-                         format, input_width, input_height, crop_rect.x, crop_rect.y, crop_rect.width, crop_rect.height,
-                         crop_resize_dims.destination_width, crop_resize_dims.destination_height);
-    }
-
-    // Create dsp image properties from both input and output video frame objects
-    dsp_image_properties_t input_image_properties;
-    dsp_image_properties_t output_image_properties;
-    create_dsp_buffer_from_video_frame(&input_video_frame, input_image_properties);
-    create_dsp_buffer_from_video_frame(&output_video_frame, output_image_properties);
-
-    // Perform the crop and resize
-    dsp_status result = dsp_utils::perform_crop_and_resize(&input_image_properties, &output_image_properties,
-                                                            crop_resize_dims,
-                                                            get_dsp_interpolation_type_from_cv(hailo_basecropper, cv::InterpolationFlags::INTER_LINEAR),
-                                                            std::nullopt);
-
-    // Free resources
-    dsp_utils::free_image_property_planes(&input_image_properties);
-    dsp_utils::free_image_property_planes(&output_image_properties);
-    gst_video_frame_unmap(&input_video_frame);
-    gst_video_frame_unmap(&output_video_frame);
-
-    if (result != DSP_SUCCESS)
-    {
-        GST_ERROR_OBJECT(hailo_basecropper, "Failed to perform dsp resize. return status: %d", result);
-        return false;
-    }
-
-    return true;
-}
-#endif
 
 static gboolean opencv_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, std::shared_ptr<HailoMat> resized_image, std::shared_ptr<HailoMat> full_image, GstVideoInfo *full_image_info, HailoROIPtr crop_roi)
 {
     GstHailoBaseCropperClass *hailo_basecropperclass = GST_HAILO_BASE_CROPPER_GET_CLASS(hailo_basecropper);
-    std::vector<cv::Mat> resized_cv_mat = resized_image->get_matrices();
+    std::vector<cv::Mat>& resized_cv_mat = get_cv_matrices(*resized_image);
 
     GST_DEBUG_OBJECT(hailo_basecropper, "Opencv Crop + Resize: Input Width: %d, Height: %d. \
                     Target Crop shape X: %f Y: %f Width: %f Height: %f. \
@@ -698,7 +486,7 @@ static gboolean opencv_crop_and_resize(GstHailoBaseCropper *hailo_basecropper, s
                      full_image->width(), full_image->height(),
                      crop_roi->get_bbox().xmin(), crop_roi->get_bbox().ymin(),
                      crop_roi->get_bbox().width(), crop_roi->get_bbox().height(), resized_cv_mat[0].cols, resized_cv_mat[0].rows);
-    std::vector<cv::Mat> cropped_cv_mat = full_image->crop(crop_roi);
+    std::vector<cv::Mat> cropped_cv_mat = crop_to_cv_matrices(*full_image, crop_roi);
 
     GstVideoFormat image_format = GST_VIDEO_INFO_FORMAT(full_image_info);
     hailo_basecropperclass->resize(hailo_basecropper, cropped_cv_mat, resized_cv_mat, crop_roi, image_format);
@@ -792,19 +580,7 @@ static GstBuffer *handle_one_crop(GstHailoBaseCropper *hailo_basecropper, GstBuf
     std::shared_ptr<HailoMat> resized_image = get_mat_by_format(output_buffer, resized_image_info);
 
 // Crop and resize the frame
-#ifdef HAILO15_TARGET
-    if (hailo_basecropper->use_dsp)
-    {
-        cv::Rect crop_rect = full_image->get_crop_rect(crop_roi);
-        dsp_crop_and_resize(hailo_basecropper, crop_rect, resized_image, input_buffer, full_image_info, output_buffer, resized_image_info);
-    }
-    else
-    {
-        opencv_crop_and_resize(hailo_basecropper, resized_image, full_image, full_image_info, crop_roi);
-    }
-#else
     opencv_crop_and_resize(hailo_basecropper, resized_image, full_image, full_image_info, crop_roi);
-#endif
 
     GST_DEBUG_OBJECT(hailo_basecropper, "Crop and resize done, freeing resources and returning buffer");
 

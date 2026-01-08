@@ -18,7 +18,6 @@ catch2_includedir=${tappas_sources}/Catch2/include
 cxxopts_includedir=${tappas_sources}/cxxopts/include
 pybind11_includedir=${tappas_sources}/pybind11/include
 rapidjson_includedir=${tappas_sources}/rapidjson/include
-xtensor_blas_includedir=${tappas_sources}/xtensor-blas/include
 xtensor_includedir=${tappas_sources}/xtensor/include
 xtl_includedir=${tappas_sources}/xtl/include
 
@@ -28,7 +27,7 @@ Requires: opencv4 gstreamer-1.0
 Name: hailo_tappas
 Version:
 Description: Hailo Tappas
-Libs: -L${tappas_libdir} -lgsthailometa -lhailo_tracker -lhailo_gst_image -lhailo_cv_singleton
+Libs: -L${tappas_libdir} -lgsthailometa -lhailo_tracker -lhailo_gst_image -lhailo_cv_singleton -lhailo_opencv_utils
 
 Cflags: -I${includedir} \
         -I${tappas_includedir} \
@@ -41,7 +40,6 @@ Cflags: -I${includedir} \
         -I${cxxopts_includedir} \
         -I${pybind11_includedir} \
         -I${rapidjson_includedir} \
-        -I${xtensor_blas_includedir} \
         -I${xtensor_includedir} \
         -I${xtl_includedir} \
         -I/usr/include/hailo/ \

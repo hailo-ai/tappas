@@ -3,6 +3,7 @@
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
 #include "3ddfa.hpp"
+#include "hailomat_internal.hpp"
 #include <iostream>
 
 #define FACE_LABEL "face"
@@ -10,7 +11,7 @@
 /**
  * @brief Returns an adjusted HailoBBox acordding to 3ddfa cropping algorithm.
  *
- * @param image The original picture (cv::Mat).
+ * @param image The original picture (std::shared_ptr<HailoMat>)
  * @param roi The ROI to modify
  * @return HailoBBox Adjusted HailoBBox to crop.
  * @note Original algorithm at https://github.com/cleardusk/3DDFA_V2/blob/9fdbea1eb97f762221f71f5c76f08f52296c6704/utils/functions.py#L85
@@ -32,7 +33,7 @@ HailoBBox algorithm_3ddfa(cv::Mat &image, const HailoBBox &roi)
 /**
  * @brief Returns a vector of HailoROIPtr to crop and resize.
  *
- * @param image The original picture (cv::Mat).
+ * @param image The original picture (std::shared_ptr<HailoMat>).
  * @param roi The main ROI of this picture.
  * @return std::vector<HailoROIPtr> vector of ROI's to crop and resize.
  */
@@ -46,7 +47,7 @@ std::vector<HailoROIPtr> create_crops(std::shared_ptr<HailoMat> image, HailoROIP
         // Modify only detections with "face" label.
         if (std::string(FACE_LABEL) == detection->get_label())
         {
-            cv::Mat mat = image->get_matrices()[0];
+            cv::Mat mat = get_cv_matrices(*image)[0];
             // Modifies a rectengle according to 3ddfa cropping algorithm only on faces
             auto new_bbox = algorithm_3ddfa(mat, detection->get_bbox());
             detection->set_bbox(new_bbox);
