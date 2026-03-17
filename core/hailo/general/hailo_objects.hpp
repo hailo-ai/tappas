@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
 /**
@@ -732,7 +732,7 @@ public:
      */
     HailoClassification(const std::string &classification_type,
                         int class_id,
-                        std::string label,
+                        const std::string &label,
                         float confidence) : m_confidence(assure_normal(confidence)), m_classification_type(classification_type), m_label(label), m_class_id(class_id){};
     // Move Constructor
     HailoClassification(HailoClassification &&other) : m_confidence(assure_normal(other.m_confidence)),

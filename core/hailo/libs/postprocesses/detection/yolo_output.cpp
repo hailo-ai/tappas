@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
 #include <cmath>
@@ -26,7 +26,7 @@ std::pair<uint, float> YoloOutputLayer::get_class(uint row, uint col, uint ancho
 float YoloOutputLayer::get_confidence(uint row, uint col, uint anchor)
 {
     uint channel = _tensor->features() / NUM_ANCHORS * anchor + CONF_CHANNEL_OFFSET;
-    float confidence = _tensor->get_full_percision(row, col, channel, _is_uint16);
+    float confidence = _tensor->get_full_precision(row, col, channel, _is_uint16);
     if (_perform_sigmoid)
         confidence = sigmoid(confidence);
     return confidence;
@@ -59,8 +59,8 @@ std::pair<float, float> Yolov5OL::get_center(uint row, uint col, uint anchor)
 {
     float x, y = 0.0f;
     uint channel = _tensor->features() / NUM_ANCHORS * anchor;
-    x = (_tensor->get_full_percision(row, col, channel, _is_uint16) * 2.0f - 0.5f + col) / _width;
-    y = (_tensor->get_full_percision(row, col, channel + 1, _is_uint16) * 2.0f - 0.5f + row) / _height;
+    x = (_tensor->get_full_precision(row, col, channel, _is_uint16) * 2.0f - 0.5f + col) / _width;
+    y = (_tensor->get_full_precision(row, col, channel + 1, _is_uint16) * 2.0f - 0.5f + row) / _height;
     return std::pair<float, float>(x, y);
 }
 
@@ -68,8 +68,8 @@ std::pair<float, float> Yolov5OL::get_shape(uint row, uint col, uint anchor, uin
 {
     float w, h = 0.0f;
     uint channel = _tensor->features() / NUM_ANCHORS * anchor + NUM_CENTERS;
-    w = pow(2.0f * _tensor->get_full_percision(row, col, channel, _is_uint16), 2.0f) * _anchors[anchor * 2] / image_width;
-    h = pow(2.0f * _tensor->get_full_percision(row, col, channel + 1, _is_uint16), 2.0f) * _anchors[anchor * 2 + 1] / image_height;
+    w = pow(2.0f * _tensor->get_full_precision(row, col, channel, _is_uint16), 2.0f) * _anchors[anchor * 2] / image_width;
+    h = pow(2.0f * _tensor->get_full_precision(row, col, channel + 1, _is_uint16), 2.0f) * _anchors[anchor * 2 + 1] / image_height;
     return std::pair<float, float>(w, h);
 }
 
@@ -85,8 +85,8 @@ std::pair<float, float> Yolov3OL::get_shape(uint row, uint col, uint anchor, uin
 {
     float w, h = 0.0f;
     uint channel = _tensor->features() / NUM_ANCHORS * anchor + NUM_CENTERS;
-    w = expf(_tensor->get_full_percision(row, col, channel, _is_uint16)) * _anchors[anchor * 2] / image_width;
-    h = expf(_tensor->get_full_percision(row, col, channel + 1, _is_uint16)) * _anchors[anchor * 2 + 1] / image_height;
+    w = expf(_tensor->get_full_precision(row, col, channel, _is_uint16)) * _anchors[anchor * 2] / image_width;
+    h = expf(_tensor->get_full_precision(row, col, channel + 1, _is_uint16)) * _anchors[anchor * 2 + 1] / image_height;
     return std::pair<float, float>(w, h);
 }
 
@@ -94,14 +94,14 @@ std::pair<float, float> Yolov3OL::get_center(uint row, uint col, uint anchor)
 {
     float x, y = 0.0f;
     uint channel = _tensor->features() / NUM_ANCHORS * anchor;
-    x = (sigmoid(_tensor->get_full_percision(row, col, channel, _is_uint16)) + col) / _width;
-    y = (sigmoid(_tensor->get_full_percision(row, col, channel + 1, _is_uint16)) + row) / _height;
+    x = (sigmoid(_tensor->get_full_precision(row, col, channel, _is_uint16)) + col) / _width;
+    y = (sigmoid(_tensor->get_full_precision(row, col, channel + 1, _is_uint16)) + row) / _height;
     return std::pair<float, float>(x, y);
 }
 
 float Yolov4OL::get_confidence(uint row, uint col, uint anchor)
 {
-    float confidence = _obj->get_full_percision(row, col, anchor, _is_uint16);
+    float confidence = _obj->get_full_precision(row, col, anchor, _is_uint16);
     if (_perform_sigmoid)
         confidence = sigmoid(confidence);
     return confidence;
@@ -127,12 +127,12 @@ std::pair<float, float> Yolov4OL::get_center(uint row, uint col, uint anchor)
     float y;
     uint channel = (_center->features() / NUM_ANCHORS) * anchor;
     if (_perform_sigmoid) {
-        x = (sigmoid(_center->get_full_percision(row, col, channel, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
-        y = (sigmoid(_center->get_full_percision(row, col, channel + 1, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
+        x = (sigmoid(_center->get_full_precision(row, col, channel, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
+        y = (sigmoid(_center->get_full_precision(row, col, channel + 1, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
     }
     else {
-        x = (_center->get_full_percision(row, col, channel, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
-        y = (_center->get_full_percision(row, col, channel + 1, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
+        x = (_center->get_full_precision(row, col, channel, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
+        y = (_center->get_full_precision(row, col, channel + 1, _is_uint16) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
     }
     return std::pair<float, float>(x, y);
 }
@@ -141,16 +141,16 @@ std::pair<float, float> Yolov4OL::get_shape(uint row, uint col, uint anchor, uin
 {
     float w, h = 0.0f;
     uint channel = (_scale->features() / NUM_ANCHORS) * anchor;
-    w = expf(_scale->get_full_percision(row, col, channel, _is_uint16)) * _anchors[anchor * 2] / image_width;
-    h = expf(_scale->get_full_percision(row, col, channel + 1, _is_uint16)) * _anchors[anchor * 2 + 1] / image_height;
+    w = expf(_scale->get_full_precision(row, col, channel, _is_uint16)) * _anchors[anchor * 2] / image_width;
+    h = expf(_scale->get_full_precision(row, col, channel + 1, _is_uint16)) * _anchors[anchor * 2 + 1] / image_height;
     return std::pair<float, float>(w, h);
 }
 
 std::pair<float, float> TinyYolov4OL::get_center(uint row, uint col, uint anchor)
 {
     uint channel = (_tensor->features() / NUM_ANCHORS) * anchor;
-    float x = (sigmoid(_tensor->get_full_percision(row, col, channel, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
-    float y = (sigmoid(_tensor->get_full_percision(row, col, channel + 1, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
+    float x = (sigmoid(_tensor->get_full_precision(row, col, channel, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + col) / _width;
+    float y = (sigmoid(_tensor->get_full_precision(row, col, channel + 1, _is_uint16)) * SCALE_XY - 0.5f * (SCALE_XY - 1) + row) / _height;
     return std::pair<float, float>(x, y);
 }
 
@@ -166,14 +166,14 @@ std::pair<float, float> TinyYolov4OL::get_shape(uint row, uint col, uint anchor,
 {
     float w, h = 0.0f;
     uint channel = _tensor->features() / NUM_ANCHORS * anchor + NUM_CENTERS;
-    w = expf(_tensor->get_full_percision(row, col, channel, _is_uint16)) * _anchors[anchor * 2] / image_width;
-    h = expf(_tensor->get_full_percision(row, col, channel + 1, _is_uint16)) * _anchors[anchor * 2 + 1] / image_height;
+    w = expf(_tensor->get_full_precision(row, col, channel, _is_uint16)) * _anchors[anchor * 2] / image_width;
+    h = expf(_tensor->get_full_precision(row, col, channel + 1, _is_uint16)) * _anchors[anchor * 2 + 1] / image_height;
     return std::pair<float, float>(w, h);
 }
 
 float YoloXOL::get_confidence(uint row, uint col, uint anchor)
 {
-    float confidence = _obj->get_full_percision(row, col, 0, _is_uint16);
+    float confidence = _obj->get_full_precision(row, col, 0, _is_uint16);
     if (_perform_sigmoid)
         confidence = sigmoid(confidence);
     return confidence;
@@ -195,15 +195,15 @@ float YoloXOL::get_class_conf(uint prob_max)
 std::pair<float, float> YoloXOL::get_center(uint row, uint col, uint anchor)
 {
     float x, y = 0.0f;
-    x = (_bbox->get_full_percision(row, col, 0, _is_uint16) + col) / _width;
-    y = (_bbox->get_full_percision(row, col, 1, _is_uint16) + row) / _height;
+    x = (_bbox->get_full_precision(row, col, 0, _is_uint16) + col) / _width;
+    y = (_bbox->get_full_precision(row, col, 1, _is_uint16) + row) / _height;
     return std::pair<float, float>(x, y);
 }
 
 std::pair<float, float> YoloXOL::get_shape(uint row, uint col, uint anchor, uint image_width, uint image_height)
 {
     float w, h = 0.0f;
-    w = expf(_bbox->get_full_percision(row, col, 2, _is_uint16)) / _width;
-    h = expf(_bbox->get_full_percision(row, col, 3, _is_uint16)) / _height;
+    w = expf(_bbox->get_full_precision(row, col, 2, _is_uint16)) / _width;
+    h = expf(_bbox->get_full_precision(row, col, 3, _is_uint16)) / _height;
     return std::pair<float, float>(w, h);
 }

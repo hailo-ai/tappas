@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+* Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
 * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
 **/
 /**
@@ -9,7 +9,7 @@
  * @version 0.1
  * @date 2022-01-20
  * 
- * @copyright Copyright (c) 2022
+ * @copyright Copyright (c) 2022-2026
  * 
  */
 #pragma once

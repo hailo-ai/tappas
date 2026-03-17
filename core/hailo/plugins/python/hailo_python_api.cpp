@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+ * Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
 #include "hailo_common.hpp"
@@ -753,7 +753,7 @@ PYBIND11_MODULE(hailo, m)
             .def("fix_scale", &HailoTensor::fix_scale<uint8_t>, "Fix scale", "num"_a)
             .def("get", &HailoTensor::get, "Get", "row"_a, "col"_a, "channel"_a)
             .def("get", &HailoTensor::get_uint16, "Get", "row"_a, "col"_a, "channel"_a)
-            .def("get_full_percision", &HailoTensor::get_full_percision, "Get full percision", "row"_a,
+            .def("get_full_precision", &HailoTensor::get_full_precision, "Get full precision", "row"_a,
                  "col"_a, "channel"_a, "is_uint16"_a)
             .def("__repr__", [](const HailoTensor &obj)
                  { return "<hailo.HailoTensor"s + "(" +

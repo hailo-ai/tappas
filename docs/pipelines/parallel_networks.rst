@@ -17,9 +17,7 @@ Example Pipeline of One Display Multi Source
        $source_element ! videoconvert ! \
        queue name=hailo_pre_split leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        tee name=splitter \
-       hailomuxer name=hailomuxer ! \
-       queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
-       hailooverlay qos=false !  \
+       hailomuxer name=hailomuxer \
        splitter. ! queue name=hailo_pre_infer_q_1 leaky=no max-size-buffers=5 max-size-bytes=0 max-size-time=0 ! \
        hailonet hef-path=$NETWORK_ONE_HEF_PATH is-active=true ! \
        queue name=hailo_postprocess0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
@@ -28,6 +26,9 @@ Example Pipeline of One Display Multi Source
        hailonet hef-path=$NETWORK_TWO_HEF_PATH is-active=true ! \
        queue name=hailo_postprocess1 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        hailofilter so-path=$NETWORK_TWO_POSTPROCESS_SO function-name=$NETWORK_TWO_POSTPROCESS_FUNCTION_NAME qos=false ! hailomuxer. \
+       hailomuxer. ! \
+       queue name=hailo_draw0 leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
+       hailooverlay qos=false ! \
        queue leaky=no max-size-buffers=30 max-size-bytes=0 max-size-time=0 ! \
        fpsdisplaysink video-sink=$video_sink_element name=hailo_display sync=false text-overlay=false \
 

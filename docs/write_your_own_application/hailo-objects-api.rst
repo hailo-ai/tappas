@@ -126,7 +126,7 @@ Typing enumeration for `HailoObject`_ instances.
 HailoTensor
 ======================
 
-``Tensors`` are the ouput vector of the network inference. Usually these are N-dimensional matrices that hold little "human readable" value at first, but after a little postprocessing become meaningful objects such as detections or landmarks. All postprocesses start by looking at the output tensors. In fact, usually there will be no need to construct one it will be `provided to your postprocess <write-your-own-postprocess.rst>`_ via the `hailofilter <../elements/hailo_filter.rst>`_ element. To make handling these vectors easier, they are provided in a ``HailoTensor`` class.  \
+``Tensors`` are the output vectors of the network inference. Usually these are N-dimensional matrices that hold little readable value at first, but after postprocessing they become meaningful objects such as detections or landmarks. All postprocesses start by looking at the output tensors. In fact, usually there will be no need to construct one; it will be `provided to your postprocess <write-your-own-postprocess.rst>`_ via the `hailofilter <../elements/hailo_filter.rst>`_ element. To make handling these vectors easier, they are provided in a ``HailoTensor`` class.  \
 ``Shared pointer handle``\ : **HailoTensorPtr**  \
 ``SOURCE``\ : `core/hailo/general/hailo_tensors.hpp <../../core/hailo/general/hailo_tensors.hpp>`_  
 
@@ -186,7 +186,7 @@ Functions
        |            ``uint channel)``
      - | uint16_t
      - | Get the tensor value (uint16_t) at this location.
-   * - | ``get_full_percision(``
+   * - | ``get_full_precision(``
        |     ``uint row,`` 
        |     ``uint col,`` 
        |     ``uint channel,`` 
@@ -378,7 +378,7 @@ Functions
      - Get the stream ID of this ROI.
    * - | ``set_stream_id``
        | ``(std::string stream_id)``
-     - | std::string
+     - | void
      - | Set the stream ID of this ROI.
      
 
@@ -457,7 +457,8 @@ Constructors
 .. code-block:: cpp
 
    HailoClassification(const std::string &classification_type, const std::string &label, float confidence)
-   HailoClassification(const std::string &classification_type, int class_id, std::string label, float confidence)
+   HailoClassification(const std::string &classification_type, const std::string &label)
+   HailoClassification(const std::string &classification_type, int class_id, const std::string &label, float confidence)
 
 Functions
 ---------
@@ -508,7 +509,7 @@ Constructors
 .. code-block:: cpp
 
    HailoLandmarks(std::string landmarks_name, float threshold = 0.0f, const std::vector<std::pair<int, int>> pairs = {})
-   std::string landmarks_name, std::vector<HailoPoint> points, float threshold = 0.0f, const std::vector<std::pair<int, int>> pairs = {})
+   HailoLandmarks(std::string landmarks_name, std::vector<HailoPoint> points, float threshold = 0.0f, const std::vector<std::pair<int, int>> pairs = {})
 
 Functions
 ---------
@@ -554,7 +555,7 @@ HailoUniqueID
 =====================
 
 | Inherits from `HailoObject`_
-| ``HailoUniqueID`` represents a unique id of an ROI. Sometimes the user may want to give ROIs unique ids (for example, when tracking detections), and having a `HailoObject`_ abstraction makes adding and removing ids very simple (via ``add_object()`` and ``remove_object()``\ ). If no unique if is provided at construction, then a default -1 is used.
+| ``HailoUniqueID`` represents a unique id of an ROI. Sometimes the user may want to give ROIs unique ids (for example, when tracking detections), and having a `HailoObject`_ abstraction makes adding and removing ids very simple (via ``add_object()`` and ``remove_object()``\ ). If no unique id is provided at construction, then a default -1 is used.
 | ``Shared pointer handle``\ : **HailoUniqueIDPtr**  \
 | ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
 
@@ -563,8 +564,7 @@ Constructors
 
 .. code-block:: cpp
 
-   HailoUniqueID()
-   HailoUniqueID(int unique_id)
+   HailoUniqueID(int unique_id, hailo_unique_id_mode_t mode = TRACKING_ID)
 
 Functions
 ---------
@@ -599,7 +599,7 @@ HailoMask
 =================
 
 | Inherits from `HailoObject`_
-| ``HailoMask`` represents a mask of an ROI. Whenever the output of a postprocess is masks (tensors with result for every pixel) we will ROIs mask objects.
+| ``HailoMask`` represents a per-pixel mask associated with an ROI. A mask is essentially a 2D grid (width × height) where each pixel holds a value whose meaning depends on the mask variant. Masks are commonly produced by segmentation and depth estimation postprocesses. The ``transparency`` parameter controls the blending opacity when the mask is drawn as an overlay on the original frame.
 | ``Shared pointer handle``\ : **HailoMaskPtr**  \
 | ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
 
@@ -638,7 +638,7 @@ HailoDepthMask
 ======================
 
 | Inherits from `HailoMask`_.
-| ``HailoDepthMask`` represents a mask of an ROI, with float values for each pixel. The values represent depth between minimum and maximum values.
+| ``HailoDepthMask`` represents a depth mask of an ROI. Each pixel stores a ``float`` depth value (e.g., estimated distance from the camera), ranging between minimum and maximum values.
 | ``Shared pointer handle``\ : **HailoDepthMaskPtr**  \
 | ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
 
@@ -674,7 +674,7 @@ HailoClassMask
 ======================
 
 | Inherits from `HailoMask`_
-| ``HailoClassMask`` represents a mask of an ROI, with uint8_t class id classification for each pixel.
+| ``HailoClassMask`` represents a semantic segmentation mask of an ROI. Each pixel stores a ``uint8_t`` class ID indicating which class the pixel belongs to (e.g., 0=background, 1=person, 2=car).
 | ``Shared pointer handle``\ : **HailoClassMaskPtr**  \
 | ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
 
@@ -710,7 +710,7 @@ HailoConfClassMask
 ==========================
 
 | Inherits from `HailoMask`_
-| ``HailoConfClassMask`` represents a mask of an ROI, contains mask-class-id and confidence float value for each pixel.
+| ``HailoConfClassMask`` represents a confidence mask for a specific class within an ROI. Each pixel stores a ``float`` confidence value indicating the probability of belonging to the given ``class_id``.
 | ``Shared pointer handle``\ : **HailoConfClassMaskPtr**  \
 | ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
 
@@ -749,7 +749,7 @@ HailoMatrix
 ===================
 
 | Inherits from `HailoObject`_
-| ``HailoMatrix`` represents a matrix, contains float values. This matrix can be added to any HailoObject for different use cases. 
+| ``HailoMatrix`` represents a matrix that contains float values. This matrix can be added to any HailoObject for different use cases. 
 | ``Shared pointer handle``\ : **HailoMatrixPtr**  \
 | ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
 
@@ -789,7 +789,7 @@ Functions
      - const uint32_t
      - get number of elements in matrix
    * - ``shape()``
-     - std::vectorstd::size_t
+     - std::vector<std::size_t>
      - get the shape of the matrix
    * - ``get_data()``
      - std::vector<float> 
@@ -804,17 +804,19 @@ HailoUserMeta
 ===================
 
 | Inherits from `HailoObject`_
-| ``HailoUserMeta`` represents a sample metadata for users. 
+| ``HailoUserMeta`` represents user-defined metadata that can be attached to any `HailoMainObject`_ (such as a `HailoROI`_ or `HailoDetection`_).
+| It provides three general-purpose fields — an ``int``\ , a ``std::string``\ , and a ``float`` — allowing users to store custom application-specific data alongside pipeline objects without modifying the core API.
+| All getters and setters are thread-safe (protected by mutex). Common use cases include attaching frame-level metadata (e.g., frame number, source identifier, timestamp), passing custom data between pipeline elements, or tagging detections with application-specific attributes.
 | ``Shared pointer handle``\ : **HailoUserMetaPtr**  \
-| ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_  
+| ``SOURCE``\ : `core/hailo/general/hailo_objects.hpp <../../core/hailo/general/hailo_objects.hpp>`_
 
 Constructors
 ------------
 
 .. code-block:: cpp
 
-       HailoUserMeta()
-       HailoUserMeta(int user_int, std::string user_string, float user_float) : m_user_int(user_int), m_user_string(user_string), m_user_float(user_float)
+   HailoUserMeta()
+   HailoUserMeta(int user_int, std::string user_string, float user_float)
 
 Functions
 ---------
@@ -829,23 +831,23 @@ Functions
    * - ``get_type()``
      - `hailo_object_t`_
      - This `HailoObject`_\ 's type: HAILO_USER_META
-   * - ``get_user_float()``
-     - folat
-     - get the user-defined floating-point value in a thread-safe manner.
-   * - ``get_user_string()``
-     - std::string
-     - get the user-defined string in a thread-safe manner.
    * - ``get_user_int()``
      - int
-     - get the user-defined integer value in a thread-safe manner   
-   * - ``set_user_float(float user_float)``
-     - void
-     - set the user-defined floating-point value in a thread-safe manner.
-   * - ``set_user_string(std::string user_string)``
-     - void
-     - set the user-defined string in a thread-safe manner.
+     - Get the user-defined integer value in a thread-safe manner.
+   * - ``get_user_string()``
+     - std::string
+     - Get the user-defined string in a thread-safe manner.
+   * - ``get_user_float()``
+     - float
+     - Get the user-defined floating-point value in a thread-safe manner.
    * - ``set_user_int(int user_int)``
      - void
-     - set the user-defined integer value in a thread-safe manner.
+     - Set the user-defined integer value in a thread-safe manner.
+   * - ``set_user_string(std::string user_string)``
+     - void
+     - Set the user-defined string in a thread-safe manner.
+   * - ``set_user_float(float user_float)``
+     - void
+     - Set the user-defined floating-point value in a thread-safe manner.
   
 

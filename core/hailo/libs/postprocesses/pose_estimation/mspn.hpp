@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+* Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
 * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
 **/
 #pragma once
@@ -16,7 +16,7 @@ public:
 };
 
 
-void mspn(HailoROIPtr roi);
+void mspn(HailoROIPtr roi, void *params_void_ptr);
 void filter(HailoROIPtr roi, void *params_void_ptr);
 void free_resources(void *params_void_ptr);
 MSPNParams *init(const std::string config_path);
