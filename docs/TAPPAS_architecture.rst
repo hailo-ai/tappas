@@ -41,7 +41,7 @@ Hailo GStreamer Elements
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-* `HailoNet <elements/hailo_net.rst>`_ - Element for sending and reciveing data from Hailo-8 chip
+* `HailoNet <elements/hailo_net.rst>`_ - Element for sending and receiving data from Hailo-8/Hailo-10H chip
 * `HailoFilter <elements/hailo_filter.rst>`_ - Element that enables the user to apply a postprocess or drawing operation to a frame and its tensors
 * `HailoPython <elements/hailo_python.rst>`_ - Element that enables the user to apply a postprocess or drawing operation to a frame and its tensors via python.
 * `HailoMuxer <elements/hailo_muxer.rst>`_ - Muxer element used for Multi-Hailo-8 setups
@@ -49,7 +49,7 @@ Hailo GStreamer Elements
 * `HailoAggregator <elements/hailo_aggregator.rst>`_ - HailoAggregator is an element designed for applications with cascading networks. It has 2 sink pads and 1 source
 * `HailoCropper <elements/hailo_cropper.rst>`_ - HailoCropper is an element designed for applications with cascading networks. It has 1 sink and 2 sources
 * `HailoTileAggregator <elements/hailo_tile_aggregator.rst>`_ - HailoTileAggregator is an element designed for applications with tiles. It has 2 sink pads and 1 source
-* `HailoTileCropper <elements/hailo_tile_cropper.rst>`_ - HailoCropper is an element designed for applications with tiles. It has 1 sink and 2 sources
+* `HailoTileCropper <elements/hailo_tile_cropper.rst>`_ - HailoTileCropper is an element designed for applications with tiles. It has 1 sink and 2 sources
 * `HailoTracker <elements/hailo_tracker.rst>`_ - HailoTracker is an element that applies Joint Detection and Embedding (JDE) model with Kalman filtering to track object instances.
 * `HailoRoundRobin <elements/hailo_roundrobin.rst>`_ - HailoRoundRobin is an element that provides muxing functionality in roundrobin method.
 * `HailoStreamRouter <elements/hailo_stream_router.rst>`_ - HailoStreamRouter is an element that provides de-muxing functionality.

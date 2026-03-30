@@ -1,4 +1,4 @@
-Dot Visulaizer
+Dot Visualizer
 ==============
 
 How to use the tool?

@@ -30,7 +30,7 @@ Hierarchy
      Rank                     primary (256)
      Long-name                hailodevicestats element
      Klass                    Hailo/Device
-     Description              Log Hailo-8 device statistics
+     Description              Log Hailo device statistics
      Author                   Omer Salem <omers@hailo.ai>
 
 

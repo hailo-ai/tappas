@@ -34,10 +34,10 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
 Overview
 --------
 
-TAPPAS is Hailo's infrasturcture for building applications, implementing pipeline elements and
+TAPPAS is Hailo's infrastructure for building applications, implementing pipeline elements and
 pre-trained AI tasks.
 
-Hailo apllications are now maintained at `this repository <https://github.com/hailo-ai/hailo-apps-infra>`_.
+Hailo applications are now maintained at `this repository <https://github.com/hailo-ai/hailo-apps-infra>`_.
 
 Demonstrating Hailo's system integration scenario of specific use cases on predefined systems
 (software and Hardware platforms). It can be used for evaluations, reference code and demos:
