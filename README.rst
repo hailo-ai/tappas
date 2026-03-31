@@ -7,15 +7,15 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.23.0%20%7C%205.2.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.23.0%20%7C%205.3.0-green
    :target: https://github.com/hailo-ai/hailort
-   :alt: HailoRT 4.23.0 | 5.2.0
+   :alt: HailoRT 4.23.0 | 5.3.0
    :height: 20
 
 
-.. |license| image:: https://img.shields.io/badge/License-LGPLv2.1-green
+.. |license| image:: https://img.shields.io/badge/License-LGPL--2.1--or--later-green
    :target: https://github.com/hailo-ai/tappas/blob/master/LICENSE
-   :alt: License: LGPL v2.1
+   :alt: License: LGPL-2.1-or-later
    :height: 20
 
 .. |check_mark| image:: ./resources/check_mark.png
@@ -34,10 +34,10 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
 Overview
 --------
 
-TAPPAS is Hailo's infrasturcture for building applications, implementing pipeline elements and
+TAPPAS is Hailo's infrastructure for building applications, implementing pipeline elements and
 pre-trained AI tasks.
 
-Hailo apllications are now maintained at `this repository <https://github.com/hailo-ai/hailo-apps-infra>`_.
+Hailo applications are now maintained at `this repository <https://github.com/hailo-ai/hailo-apps-infra>`_.
 
 Demonstrating Hailo's system integration scenario of specific use cases on predefined systems
 (software and Hardware platforms). It can be used for evaluations, reference code and demos:
@@ -61,7 +61,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.23.0 for Hailo-8 devices, and with HailoRT v5.2.0 for Hailo-10H devices.
+    This version is compatible with HailoRT v4.23.0 for Hailo-8 devices, and with HailoRT v5.3.0 for Hailo-10H devices.
 
 
 Installation
@@ -147,7 +147,15 @@ Contact information is available at `hailo.ai <https://hailo.ai/contact-us/>`_.
 Changelog
 ----------
 
-**v5.2.0 (December 2025)**
+**v5.3.0 (April 2026)**
+
+* Documentation: refactored `Yocto section <docs/installation/yocto.rst>`_ — removed Dunfell references, updated to Kirkstone syntax, removed deprecated recipes and i.MX warning
+* Documentation: fixed outdated directory structure and paths in `Writing Your Own Postprocess <docs/write_your_own_application/write-your-own-postprocess.rst>`_ guide
+* Documentation: fixed `Hailo Objects API <docs/write_your_own_application/hailo-objects-api.rst>`_ inconsistencies with source code, added HailoMask hierarchy and HailoUserMeta documentation
+* Fixed ``get_full_percision`` typo — renamed to ``get_full_precision`` across source code, Python bindings, and documentation
+* This release supports both HailoRT v4.23.0 (Hailo-8/8L) and HailoRT v5.3.0 (Hailo-10H)
+
+**v5.2.0 (January 2026)**
 
 * Added ``--static-opencv`` option to ``install.sh`` for static OpenCV linking.
 * Added Python wheel builder for TAPPAS Python binding package

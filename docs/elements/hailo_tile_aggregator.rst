@@ -16,7 +16,7 @@ The element extends two methods of the parent element:
 
                            Performs ``remove_exceeded_bboxes`` (remove boxes close to boundary - using given border_threshold) and then parent element performs flatten detections.
 
-* ``post_aggregation``\ : Functionality to perform after all frames are aggregated succesfully.
+* ``post_aggregation``\ : Functionality to perform after all frames are aggregated successfully.
   .. code-block::
 
                        Performs ``remove_large_landscape`` and ``NMS``.

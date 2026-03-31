@@ -7,7 +7,7 @@ Overview
 
 HailoAggregator is an element designed for applications with cascading networks or cropping functionality, meaning to perform one task based on a previous task.
 It is a complement to the `HailoCropper <hailo_cropper.rst>`_\ , the two elements work together to form versatile apps. It has 2 sink pads and 1 source: the first sinkpad receives the original frame from an upstream hailocropper, while the other receives cropped buffers from the other hailocropper. 
-The HailoAggregator waits for all crops of a given orignal frame to arrive, then sends the original buffer with the combined metadata of all collected crops.
+The HailoAggregator waits for all crops of a given original frame to arrive, then sends the original buffer with the combined metadata of all collected crops.
 
 HailoAggregator also performs a 'flattening' functionality on the detection metadata when receiving each frame: detections are taken from the cropped frame, copied to the main frame and re-scaled/moved to their corresponding location in the main frame (x,y,width,height).
 As an example:
@@ -25,7 +25,7 @@ HailoAggregator exports two methods to extend or override in derived elements:
 
                            Calls `flattening` method.
 
-* ``post_aggregation``\ : Functionality to perform after all frames are aggregated succesfully.
+* ``post_aggregation``\ : Functionality to perform after all frames are aggregated successfully.
   
   .. code-block::
 

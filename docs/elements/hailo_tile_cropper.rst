@@ -10,7 +10,7 @@ It overrides the default ``prepare_crops`` behaviour to return a vector of tile 
 Each tile stores their x, y, width, and height (with overlap between tiles included) in the full frame.
 Just like the base HailoCropper, the full original frame is sent to the first src pad while all the cropped images are sent to the second.
 
-`hailoaggregator <hailo_aggregator.rst>`_ wiil aggregate the cropped tiles and stitch them back to the original resolution.
+`hailoaggregator <hailo_aggregator.rst>`_ will aggregate the cropped tiles and stitch them back to the original resolution.
 
 Parameters
 ^^^^^^^^^^

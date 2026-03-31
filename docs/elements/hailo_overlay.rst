@@ -9,10 +9,10 @@ HailoOverlay is a drawing element that can draw postprocessed results on an inco
 This element supports the following results:
 
 
-* Detection - Draws the rectengle over the frame, with the label and confidence (rounded).
+* Detection - Draws the rectangle over the frame, with the label and confidence (rounded).
 * Classification - Draws a classification over the frame, at the top left corner of the frame.
-* Landmarks - Draws a set of points on the given frame at the wanted coordintates.
-* Tiles - Can draw tiles as a thin rectengle.
+* Landmarks - Draws a set of points on the given frame at the wanted coordinates.
+* Tiles - Can draw tiles as a thin rectangle.
 
 Parameters
 ^^^^^^^^^^

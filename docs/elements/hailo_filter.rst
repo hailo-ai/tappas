@@ -12,7 +12,7 @@ Parameters
 
 The most important parameter here is the ``so-path``. Here the user provides the path to your compiled .so that applies your wanted filter. \
 By default, the hailofilter will call on a filter() function within the .so as the entry point. If your .so has multiple entry points, for example in the case of slightly different network flavors, then you can chose which specific filter function to apply via the ``function-name`` parameter. \
-As a member of the GstVideoFilter hierarchy, the hailofilter element supports qos (\ `Quality of Service <https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/qos.html?gi-language=c>`_\ ). Although qos typically tries to garuantee some level of performance, it can lead to frames dropping. For this reason it is advised to always set ``qos=false`` to avoid either tensors being dropped or not drawn.
+As a member of the GstVideoFilter hierarchy, the hailofilter element supports qos (\ `Quality of Service <https://gstreamer.freedesktop.org/documentation/plugin-development/advanced/qos.html?gi-language=c>`_\ ). Although qos typically tries to guarantee some level of performance, it can lead to frames dropping. For this reason it is advised to always set ``qos=false`` to avoid either tensors being dropped or not drawn.
 
 Hierarchy
 ---------

@@ -2,20 +2,16 @@
 Yocto
 =====
 
-This section will guide through the integration of Hailo's Yocto layer's into your own Yocto
-environment.
+This section guides users how to integrate Hailo's Yocto layers into their own Yocto environment.
 
 Two layers are provided by Hailo, the first one is ``meta-hailo`` which compiles the ``HailoRT`` sources, and the second one is ``meta-hailo-tappas`` which compiles the ``TAPPAS`` sources.
 
-``meta-hailo-tappas`` is a layer that based un-top of ``meta-hailo`` that adds ``TAPPAS`` recipes.
+``meta-hailo-tappas`` is a layer that is based on top of ``meta-hailo`` and adds ``TAPPAS`` recipes.
 
-The layers are stored in `Meta-Hailo Github <https://github.com/hailo-ai/meta-hailo.git>`_\ , with branch for each supported yocto release:
+The layers are stored in `Meta-Hailo Github <https://github.com/hailo-ai/meta-hailo.git>`_\ , with a branch for each supported Yocto release:
 
 
-* Dunfell 3.1 (kernel 5.4.85)
 * Kirkstone 4.0 (kernel 5.15)
-
-.. warning:: On i.MX8-based devices Kirkstone branch does not support OpenGL, therefore, the Kirkstone applications portfolio is reduced.
 
 Setup
 -----
@@ -34,7 +30,7 @@ Add the recipes to your image in your ``conf/local.conf``\ :
 
 .. code-block:: sh
 
-   IMAGE_INSTALL_append = "hailo-firmware libhailort hailortcli hailo-pci libgsthailo"
+   IMAGE_INSTALL:append = "hailo-firmware libhailort hailortcli hailo-pci libgsthailo"
 
 TAPPAS
 ^^^^^^
@@ -49,25 +45,25 @@ Add the following to your image in your ``conf/local.conf``\ :
 
 .. code-block:: sh
 
-   IMAGE_INSTALL:append = "libgsthailotools tappas-apps hailo-post-processes tappas-tracers"
+   IMAGE_INSTALL:append = "libgsthailotools hailo-post-processes tappas-tracers"
 
-Build your image
+Building the Image
 ----------------
 
-Run bitbake and build your image. After the build successfully finished, burn the Image to your embedded device.
+Run bitbake and build the image. After the build has successfully finished, burn the image to the embedded device.
 
 .. note::
-    building on non-IMX devices:
-    To increase the performance of our applications, we patched imx gstreamer-plugins-base.
-    In non-IMX devices you may encounter an error indicating that recipes under ``meta-hailo-tappas/recipes-multimedia/gstreamer/`` cannot be parsed.
-    In this case remove this directory under the meta-hailo-tappas layer, and re-build the image.
+    Building on non-IMX devices:
+    To increase application performance, the imx gstreamer-plugins-base has been patched.
+    In non-IMX devices an error may be encountered indicating that recipes under ``meta-hailo-tappas/recipes-gstreamer/gstreamer/`` cannot be parsed.
+    In this case, remove this directory under the meta-hailo-tappas layer, and re-build the image.
 
     .. code-block:: sh
 
-        rm -rf meta-hailo/meta-hailo-tappas/recipes-multimedia/gstreamer/
+        rm -rf meta-hailo/meta-hailo-tappas/recipes-gstreamer/gstreamer/
 
 
-Validating the integration's success
+Validating the Integration's Success
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure that the following conditions have been met on the target device:
@@ -105,33 +101,26 @@ libgsthailo
 Hailo's GStreamer plugin for running inference on the hailo8 chip. Depends on ``libhailort`` and GStreamer.
 
 The recipe compiles and copies the ``libgsthailo.so`` file to ``/usr/lib/gstreamer-1.0`` on the target device's
-root file system, make it loadable by GStreamer as a plugin.
+root file system, making it loadable by GStreamer as a plugin.
 
 libgsthailotools
 ^^^^^^^^^^^^^^^^
 
 Hailo's TAPPAS gstreamer elements. Depends on ``libgsthailo``, GStreamer, opencv, xtensor and xtl.
-The source files located in the TAPPAS release under ``core/hailo``.
+The source files are located in the TAPPAS release under ``core/hailo``.
 The recipe compiles with meson and copies the ``libgsthailotools.so`` file to ``/usr/lib/gstreamer-1.0`` 
 on the target device's root file system.
-
-tappas-apps
-^^^^^^^^^^^
-
-Hailo's TAPPAS embedded application recipe, including GStreamer apps for embedded.
-The recipe copies the app script, the hef and media files to /home/root/apps/.
-Depends on GStreamer, opencv, cxxopts, xtensor and xtl.
 
 hailo-post-processes
 ^^^^^^^^^^^^^^^^^^^^
 
 The recipe compiles and copies the post processes to ``/usr/lib/hailo-post-processes``.
-Deppends on opencv, xtensor, xtl, rapidjson and cxxopts.
+Depends on opencv, xtensor, xtl, rapidjson and cxxopts.
 
 tappas-tracers
 ^^^^^^^^^^^^^^
 Hailo's TAPPAS gstreamer tracers. Depends on ``libgsthailo`` and GStreamer.
-The source files located in the TAPPAS release under ``core/hailo/tracers``.
+The source files are located in the TAPPAS release under ``core/hailo/tracers``.
 The recipe compiles with meson and copies the ``libgsthailotracers.so`` file to ``/usr/lib/gstreamer-1.0`` 
 on the target device's root file system.
 
@@ -183,7 +172,7 @@ For example on IMX6Q-Sabresd, this the default value of mmargs:
 
       mmcargs="setenv bootargs console=${console},${baudrate} ${smp} root=${mmcroot}"
 
-Using this command we add the needed info to this variable:
+Use the following command to add the needed info to this variable:
 
    .. code-block:: sh
    

@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2021-2022 Hailo Technologies Ltd. All rights reserved.
+* Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
 * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
 **/
 /**
@@ -127,7 +127,7 @@ public:
      * @param channel The channel of the cell
      * @return float value of this tensor at the specified place (dequantized).
      */
-    float get_full_percision(uint row, uint col, uint channel, bool is_uint16)
+    float get_full_precision(uint row, uint col, uint channel, bool is_uint16)
     {
         if (is_uint16)
             return fix_scale(get_uint16(row, col, channel));
