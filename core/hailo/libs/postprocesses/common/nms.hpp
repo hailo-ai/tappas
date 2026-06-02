@@ -2,81 +2,95 @@
  * Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
-#pragma once
+#ifndef _POSTPROCESSES_COMMON_NMS_HPP_
+#define _POSTPROCESSES_COMMON_NMS_HPP_
 
+#include <algorithm>
 #include "hailo_objects.hpp"
 #include "hailo_common.hpp"
+
 namespace common
 {
 
-    float iou_calc(const HailoBBox &box_1, const HailoBBox &box_2)
-    {
-        // Calculate IOU between two detection boxes
-        const float width_of_overlap_area = std::min(box_1.xmax(), box_2.xmax()) - std::max(box_1.xmin(), box_2.xmin());
-        const float height_of_overlap_area = std::min(box_1.ymax(), box_2.ymax()) - std::max(box_1.ymin(), box_2.ymin());
-        const float positive_width_of_overlap_area = std::max(width_of_overlap_area, 0.0f);
-        const float positive_height_of_overlap_area = std::max(height_of_overlap_area, 0.0f);
-        const float area_of_overlap = positive_width_of_overlap_area * positive_height_of_overlap_area;
-        const float box_1_area = (box_1.ymax() - box_1.ymin()) * (box_1.xmax() - box_1.xmin());
-        const float box_2_area = (box_2.ymax() - box_2.ymin()) * (box_2.xmax() - box_2.xmin());
-        // The IOU is a ratio of how much the boxes overlap vs their size outside the overlap.
-        // Boxes that are similar will have a higher overlap threshold.
-        return area_of_overlap / (box_1_area + box_2_area - area_of_overlap);
-    }
+    float iou_calc(const HailoBBox &box_1, const HailoBBox &box_2);
 
     /**
-     * @brief Perform IOU based NMS on a vector of HailoDetection objects
+     * @brief Generic IOU-based NMS on any container whose elements wrap a HailoDetection.
      *
-     * @param objects  -  std::vector<HailoDetection>
-     *        The detections to perform NMS on.
-     *
-     * @param iou_thr  -  float
-     *        Threshold for IOU filtration
-     *
-     * @param should_nms_cross_classes  -  bool
-     *        If true, then apply NMS regardless of class differences. Default false.
+     * @param objects           Vector of elements to perform NMS on (modified in-place).
+     * @param get_detection     Accessor: given an element, returns HailoDetection& for reading/writing confidence.
+     * @param iou_thr           IOU threshold for suppression.
+     * @param should_nms_cross_classes  If true, suppress across different classes.
      */
-    void nms(std::vector<HailoDetection> &objects, const float iou_thr, bool should_nms_cross_classes = false)
+    template <typename T, typename GetDetection>
+    void nms(std::vector<T> &objects, GetDetection get_detection,
+        const float iou_thr, bool should_nms_cross_classes = false)
     {
-        std::vector<HailoDetection> objects_after_nms;
-        // The network may propose multiple detections of similar size/score,
-        // which are actually the same detection. We want to filter out the lesser
-        // detections with a simple nms.
         std::sort(objects.begin(), objects.end(),
-                  [](HailoDetection a, HailoDetection b)
-                  { return a.get_confidence() > b.get_confidence(); });
+            [&](T &a, T &b) {
+                return get_detection(a).get_confidence() > get_detection(b).get_confidence();
+            });
 
-        for (uint index = 0; index < objects.size(); index++)
-        {
-            if (objects[index].get_confidence() != 0.0f)
-            {
-                for (uint jindex = index + 1; jindex < objects.size(); jindex++)
-                {
-                    if ((should_nms_cross_classes || (objects[index].get_class_id() == objects[jindex].get_class_id())) &&
-                        objects[jindex].get_confidence() != 0.0f)
-                    {
-                        // For each detection, calculate the IOU against each following detection.
-                        float iou = iou_calc(objects[index].get_bbox(), objects[jindex].get_bbox());
-                        // If the IOU is above threshold, then we have two similar detections,
-                        // and want to delete the one.
-                        if (iou >= iou_thr)
-                        {
-                            // The detections are arranged in highest score order,
-                            // so we want to erase the latter detection.
-                            objects[jindex].set_confidence(0.0f);
+        for (uint32_t i = 0; i < objects.size(); i++) {
+            if (0.0f != get_detection(objects[i]).get_confidence()) {
+                for (uint32_t j = i + 1; j < objects.size(); j++) {
+                    if ((should_nms_cross_classes ||
+                            (get_detection(objects[i]).get_class_id() == get_detection(objects[j]).get_class_id())) &&
+                        (0.0f != get_detection(objects[j]).get_confidence())) {
+                        float iou = iou_calc(
+                            get_detection(objects[i]).get_bbox(),
+                            get_detection(objects[j]).get_bbox());
+                        if (iou >= iou_thr) {
+                            get_detection(objects[j]).set_confidence(0.0f);
                         }
                     }
                 }
             }
         }
-        for (uint index = 0; index < objects.size(); index++)
-        {
-            if (objects[index].get_confidence() != 0.0f)
-            {
-                objects_after_nms.push_back(objects[index]);
+        objects.erase(
+            std::remove_if(objects.begin(), objects.end(),
+                [&](T &obj) {
+                    return 0.0f == get_detection(obj).get_confidence();
+                }),
+            objects.end());
+    }
+
+    /**
+     * @brief IOU-based NMS on a vector of HailoDetection objects (convenience overload).
+     */
+    inline void nms(std::vector<HailoDetection> &objects, const float iou_thr,
+        bool should_nms_cross_classes = false)
+    {
+        nms(objects, [](HailoDetection &d) -> HailoDetection& { return d; },
+            iou_thr, should_nms_cross_classes);
+    }
+
+    /**
+     * @brief Filter items by score threshold
+     *
+     * @param items     -  std::vector<T>
+     *        The items to filter.
+     *
+     * @param score_fn  -  ScoreFn
+     *        A callable that returns the score of an item.
+     *
+     * @param threshold -  float
+     *        Minimum score to keep an item.
+     *
+     * @return std::vector<T>  Items with score >= threshold.
+     */
+    template <typename T, typename ScoreFn>
+    std::vector<T> threshold_filter(const std::vector<T> &items, ScoreFn score_fn, float threshold)
+    {
+        std::vector<T> filtered;
+        for (const auto &item : items) {
+            if (threshold <= score_fn(item)) {
+                filtered.push_back(item);
             }
         }
-        objects = objects_after_nms;
+        return filtered;
     }
 
 }
+
+#endif  // _POSTPROCESSES_COMMON_NMS_HPP_

@@ -43,7 +43,6 @@ Hailo GStreamer Elements
 
 * `HailoNet <elements/hailo_net.rst>`_ - Element for sending and receiving data from Hailo-8/Hailo-10H chip
 * `HailoFilter <elements/hailo_filter.rst>`_ - Element that enables the user to apply a postprocess or drawing operation to a frame and its tensors
-* `HailoPython <elements/hailo_python.rst>`_ - Element that enables the user to apply a postprocess or drawing operation to a frame and its tensors via python.
 * `HailoMuxer <elements/hailo_muxer.rst>`_ - Muxer element used for Multi-Hailo-8 setups
 * `HailoDeviceStats <elements/hailo_device_stats.rst>`_ - Hailodevicestats is an element that samples power and temperature
 * `HailoAggregator <elements/hailo_aggregator.rst>`_ - HailoAggregator is an element designed for applications with cascading networks. It has 2 sink pads and 1 source

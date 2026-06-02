@@ -13,14 +13,13 @@ class YoloParamsNMS
 public:
     std::map<std::uint8_t, std::string> labels;
     float detection_threshold;
-    uint max_boxes;
-    bool filter_by_score=false;
+    uint32_t max_boxes;
+    bool filter_by_score = false;
     YoloParamsNMS(std::map<uint8_t, std::string> dataset = std::map<uint8_t, std::string>(),
-                  float detection_threshold = 0.3f,
-                  uint max_boxes = 200)
-        : labels(dataset),
-          detection_threshold(detection_threshold), 
-          max_boxes(max_boxes) {}
+        float detection_threshold = 0.3f, uint32_t max_boxes = 200): 
+            labels(dataset),
+            detection_threshold(detection_threshold),
+            max_boxes(max_boxes) {}
 };
 
 YoloParamsNMS *init(const std::string config_path, const std::string function_name);

@@ -11,7 +11,7 @@
 #include "xtensor/xadapt.hpp"
 #include "xtensor/xarray.hpp"
 
-#define OUTPUT_LAYER_NAME_RGB "arcface_mobilenet_v1/fc1"
+#define OUTPUT_LAYER_NAME_RGB "arcface_mobilefacenet/fc1"
 #define OUTPUT_LAYER_NAME_RGBA "arcface_mobilefacenet_rgbx/fc1"
 #define OUTPUT_LAYER_NAME_NV12 "arcface_mobilefacenet/fc1"
 

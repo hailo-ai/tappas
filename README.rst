@@ -7,9 +7,9 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.23.0%20%7C%205.3.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.24.0%20%7C%205.3.0-green
    :target: https://github.com/hailo-ai/hailort
-   :alt: HailoRT 4.23.0 | 5.3.0
+   :alt: HailoRT 4.24.0 | 5.3.0
    :height: 20
 
 
@@ -61,7 +61,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.23.0 for Hailo-8 devices, and with HailoRT v5.3.0 for Hailo-10H devices.
+    This version is compatible with HailoRT v4.24.0 for Hailo-8 devices, and with HailoRT v5.3.0 for Hailo-10H devices.
 
 
 Installation
@@ -95,7 +95,6 @@ Documentation
 
 * `Framework architecture and elements documentation <docs/TAPPAS_architecture.rst>`_
 * `Guide to writing your own C++ postprocess element <docs/write_your_own_application/write-your-own-postprocess.rst>`_
-* `Guide to writing your own Python postprocess element <docs/write_your_own_application/write-your-own-python-postprocess.rst>`_
 * `Debugging and profiling performance <docs/write_your_own_application/debugging.rst>`_
 * `Cross compile <tools/cross_compiler/README.rst>`_ - A guide for cross-compiling
 
@@ -147,6 +146,15 @@ Contact information is available at `hailo.ai <https://hailo.ai/contact-us/>`_.
 Changelog
 ----------
 
+**v5.3.1 (June 2026)**
+
+* Postprocess: deduplicated common helpers (sigmoid, dequantize, NMS); unified ``yolo_hailortpp`` / ``mobilenet_ssd`` / ``yolo_postprocess`` via templates
+* Overlay: added YUY2 color format support (``draw_text``, ``draw_line``, ``draw_ellipse``, ``blur``)
+* Fixed ``hailoaggregator`` / ``hailotileaggregator`` segfault on caps queries when wired directly to ``autovideosink`` without ``hailooverlay``
+* Fixed ``GstHailoBaseCropper`` caps-query abort with ``fakesink`` or multi-format peers
+* Detection example: auto-detect Debian multiarch vs flat ``/usr/lib`` layout for Yocto images; added ``--no-display`` for headless runs; switched display sink to ``autovideosink`` for cross-platform display support
+* This release supports both HailoRT v4.24.0 (Hailo-8/8L) and HailoRT v5.3.0 (Hailo-10H)
+
 **v5.3.0 (April 2026)**
 
 * Documentation: refactored `Yocto section <docs/installation/yocto.rst>`_ — removed Dunfell references, updated to Kirkstone syntax, removed deprecated recipes and i.MX warning
@@ -170,10 +178,10 @@ Changelog
 * Downloader: HEF files now downloaded from ``model_zoo`` and media files from the TAPPAS bucket; removed the uploader;
 * Detection app: ``detection.sh`` now supports ``--arch`` (Hailo-8/Hailo-10H);
 * Models and resources: migrated model files to ``model_zoo``; TAPPAS bucket is now used only for general MP4 files; updated resources directory structure; changed ``yolov5m_wo_spp_60p.hef`` to ``yolov5m_wo_spp.hef``.
-* Hailo‑10H support: added Hailo-10H HEF downloads.
+* Hailo-10H support: added Hailo-10H HEF downloads.
 * Build and packaging: separated GCC apt installation and removed fixed GCC version; updated related documentation.
 * Dependencies: updated package versions for Python 3.13 compatibility; migrated pandas to support the newer environment.
-* Cleanup: removed Hailo‑8 references where appropriate; removed nested directories under apps; various comment updates.
+* Cleanup: removed Hailo-8 references where appropriate; removed nested directories under apps; various comment updates.
 * This release supports both HailoRT v4.23.0 (Hailo-8) and HailoRT v5.1.0 (Hailo-10H)
 
 **v5.0.0 (July 2025)**
