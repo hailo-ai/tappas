@@ -148,6 +148,7 @@ Changelog
 
 **v5.3.1 (June 2026)**
 
+* Deprecated the ``hailopython`` GStreamer element; it will be removed in a future release
 * Postprocess: deduplicated common helpers (sigmoid, dequantize, NMS); unified ``yolo_hailortpp`` / ``mobilenet_ssd`` / ``yolo_postprocess`` via templates
 * Overlay: added YUY2 color format support (``draw_text``, ``draw_line``, ``draw_ellipse``, ``blur``)
 * Fixed ``hailoaggregator`` / ``hailotileaggregator`` segfault on caps queries when wired directly to ``autovideosink`` without ``hailooverlay``
