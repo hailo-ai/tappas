@@ -40,6 +40,9 @@
 #define DEPTH_MIN_DISTANCE 0.5
 #define DEPTH_MAX_DISTANCE 3
 
+#define WSTB_ROI_WIDTH 368
+#define WSTB_ROI_HEIGHT 552
+
 static const std::vector<cv::Scalar> tile_layer_color_table = {
     cv::Scalar(0, 0, 255), cv::Scalar(200, 100, 120), cv::Scalar(255, 0, 0), cv::Scalar(120, 0, 0), cv::Scalar(0, 0, 120)};
 
@@ -83,6 +86,94 @@ static overlay_status_t draw_classification(HailoMat &mat, HailoROIPtr roi, std:
     double font_scale = TEXT_CLS_FONT_SCALE_FACTOR * roi_width;
     font_scale = (font_scale < MINIMUM_TEXT_CLS_FONT_SCALE) ? MINIMUM_TEXT_CLS_FONT_SCALE : font_scale;
     mat.draw_text(text, text_position, font_scale, get_color(color_id));
+    return OVERLAY_STATUS_OK;
+}
+
+static overlay_status_t draw_classification_area(HailoMat &mat, HailoROIPtr roi, std::string text, uint number_of_classifications, size_t color_id = NULL_COLOR_ID)
+{
+    int NUM_CLASS = 3;
+
+    std::vector<HailoClassificationPtr> confidence_v = hailo_common::get_hailo_classifications(roi);
+
+    struct prediction_format
+    {
+        std::string confidence;
+        std::string class_name;
+        int class_id;
+        cv::Scalar color;
+    };
+
+    std::string class_res = confidence_v[0]->get_label();
+
+    prediction_format prediction[4];
+
+    int num_items = std::min(static_cast<int>(confidence_v.size()), NUM_CLASS + 1);
+
+    for (int i = 0; i < num_items; i++)
+    {
+        prediction[i].confidence = confidence_to_string(confidence_v[i]->get_confidence());
+        prediction[i].class_name = confidence_v[i]->get_label();
+        prediction[i].class_id = confidence_v[i]->get_class_id();
+        prediction[i].color = get_color(i);
+    }
+
+    int COLOR_ID = 0;
+
+    if (class_res == (std::string) "Digital")
+    {
+        COLOR_ID = 0;
+    }
+    else if (class_res == (std::string) "Real")
+    {
+        COLOR_ID = 1;
+    }
+    else if (class_res == (std::string) "Paper")
+    {
+        COLOR_ID = 2;
+    }
+
+    auto middle_point_x = mat.native_width() / 2;
+    auto middle_point_y = mat.native_height() / 2;
+
+    auto bbox = hailo_common::create_flattened_bbox(roi->get_bbox(), roi->get_scaling_bbox());
+    int roi_xmin = bbox.xmin() * mat.native_width();
+    int roi_ymin = bbox.ymin() * mat.native_height();
+    int roi_width = mat.native_width() * bbox.width();
+    int roi_height = mat.native_height() * bbox.height();
+    double font_scale = TEXT_CLS_FONT_SCALE_FACTOR * roi_width / 2;
+    font_scale = (font_scale < MINIMUM_TEXT_CLS_FONT_SCALE) ? MINIMUM_TEXT_CLS_FONT_SCALE : font_scale;
+
+    int start_y = middle_point_y - WSTB_ROI_HEIGHT / 2 - log(roi_height);
+
+    int line_spacing = 30 * font_scale + 10;
+
+    auto text_position = cv::Point(middle_point_x - WSTB_ROI_WIDTH / 2, middle_point_y - WSTB_ROI_HEIGHT / 2 - log(roi_height));
+    auto text_position1 = cv::Point(roi_xmin, start_y + (line_spacing * 1));
+    auto text_position2 = cv::Point(roi_xmin, start_y + (line_spacing * 2));
+    auto text_position3 = cv::Point(roi_xmin, start_y + (line_spacing * 3));
+
+    auto rect_min_p = cv::Point(middle_point_x - WSTB_ROI_WIDTH / 2, middle_point_y - WSTB_ROI_HEIGHT / 2);
+    auto rect_max_p = cv::Point(middle_point_x + WSTB_ROI_WIDTH / 2, middle_point_y + WSTB_ROI_HEIGHT / 2);
+
+    auto rect = cv::Rect(rect_min_p, rect_max_p);
+    cv::Mat &raw_mat = mat.get_matrices()[0];
+
+    int font_thickness = 3;
+    int conf_font_thickness = 2;
+
+    cv::putText(raw_mat, prediction[0].class_name + " " + prediction[0].confidence, text_position, cv::FONT_HERSHEY_SIMPLEX,
+                1.0, get_color(COLOR_ID), font_thickness);
+    cv::putText(raw_mat, prediction[1].class_name + " " + prediction[1].confidence, text_position1, cv::FONT_HERSHEY_SIMPLEX,
+                0.8, prediction[0].color, conf_font_thickness);
+    cv::putText(raw_mat, prediction[2].class_name + " " + prediction[2].confidence, text_position2, cv::FONT_HERSHEY_SIMPLEX,
+                0.8, prediction[1].color, conf_font_thickness);
+    cv::putText(raw_mat, prediction[3].class_name + " " + prediction[3].confidence, text_position3, cv::FONT_HERSHEY_SIMPLEX,
+                0.8, prediction[2].color, conf_font_thickness);
+
+    int roi_thickness = 4;
+
+    cv::rectangle(raw_mat, rect, get_color(COLOR_ID), roi_thickness);
+
     return OVERLAY_STATUS_OK;
 }
 
@@ -221,10 +312,6 @@ static overlay_status_t draw_id(HailoMat &mat, HailoUniqueIDPtr &hailo_id, Hailo
 template <typename T>
 void calc_destination_roi_and_resize_mask(cv::Mat &destinationROI, cv::Mat &image_planes, HailoROIPtr roi, HailoMaskPtr mask, cv::Mat &resized_mask_data, T data_ptr, int cv_type)
 {
-    if (mask->get_height() == 0 || mask->get_width() == 0) {
-        return;
-    }
-
     HailoBBox bbox = roi->get_bbox();
     int roi_xmin = bbox.xmin() * image_planes.cols;
     int roi_ymin = bbox.ymin() * image_planes.rows;
@@ -394,7 +481,7 @@ overlay_status_t draw_all(HailoMat &hmat, HailoROIPtr roi, float landmark_point_
             else
             {
                 std::string text = get_classification_text(classification, show_confidence);
-                ret = draw_classification(hmat, roi, text, number_of_classifications);
+                ret = draw_classification_area(hmat, roi, text, number_of_classifications);
             }
             break;
         }
