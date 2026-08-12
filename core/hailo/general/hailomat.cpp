@@ -261,22 +261,31 @@ void HailoYUY2Mat::draw_rectangle(hailo_rect_t rect, const hailo_scalar_t color)
 
 void HailoYUY2Mat::draw_text(std::string text, hailo_point_t position, double font_scale, const hailo_scalar_t color)
 {
-    // Empty implementation - YUY2 text drawing not supported
+    // adjust X position and font scale for YUY2's halved width
+    cv::Point fixed_position(position.x / 2, position.y);
+    double fixed_font_scale = font_scale / 2.0;
+    cv::putText(m_impl->get(0), text, fixed_position, cv::FONT_HERSHEY_SIMPLEX, fixed_font_scale, get_yuy2_color(color), m_font_thickness);
 }
 
 void HailoYUY2Mat::draw_line(hailo_point_t point1, hailo_point_t point2, const hailo_scalar_t color, int thickness, int line_type)
 {
-    // Empty implementation - YUY2 line drawing not supported
+    cv::Point fixed_p1(point1.x / 2, point1.y);
+    cv::Point fixed_p2(point2.x / 2, point2.y);
+    cv::line(m_impl->get(0), fixed_p1, fixed_p2, get_yuy2_color(color), thickness, line_type);
 }
 
 void HailoYUY2Mat::draw_ellipse(hailo_point_t center, hailo_size_t axes, double angle, double start_angle, double end_angle, const hailo_scalar_t color, int thickness)
 {
-    // Empty implementation - YUY2 ellipse drawing not supported
+    cv::Point fixed_center(center.x / 2, center.y);
+    cv::Size fixed_axes(axes.width / 2, axes.height);
+    cv::ellipse(m_impl->get(0), fixed_center, fixed_axes, angle, start_angle, end_angle, get_yuy2_color(color), thickness);
 }
 
 void HailoYUY2Mat::blur(hailo_rect_t rect, hailo_size_t ksize)
 {
-    // Empty implementation - YUY2 blur not supported
+    cv::Rect fixed_rect(rect.x / 2, rect.y, rect.width / 2, rect.height);
+    cv::Mat target_roi = m_impl->get(0)(fixed_rect);
+    cv::blur(target_roi, target_roi, to_cv_size(ksize));
 }
 
 HailoYUY2Mat::~HailoYUY2Mat() = default;

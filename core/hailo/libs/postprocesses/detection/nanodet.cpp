@@ -19,6 +19,8 @@
 #include "common/labels/coco_eighty.hpp"
 #include "nanodet.hpp"
 
+using namespace common;
+
 // xtensor includes
 #include "xtensor/xadapt.hpp"
 #include "xtensor/xarray.hpp"
@@ -28,8 +30,8 @@
 #include "xtensor/xview.hpp"
 using namespace xt::placeholders;
 
-#define SCORE_THRESHOLD 0.5
-#define IOU_THRESHOLD 0.6
+#define SCORE_THRESHOLD 0.5f
+#define IOU_THRESHOLD 0.6f
 #define NUM_CLASSES 80
 
 /**
@@ -47,22 +49,23 @@ using namespace xt::placeholders;
  * @return std::pair<std::vector<xt::xarray<float>>, xt::xarray<float>> 
  *         The separated score and box vectors
  */
-std::pair<std::vector<xt::xarray<float>>, xt::xarray<float>> get_boxes_and_scores(std::vector<HailoTensorPtr> &tensors,
-                                                                                  int num_classes,
-                                                                                  int regression_length)
+std::pair<std::vector<xt::xarray<float>>, xt::xarray<float>>
+get_boxes_and_scores(
+    std::vector<HailoTensorPtr> &tensors,
+    int num_classes,
+    int regression_length)
 {
     // The boxes we will return
     std::vector<xt::xarray<float>> boxes(tensors.size());
     
     // Prepare the scores xarray at the size we will fill in in-place
     int total_scores = 0;
-    for (uint i=0; i < tensors.size(); i++) { total_scores += tensors[i]->width() * tensors[i]->height(); }
+    for (uint32_t i=0; i < tensors.size(); i++) { total_scores += tensors[i]->width() * tensors[i]->height(); }
     std::vector<size_t> shape = { (long unsigned int)total_scores, (long unsigned int)num_classes };
     xt::xarray<float> scores(shape);
     int view_index = 0;
 
-    for (uint i=0; i < tensors.size(); i++)
-    {
+    for (uint32_t i=0; i < tensors.size(); i++) {
         // Extract and dequantize the layer
         auto layer = common::dequantize(common::get_xtensor(tensors[i]), tensors[i]->quant_info().qp_scale, tensors[i]->quant_info().qp_zp);
         int num_proposals = layer.shape(0)*layer.shape(1);
@@ -101,19 +104,19 @@ std::pair<std::vector<xt::xarray<float>>, xt::xarray<float>> get_boxes_and_score
  * @return std::vector<HailoDetection> 
  *         The vector of detected objects before NMS
  */
-std::vector<HailoDetection> decode_boxes(std::vector<xt::xarray<float>> raw_boxes,
-                                            xt::xarray<float> scores,
-                                            std::vector<int> network_dims,
-                                            std::vector<int> strides,
-                                            int regression_length)
+std::vector<HailoDetection> decode_boxes(
+    std::vector<xt::xarray<float>> raw_boxes,
+    xt::xarray<float> scores,
+    std::vector<int> network_dims,
+    std::vector<int> strides,
+    int regression_length)
 {
     int strided_width, strided_height, class_index;
     std::vector<HailoDetection> detections;
     int instance_index = 0;
     float confidence = 0.0;
     std::string label;
-    for (uint i=0; i < raw_boxes.size(); i++)
-    {
+    for (uint32_t i=0; i < raw_boxes.size(); i++) {
         strided_width = network_dims[0] / strides[i];
         strided_height = network_dims[1] / strides[i];
 
@@ -142,8 +145,7 @@ std::vector<HailoDetection> decode_boxes(std::vector<xt::xarray<float>> raw_boxe
         auto distance_view = xt::concatenate(xt::xtuple(distance_view1, distance_view2), 1);
         auto decoded_boxes = centers + distance_view;
 
-        for (uint j=0; j < decoded_boxes.shape(0); j++)
-        {
+        for (uint32_t j=0; j < decoded_boxes.shape(0); j++) {
             HailoBBox bbox(decoded_boxes(j, 0) / network_dims[0],
                            decoded_boxes(j, 1) / network_dims[1],
                            (decoded_boxes(j, 2) - decoded_boxes(j, 0)) / network_dims[0],
@@ -183,15 +185,15 @@ std::vector<HailoDetection> decode_boxes(std::vector<xt::xarray<float>> raw_boxe
  * @return std::vector<HailoDetection> 
  *         The finalized vector of detected objects
  */
-std::vector<HailoDetection> nanodet_postprocess(std::vector<HailoTensorPtr> &tensors,
-                                                   std::vector<int> network_dims,
-                                                   std::vector<int> strides,
-                                                   int regression_length,
-                                                   int num_classes)
+std::vector<HailoDetection> nanodet_postprocess(
+    std::vector<HailoTensorPtr> &tensors,
+    std::vector<int> network_dims,
+    std::vector<int> strides,
+    int regression_length,
+    int num_classes)
 {
     std::vector<HailoDetection> detections;
-    if (tensors.size() == 0)
-    {
+    if (0 == tensors.size()) {
         return detections;
     }
 
@@ -200,7 +202,7 @@ std::vector<HailoDetection> nanodet_postprocess(std::vector<HailoTensorPtr> &ten
     xt::xarray<float> scores = boxes_and_scores.second;
 
     // Calculate the sigmoid of the scores
-    common::sigmoid(scores.data(), scores.size());
+    sigmoid_inplace(scores.data(), scores.size());
 
     // Decode the boxes
     detections = decode_boxes(raw_boxes, scores, network_dims, strides, regression_length);

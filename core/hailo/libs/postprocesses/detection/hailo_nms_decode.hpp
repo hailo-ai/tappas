@@ -2,6 +2,9 @@
  * Copyright (c) 2021-2026 Hailo Technologies Ltd. All rights reserved.
  * Distributed under the LGPL license (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt)
  **/
+#ifndef _POSTPROCESSES_DETECTION_HAILO_NMS_DECODE_HPP_
+#define _POSTPROCESSES_DETECTION_HAILO_NMS_DECODE_HPP_
+
 #include <vector>
 #include <string>
 #include <iostream>
@@ -13,42 +16,40 @@
 #include "common/labels/coco_visdrone.hpp"
 
 static const int DEFAULT_MAX_BOXES = 100;
-static const float DEFAULT_THRESHOLD = 0.4;
+static const float DEFAULT_THRESHOLD = 0.4f;
 
 class HailoNMSDecode
 {
 private:
-    HailoTensorPtr _nms_output_tensor;
-    std::map<uint8_t, std::string> labels_dict;
-    float _detection_thr;
-    uint _max_boxes;
-    bool _filter_by_score;
-    const hailo_tensor_nms_shape_t _nms_shape;
+    HailoTensorPtr m_nms_output_tensor;
+    std::map<uint8_t, std::string> m_labels_dict;
+    float m_detection_thr;
+    uint32_t m_max_boxes;
+    bool m_filter_by_score;
+    const hailo_tensor_nms_shape_t m_nms_shape;
 
     common::hailo_bbox_float32_t dequantize_hailo_bbox(const auto *bbox_struct)
     {
-        // Dequantization of common::hailo_bbox_t (uint16_t) to common::hailo_bbox_float32_t (float32_t)
         common::hailo_bbox_float32_t dequant_bbox = {
-            .y_min = _nms_output_tensor->fix_scale(bbox_struct->y_min),
-            .x_min = _nms_output_tensor->fix_scale(bbox_struct->x_min),
-            .y_max = _nms_output_tensor->fix_scale(bbox_struct->y_max),
-            .x_max = _nms_output_tensor->fix_scale(bbox_struct->x_max),
-            .score = _nms_output_tensor->fix_scale(bbox_struct->score)};
+            .y_min = m_nms_output_tensor->fix_scale(bbox_struct->y_min),
+            .x_min = m_nms_output_tensor->fix_scale(bbox_struct->x_min),
+            .y_max = m_nms_output_tensor->fix_scale(bbox_struct->y_max),
+            .x_max = m_nms_output_tensor->fix_scale(bbox_struct->x_max),
+            .score = m_nms_output_tensor->fix_scale(bbox_struct->score)};
 
         return dequant_bbox;
     }
 
-    void parse_bbox_to_detection_object(auto dequant_bbox, uint32_t class_index, std::vector<HailoDetection> &_objects)
+    void parse_bbox_to_detection_object(auto dequant_bbox, uint32_t class_index,
+        std::vector<HailoDetection> &objects)
     {
         float confidence = CLAMP(dequant_bbox.score, 0.0f, 1.0f);
-        // filter score by detection threshold if needed.
-        if (!_filter_by_score || dequant_bbox.score > _detection_thr)
-        {
-            float32_t w, h = 0.0f;
-            // parse width and height of the box
+        if (!m_filter_by_score || (dequant_bbox.score > m_detection_thr)) {
+            float32_t w = 0.0f, h = 0.0f;
             std::tie(w, h) = get_shape(&dequant_bbox);
-            // create new detection object and add it to the vector of detections
-            _objects.push_back(HailoDetection(HailoBBox(dequant_bbox.x_min, dequant_bbox.y_min, w, h), class_index, labels_dict[class_index], confidence));
+            objects.push_back(HailoDetection(
+                HailoBBox(dequant_bbox.x_min, dequant_bbox.y_min, w, h),
+                class_index, m_labels_dict[class_index], confidence));
         }
     }
 
@@ -56,16 +57,19 @@ private:
     {
         float32_t w = bbox_struct->x_max - bbox_struct->x_min;
         float32_t h = bbox_struct->y_max - bbox_struct->y_min;
-        return std::pair<float, float>(w, h);
+        return {w, h};
     }
 
 public:
-    HailoNMSDecode(HailoTensorPtr tensor, std::map<uint8_t, std::string> &labels_dict, float detection_thr = DEFAULT_THRESHOLD, uint max_boxes = DEFAULT_MAX_BOXES, bool filter_by_score = false)
-        : _nms_output_tensor(tensor), labels_dict(labels_dict), _detection_thr(detection_thr), _max_boxes(max_boxes), _filter_by_score(filter_by_score), _nms_shape(tensor->nms_shape())
+    HailoNMSDecode(HailoTensorPtr tensor, const std::map<uint8_t, std::string> &labels_dict,
+        float detection_thr = DEFAULT_THRESHOLD, uint32_t max_boxes = DEFAULT_MAX_BOXES,
+        bool filter_by_score = false):
+            m_nms_output_tensor(tensor), m_labels_dict(labels_dict),
+            m_detection_thr(detection_thr), m_max_boxes(max_boxes),
+            m_filter_by_score(filter_by_score), m_nms_shape(tensor->nms_shape())
     {
-        // making sure that the network's output is indeed an NMS type, by checking the order type value included in the metadata
         if (!tensor->format().is_nms)
-            throw std::invalid_argument("Output tensor " + _nms_output_tensor->name() + " is not an NMS type");
+            throw std::invalid_argument("Output tensor " + m_nms_output_tensor->name() + " is not an NMS type");
     };
 
     template <typename T, typename BBoxType>
@@ -80,7 +84,8 @@ public:
 
         The data is sorted by the number of the classes.
         for each class - first comes the number of boxes in the class, then the boxes one after the other,
-        each box contains x_min, y_min, x_max, y_max and score (uint16_t\float32 each) and can be casted to common::hailo_bbox_t struct (5*uint16_t).
+        each box contains x_min, y_min, x_max, y_max and score (uint16_t\float32 each) and can be casted
+        to common::hailo_bbox_t struct (5*uint16_t).
         means that a frame size of one class is sizeof(bbox_count) + bbox_count * sizeof(common::hailo_bbox_t).
         and the actual size of the data is (frame size of one class)*number of classes.
 
@@ -103,43 +108,62 @@ public:
         ymin = 0.551805 xmin = 0.389635 ymax = 0.741805 xmax = 0.561974 score = 0.95
         */
 
-        if (!_nms_output_tensor)
+        if (!m_nms_output_tensor)
             return std::vector<HailoDetection>{};
 
-        std::vector<HailoDetection> _objects;
-        _objects.reserve(_max_boxes);
-        uint32_t max_bboxes_per_class = _nms_shape.max_bboxes_per_class;
-        uint32_t num_of_classes = _nms_shape.number_of_classes;
+        std::vector<HailoDetection> objects;
+        objects.reserve(m_max_boxes);
+        uint32_t max_bboxes_per_class = m_nms_shape.max_bboxes_per_class;
+        uint32_t num_of_classes = m_nms_shape.number_of_classes;
         size_t buffer_offset = 0;
-        uint8_t *buffer = _nms_output_tensor->data();
-        for (size_t class_id = 0; class_id < num_of_classes; class_id++)
-        {
+        uint8_t *buffer = m_nms_output_tensor->data();
+        for (size_t class_id = 0; class_id < num_of_classes; class_id++) {
             float32_t bbox_count = 0;
             memcpy(&bbox_count, buffer + buffer_offset, sizeof(bbox_count));
             buffer_offset += sizeof(bbox_count);
 
-            if (bbox_count == 0) // No detections
+            if (0 == bbox_count)
                 continue;
-            if (bbox_count > max_bboxes_per_class)
+            if (max_bboxes_per_class < bbox_count)
                 throw std::runtime_error("Runtime error - Got more than the maximum bboxes per class in the nms buffer");
 
-            for (size_t bbox_index = 0; bbox_index < static_cast<uint32_t>(bbox_count); bbox_index++)
-            {
-                if (std::is_same<T, uint16_t>::value)
-                {
-                    // output type (T) is uint16, so we need to do dequantization before parsing
-                    common::hailo_bbox_float32_t *bbox = (common::hailo_bbox_float32_t *)(&buffer[buffer_offset]);
-                    parse_bbox_to_detection_object(*bbox, class_id + 1, _objects);
+            for (size_t bbox_index = 0; bbox_index < static_cast<uint32_t>(bbox_count); bbox_index++) {
+                if (std::is_same<T, uint16_t>::value) {
+                    auto *bbox = reinterpret_cast<common::hailo_bbox_float32_t *>(&buffer[buffer_offset]);
+                    parse_bbox_to_detection_object(*bbox, class_id + 1, objects);
                     buffer_offset += sizeof(common::hailo_bbox_float32_t);
-                }
-                else
-                {
-                    BBoxType *bbox_struct = (BBoxType *)(&buffer[buffer_offset]);
-                    parse_bbox_to_detection_object(*bbox_struct, class_id + 1, _objects);
+                } else {
+                    auto *bbox_struct = reinterpret_cast<BBoxType *>(&buffer[buffer_offset]);
+                    parse_bbox_to_detection_object(*bbox_struct, class_id + 1, objects);
                     buffer_offset += sizeof(BBoxType);
                 }
             }
         }
-        return _objects;
+        return objects;
     }
 };
+
+inline std::vector<HailoDetection> nms_decode(HailoTensorPtr tensor,
+    const std::map<uint8_t, std::string> &labels,
+    float detection_thr = 0.4f,
+    uint32_t max_boxes = 100,
+    bool filter_by_score = false)
+{
+    auto post = HailoNMSDecode(tensor, labels, detection_thr, max_boxes, filter_by_score);
+    return post.decode<float32_t, common::hailo_bbox_float32_t>();
+}
+
+inline void nms_decode_to_roi(HailoROIPtr roi, const std::string &layer_name,
+    const std::map<uint8_t, std::string> &labels,
+    float detection_thr = 0.4f,
+    uint32_t max_boxes = 100,
+    bool filter_by_score = false)
+{
+    if (!roi->has_tensors()) {
+        return;
+    }
+    auto detections = nms_decode(roi->get_tensor(layer_name), labels, detection_thr, max_boxes, filter_by_score);
+    hailo_common::add_detections(roi, detections);
+}
+
+#endif  // _POSTPROCESSES_DETECTION_HAILO_NMS_DECODE_HPP_

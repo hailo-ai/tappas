@@ -63,6 +63,8 @@ static GstFlowReturn gst_hailoaggregator_chain_sub(GstPad *pad, GstObject *paren
 
 static gboolean gst_hailoaggregator_sink_query(GstPad *pad,
                                                  GstObject *parent, GstQuery *query);
+static gboolean gst_hailoaggregator_src_query(GstPad *pad,
+                                              GstObject *parent, GstQuery *query);
 
 static void
 gst_hailoaggregator_class_init(GstHailoAggregatorClass *klass)
@@ -112,6 +114,7 @@ gst_hailoaggregator_init(GstHailoAggregator *hailoaggregator)
 
     // SrcPad
     hailoaggregator->srcpad = gst_pad_new_from_static_template(&src_template, "src");
+    gst_pad_set_query_function(hailoaggregator->srcpad, GST_DEBUG_FUNCPTR(gst_hailoaggregator_src_query));
     gst_pad_use_fixed_caps(hailoaggregator->srcpad);
 
     gst_element_add_pad(GST_ELEMENT(hailoaggregator), hailoaggregator->srcpad);
@@ -174,6 +177,24 @@ forward_events(GstPad *pad, GstEvent **event, gpointer user_data)
         return gst_pad_push_event(srcpad, gst_event_ref(*event));
 
     return TRUE;
+}
+
+// Proxy caps queries on the src pad to the main sink's peer so that
+// downstream elements (e.g. videoconvert, sinks) can negotiate before any
+// CAPS event has flowed through. The sub sink carries cropped tiles whose
+// geometry differs from the main stream, so it must not be used here.
+static gboolean gst_hailoaggregator_src_query(GstPad *pad,
+                                              GstObject *parent, GstQuery *query)
+{
+    switch (GST_QUERY_TYPE(query)) {
+    case GST_QUERY_CAPS:
+    case GST_QUERY_ACCEPT_CAPS: {
+        GstHailoAggregator *hailoaggregator = GST_HAILO_AGGREGATOR_CAST(parent);
+        return gst_pad_peer_query(hailoaggregator->sinkpad_main, query);
+    }
+    default:
+        return gst_pad_query_default(pad, parent, query);
+    }
 }
 
 static gboolean gst_hailoaggregator_sink_query(GstPad *pad,

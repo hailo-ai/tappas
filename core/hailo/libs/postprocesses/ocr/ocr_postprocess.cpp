@@ -16,6 +16,7 @@
 
 const char *DEFAULT_OUTPUT_LAYER_NAME = "lprnet/conv31";
 const char *OUTPUT_LAYER_NAME_NV12 = "lprnet_304x75/conv31";
+const char *OUTPUT_LAYER_NAME_YUY2 = "lprnet_yuy2/conv31";
 
 /**
  * @brief recognize the characters that are in the license plate
@@ -94,4 +95,9 @@ void filter(HailoROIPtr roi)
 void lprnet_nv12(HailoROIPtr roi)
 {
     OCR_postprocess(roi, OUTPUT_LAYER_NAME_NV12);
+}
+
+void lprnet_yuy2(HailoROIPtr roi)
+{
+    OCR_postprocess(roi, OUTPUT_LAYER_NAME_YUY2);
 }

@@ -30,24 +30,24 @@
 #define SCRFD_HEIGHT (640)
 
 
-std::vector<std::string> BOXES_10g {"scrfd_10g/conv48",
-                                    "scrfd_10g/conv54",
+std::vector<std::string> BOXES_10g {"scrfd_10g/conv42",
+                                    "scrfd_10g/conv50",
                                     "scrfd_10g/conv57"};
-std::vector<std::string> CLASSES_10g {"scrfd_10g/conv47",
-                                      "scrfd_10g/conv53",
+std::vector<std::string> CLASSES_10g {"scrfd_10g/conv41",
+                                      "scrfd_10g/conv49",
                                       "scrfd_10g/conv56"};
-std::vector<std::string> LANDMARKS_10g {"scrfd_10g/conv49",
-                                        "scrfd_10g/conv55",
+std::vector<std::string> LANDMARKS_10g {"scrfd_10g/conv43",
+                                        "scrfd_10g/conv51",
                                         "scrfd_10g/conv58"};
 
-std::vector<std::string> BOXES_2_5g {"scrfd_2_5g/conv47",
-                                     "scrfd_2_5g/conv53",
+std::vector<std::string> BOXES_2_5g {"scrfd_2_5g/conv43",
+                                     "scrfd_2_5g/conv50",
                                      "scrfd_2_5g/conv56"};
-std::vector<std::string> CLASSES_2_5g {"scrfd_2_5g/conv46",
-                                       "scrfd_2_5g/conv52",
+std::vector<std::string> CLASSES_2_5g {"scrfd_2_5g/conv42",
+                                       "scrfd_2_5g/conv49",
                                        "scrfd_2_5g/conv55"};
-std::vector<std::string> LANDMARKS_2_5g {"scrfd_2_5g/conv48",
-                                         "scrfd_2_5g/conv54",
+std::vector<std::string> LANDMARKS_2_5g {"scrfd_2_5g/conv44",
+                                         "scrfd_2_5g/conv51",
                                          "scrfd_2_5g/conv57"};
 
 std::vector<std::string> BOXES;
