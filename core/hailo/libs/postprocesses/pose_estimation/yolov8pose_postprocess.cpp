@@ -9,6 +9,7 @@
 // Hailo includes
 #include "hailo_xtensor.hpp"
 #include "common/math.hpp"
+#include "common/nms.hpp"
 #include "common/tensors.hpp"
 #include "common/labels/coco_eighty.hpp"
 #include "yolov8pose_postprocess.hpp"
@@ -31,6 +32,7 @@
 #include "xtensor/xview.hpp"
 
 using namespace xt::placeholders;
+using namespace common;
 
 #define SCORE_THRESHOLD 0.6
 #define IOU_THRESHOLD 0.7
@@ -52,7 +54,7 @@ std::pair<std::vector<KeyPt>, std::vector<PairPairs>> process_single_decoding(co
     auto score = keypoint_coordinates_and_score.second;
     
     // Filter keypoints
-    for (uint i = 0; i < score.shape(0); i++){
+    for (uint32_t i = 0; i < score.shape(0); i++){
         if (score(i,0) > joint_threshold) {
             keypoints.push_back(KeyPt({coordinates(i, 0) / network_dims[0], coordinates(i, 1) / network_dims[1], score(i,0)}));
         }
@@ -87,62 +89,9 @@ std::pair<std::vector<KeyPt>, std::vector<PairPairs>> filter_keypoints(const std
     return std::make_pair(filtered_keypoints, filtered_pairs);
 }
 
-float iou_calc(const HailoBBox &box_1, const HailoBBox &box_2)
-{
-    // Calculate IOU between two detection boxes
-    const float width_of_overlap_area = std::min(box_1.xmax(), box_2.xmax()) - std::max(box_1.xmin(), box_2.xmin());
-    const float height_of_overlap_area = std::min(box_1.ymax(), box_2.ymax()) - std::max(box_1.ymin(), box_2.ymin());
-    const float positive_width_of_overlap_area = std::max(width_of_overlap_area, 0.0f);
-    const float positive_height_of_overlap_area = std::max(height_of_overlap_area, 0.0f);
-    const float area_of_overlap = positive_width_of_overlap_area * positive_height_of_overlap_area;
-    const float box_1_area = (box_1.ymax() - box_1.ymin()) * (box_1.xmax() - box_1.xmin());
-    const float box_2_area = (box_2.ymax() - box_2.ymin()) * (box_2.xmax() - box_2.xmin());
-    // The IOU is a ratio of how much the boxes overlap vs their size outside the overlap.
-    // Boxes that are similar will have a higher overlap threshold.
-    return area_of_overlap / (box_1_area + box_2_area - area_of_overlap);
-}
-
-std::vector<Decodings> nms(std::vector<Decodings> &decodings, const float iou_thr, bool should_nms_cross_classes = false) {
-
-    std::vector<Decodings> decodings_after_nms;
-
-    for (uint index = 0; index < decodings.size(); index++)
-    {
-        if (decodings[index].detection_box.get_confidence() != 0.0f)
-        {
-            for (uint jindex = index + 1; jindex < decodings.size(); jindex++)
-            {
-                if ((should_nms_cross_classes || (decodings[index].detection_box.get_class_id() == decodings[jindex].detection_box.get_class_id())) &&
-                    decodings[jindex].detection_box.get_confidence() != 0.0f)
-                {
-                    // For each detection, calculate the IOU against each following detection.
-                    float iou = iou_calc(decodings[index].detection_box.get_bbox(), decodings[jindex].detection_box.get_bbox());
-                    // If the IOU is above threshold, then we have two similar detections,
-                    // and want to delete the one.
-                    if (iou >= iou_thr)
-                    {
-                        // The detections are arranged in highest score order,
-                        // so we want to erase the latter detection.
-                        decodings[jindex].detection_box.set_confidence(0.0f);
-                    }
-                }
-            }
-        }
-    }
-    for (uint index = 0; index < decodings.size(); index++)
-    {
-        if (decodings[index].detection_box.get_confidence() != 0.0f)
-        {
-            decodings_after_nms.push_back(Decodings{decodings[index].detection_box, decodings[index].keypoints, decodings[index].joint_pairs});
-        }
-    }
-    return decodings_after_nms;
-}
 
 
-float dequantize_value(uint8_t val, float32_t qp_scale, float32_t qp_zp){
-    return (float(val) - qp_zp) * qp_scale;
-}
+
 
                    
 void dequantize_box_values(xt::xarray<float>& dequantized_outputs, int index, 
@@ -160,7 +109,7 @@ std::vector<xt::xarray<double>> get_centers(std::vector<int>& strides, std::vect
 
         std::vector<xt::xarray<double>> centers(boxes_num);
 
-        for (uint i=0; i < boxes_num; i++) {
+        for (uint32_t i=0; i < boxes_num; i++) {
             strided_width = network_dims[0] / strides[i];
             strided_height = network_dims[1] / strides[i];
 
@@ -203,8 +152,7 @@ std::vector<Decodings> decode_boxes_and_keypoints(std::vector<HailoTensorPtr> ra
     // Box distribution to distance
     auto regression_distance =  xt::reshape_view(xt::arange(0, regression_length + 1), {1, 1, regression_length + 1});
 
-    for (uint i = 0; i < raw_boxes_outputs.size(); i++)
-    {
+    for (uint32_t i = 0; i < raw_boxes_outputs.size(); i++) {
         // Boxes setup
         float32_t qp_scale = raw_boxes_outputs[i]->quant_info().qp_scale;
         float32_t qp_zp = raw_boxes_outputs[i]->quant_info().qp_zp;
@@ -228,7 +176,7 @@ std::vector<Decodings> decode_boxes_and_keypoints(std::vector<HailoTensorPtr> ra
         auto keypoints_shape = {quantized_keypoints.shape(1), quantized_keypoints.shape(2)};
 
         // Bbox decoding
-        for (uint j = 0; j < uint(num_proposals); j++) {
+        for (uint32_t j = 0; j < static_cast<uint32_t>(num_proposals); j++) {
             confidence =    xt::row(scores, instance_index)(0);
             instance_index++;
             if (confidence < SCORE_THRESHOLD)
@@ -294,7 +242,7 @@ Triple get_boxes_scores_keypoints(std::vector<HailoTensorPtr> &tensors, int num_
     
     // Prepare the scores xarray at the size we will fill in in-place
     int total_scores = 0;
-    for (uint i = 0; i < tensors.size(); i = i + 3) { 
+    for (uint32_t i = 0; i < tensors.size(); i = i + 3) { 
         total_scores += tensors[i+1]->width() * tensors[i+1]->height(); 
     }
 
@@ -304,8 +252,7 @@ Triple get_boxes_scores_keypoints(std::vector<HailoTensorPtr> &tensors, int num_
 
     int view_index_scores = 0;
 
-    for (uint i = 0; i < tensors.size(); i = i + 3)
-    {
+    for (uint32_t i = 0; i < tensors.size(); i = i + 3) {
         // Bounding boxes extraction will be done later on only on the boxes that surpass the score threshold
         outputs_boxes[i / 3] = tensors[i];
 
@@ -332,8 +279,7 @@ std::vector<Decodings> yolov8pose_postprocess(std::vector<HailoTensorPtr> &tenso
                                 int num_classes)
 {
     std::vector<Decodings> decodings;
-    if (tensors.size() == 0)
-    {
+    if (tensors.size() == 0) {
         return decodings;
     }
 
@@ -346,9 +292,10 @@ std::vector<Decodings> yolov8pose_postprocess(std::vector<HailoTensorPtr> &tenso
     decodings = decode_boxes_and_keypoints(raw_boxes, scores, raw_keypoints, network_dims, strides, regression_length);
 
     // Filter with NMS
-    auto decodings_after_nms = nms(decodings, IOU_THRESHOLD, true);
+    common::nms(decodings, [](Decodings &d) -> HailoDetection& { return d.detection_box; },
+        IOU_THRESHOLD, true);
 
-    return decodings_after_nms;
+    return decodings;
 }
 
 /**

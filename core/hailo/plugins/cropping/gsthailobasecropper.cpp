@@ -285,19 +285,43 @@ gst_crop_scale_setcaps(GstHailoBaseCropper *hailo_basecropper)
     GstCaps *caps_result, *outcaps = NULL;
     GstQuery *query = NULL;
 
-    // Create new caps Query;
-    query = gst_query_new_caps(GST_CAPS_ANY);
+    // Build a meaningful filter for the caps query: the intersection of the
+    // upstream caps already negotiated on sinkpad with srcpad_crop's template.
+    // Without a filter, the query may use GST_CAPS_ANY, which allows peers with
+    // unrestricted sink templates (e.g. fakesink) to reply with ANY. Calling
+    // gst_caps_fixate() on ANY can abort.
+    GstCaps *sinkcaps = gst_pad_get_current_caps(hailo_basecropper->sinkpad);
+    GstCaps *tmpl = gst_pad_get_pad_template_caps(hailo_basecropper->srcpad_crop);
+    GstCaps *filter = (NULL != sinkcaps) ? gst_caps_intersect(sinkcaps, tmpl) : gst_caps_ref(tmpl);
+    if (NULL != sinkcaps) {
+        gst_caps_unref(sinkcaps);
+    }
+    gst_caps_unref(tmpl);
 
-    // Query the peer pad of cropped pad to obtain wanted resolution.
+    query = gst_query_new_caps(filter);
+    gst_caps_unref(filter);
+
+    // Query the peer pad of the cropped pad to obtain the preferred caps.
     gst_pad_peer_query(hailo_basecropper->srcpad_crop, query);
     gst_query_parse_caps_result(query, &caps_result);
 
-    // Fixate the caps
-    // gst_caps_fixate takes ownership of caps_result, no need to unref it.
+    // caps_result is NULL when the peer query had no peer to ask, or the
+    // peer answered TRUE without populating the result. Bail out before
+    // gst_caps_ref / gst_caps_fixate trip GLib critical assertions.
+    if (NULL == caps_result) {
+        GST_ERROR_OBJECT(hailo_basecropper, "Crop peer caps query returned no result (srcpad_crop unlinked?)");
+        gst_query_unref(query);
+        return FALSE;
+    }
+
+    // gst_query_parse_caps_result() returns a borrowed caps reference.
+    // Take our own reference before passing it to gst_caps_fixate(), which
+    // consumes and returns a full reference.
+    gst_caps_ref(caps_result);
     outcaps = gst_caps_fixate(caps_result);
 
-    // Set The caps, unref all objects and return.
     gboolean ret = gst_pad_set_caps(hailo_basecropper->srcpad_crop, outcaps);
+    gst_caps_unref(outcaps);
     gst_query_unref(query);
 
     return ret;

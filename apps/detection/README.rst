@@ -22,7 +22,6 @@ Options
 * ``--input`` is an optional flag, a path to the video displayed (default is detection.mp4).
 * ``--show-fps``  is an optional flag that enables printing FPS on screen.
 * ``--print-gst-launch`` is a flag that prints the ready gst-launch command without running it.
-* ``--print-device-stats`` prints the power and temperature measured on the Hailo device.
 
 Supported Networks
 ------------------

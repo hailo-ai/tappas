@@ -2,6 +2,7 @@
 #include "xtensor/xsort.hpp"
 #include "xtensor/xpad.hpp"
 #include "hailo_common.hpp"
+#include "common/math.hpp"
 #include "common/tensors.hpp"
 #include "common/nms.hpp"
 #include "common/labels/coco_eighty.hpp"
@@ -25,24 +26,12 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #endif
 
+using namespace common;
+
 // the net returns 32 values representing the mask coefficients, and 4 values representing the box coordinates
 #define MASK_CO 32
 #define BOX_CO 4
 
-/**
- * @brief  Compute sigmoid's inverse
- */
-inline float inverse_sigmoid(float y) { return std::log(y/(1-y));}
-
-/**
- * @brief  perform quantization
- */
-inline uint16_t quant(float num, float qp_zp, float qp_scale) { return uint16_t((num / qp_scale)  + qp_zp); }
-
-/**
- * @brief  perform dequantization
- */
-inline float dequant(uint16_t num, float qp_zp, float qp_scale) { return (float(num) - qp_zp) * qp_scale;}
 
 /*
  * @brief Creates the grid and the anchor grid that will be used for each decoding
@@ -82,31 +71,28 @@ std::tuple<xt::xarray<float>, xt::xarray<float>> make_grid(xt::xarray<float> &an
  */
 auto filter_above_threshold(auto &all_scores, auto &is_object_threshold, const float score_threshold, const uint16_t threshold_quantized, const float qp_zp, const float qp_scale)
 {
-    std::vector<uint> indices;
+    std::vector<uint32_t> indices;
     std::vector<float> scores;
-    std::vector<uint> classes;
+    std::vector<uint32_t> classes;
     int this_index;
     float conf_deq, is_object_deq;
     uint16_t is_object;
-    for (uint i = 0; i < is_object_threshold.size(); i++)
-    {
+    for (uint32_t i = 0; i < is_object_threshold.size(); i++) {
         // first check if the object parameter is bigger than threshold
         is_object = is_object_threshold(i, 0);
-        if (is_object > threshold_quantized)
-        {
+        if (is_object > threshold_quantized) {
             this_index = xt::argmax(xt::row(all_scores, i))(0) + 1;
             // dequantize and decode
-            conf_deq = sigmoid(dequant(all_scores(i, this_index - 1), qp_zp, qp_scale));
-            is_object_deq = sigmoid(dequant(is_object, qp_zp, qp_scale));
-            if (conf_deq*is_object_deq > score_threshold)
-            {
+            conf_deq = sigmoid(dequantize_value(all_scores(i, this_index - 1), qp_scale, qp_zp));
+            is_object_deq = sigmoid(dequantize_value(is_object, qp_scale, qp_zp));
+            if (conf_deq * is_object_deq > score_threshold) {
                 indices.emplace_back(i);
                 scores.emplace_back(conf_deq * is_object_deq);
                 classes.emplace_back(this_index);
+            }
         }
     }
-    }
-    return std::tuple<std::vector<uint>, std::vector<float>, std::vector<uint>>(std::move(indices), std::move(scores), std::move(classes));
+    return std::tuple<std::vector<uint32_t>, std::vector<float>, std::vector<uint32_t>>(std::move(indices), std::move(scores), std::move(classes));
 }
 
 /*
@@ -124,8 +110,7 @@ std::vector<HailoDetection> create_hailo_detections(auto &scores_vec, auto &clas
     int class_index;
     float confidence, w, h, x, y = 0.0;
     std::vector<HailoDetection> objects;
-    for (uint i = 0; i < scores_vec.size(); i++)
-    {
+    for (uint32_t i = 0; i < scores_vec.size(); i++) {
         // Get the box parameters for this box
         x = (xy(i, 0)) / input_width;
         y = (xy(i, 1)) / input_height;
@@ -163,11 +148,11 @@ std::vector<HailoDetection> yolov5_decoding(xt::xarray<uint16_t> &output, const 
     auto all_is_object = xt::view(all_decoded, xt::all(), xt::range(4, 5));
     auto all_scores = xt::view(all_decoded, xt::all(), xt::range(5, num_classes + 5));
     // quantize the score threshold + "undecode" it (do inverse of sigmoid), to avoid doing dequantization and decoding on all class scores
-    uint16_t threshold_quantized = quant(inverse_sigmoid(score_threshold), qp_zp, qp_scale);
+    uint16_t threshold_quantized = quantize_value<uint16_t>(inverse_sigmoid(score_threshold), qp_scale, qp_zp);
     auto filtered = filter_above_threshold(all_scores, all_is_object, score_threshold, threshold_quantized, qp_zp, qp_scale);
-    std::vector<uint> indices = std::get<0>(filtered);
+    std::vector<uint32_t> indices = std::get<0>(filtered);
     std::vector<float> scores_vec = std::get<1>(filtered);
-    std::vector<uint> classes_vec = std::get<2>(filtered);
+    std::vector<uint32_t> classes_vec = std::get<2>(filtered);
 
     // filter xy and grid
     auto xy = xt::view(all_decoded, xt::all(), xt::range(_, 2));
@@ -239,11 +224,9 @@ std::vector<HailoDetection> yolov5seg_post(auto &tensors, auto &anchor_list, aut
 Yolov5segParams *init(const std::string config_path, const std::string function_name)
 {
     Yolov5segParams *params = new Yolov5segParams();
-    if (!fs::exists(config_path))
-    {
+    if (!fs::exists(config_path)) {
         std::cerr << "Config file doesn't exist, using default parameters" << std::endl;
-    }
-    else {
+    } else {
         char config_buffer[4096];
         const char *json_schema = R""""({
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -300,14 +283,12 @@ Yolov5segParams *init(const std::string config_path, const std::string function_
         ]
         })"""";
         std::FILE *fp = fopen(config_path.c_str(), "r");
-        if (fp == nullptr)
-        {
+        if (fp == nullptr) {
             throw std::runtime_error("JSON config file is not valid");
         }
         rapidjson::FileReadStream stream(fp, config_buffer, sizeof(config_buffer));
         bool valid = common::validate_json_with_schema(stream, json_schema);
-        if (valid)
-        {
+        if (valid) {
             rapidjson::Document doc_config_json;
             doc_config_json.ParseStream(stream);
 
@@ -317,12 +298,10 @@ Yolov5segParams *init(const std::string config_path, const std::string function_
             // parse anchors
             auto config_anchors = doc_config_json["anchors"].GetArray();
             std::vector<xt::xarray<float>> anchors_vec;
-            for (uint j = 0; j < config_anchors.Size(); j++)
-            {
-                uint size = config_anchors[j].GetArray().Size();
+            for (uint32_t j = 0; j < config_anchors.Size(); j++) {
+                uint32_t size = config_anchors[j].GetArray().Size();
                 std::vector<float> anchor;
-                for (uint k = 0; k < size; k++)
-                {
+                for (uint32_t k = 0; k < size; k++) {
                     anchor.push_back(config_anchors[j].GetArray()[k].GetFloat());
                 }
                 auto anchors_tensor = xt::adapt(anchor);
@@ -333,8 +312,7 @@ Yolov5segParams *init(const std::string config_path, const std::string function_
             // parse outputs_size
             auto config_outputs_size = doc_config_json["outputs_size"].GetArray();
             std::vector<int> outputs_size_vec;
-            for (uint j = 0; j < config_outputs_size.Size(); j++)
-            {
+            for (uint32_t j = 0; j < config_outputs_size.Size(); j++) {
                 outputs_size_vec.push_back(config_outputs_size[j].GetInt());
             }
             params->outputs_size = outputs_size_vec;
@@ -342,8 +320,7 @@ Yolov5segParams *init(const std::string config_path, const std::string function_
             // parse outputs_name
             auto config_outputs_name = doc_config_json["outputs_name"].GetArray();
             std::vector<std::string> outputs_name_vec;
-            for (uint j = 0; j < config_outputs_name.Size(); j++)
-            {
+            for (uint32_t j = 0; j < config_outputs_name.Size(); j++) {
                 outputs_name_vec.push_back(config_outputs_name[j].GetString());
             }
             params->outputs_name = outputs_name_vec;
@@ -351,8 +328,7 @@ Yolov5segParams *init(const std::string config_path, const std::string function_
             // parse input_shape
             auto config_input_shape = doc_config_json["input_shape"].GetArray();
             std::vector<int> input_shape_vec;
-            for (uint j = 0; j < config_input_shape.Size(); j++)
-            {
+            for (uint32_t j = 0; j < config_input_shape.Size(); j++) {
                 input_shape_vec.push_back(config_input_shape[j].GetInt());
             }
             params->input_shape = input_shape_vec;
@@ -360,14 +336,13 @@ Yolov5segParams *init(const std::string config_path, const std::string function_
             // parse strides
             auto config_strides = doc_config_json["strides"].GetArray();
             std::vector<int> strides_vec;
-            for (uint j = 0; j < config_strides.Size(); j++)
-            {
+            for (uint32_t j = 0; j < config_strides.Size(); j++) {
                 strides_vec.push_back(config_strides[j].GetInt());
             }
             params->strides = strides_vec;
-
+        }
         fclose(fp);
-    } }
+    }
     std::vector<int> outputs_size = params->outputs_size;
     std::vector<xt::xarray<float>> anchors = params->anchors;
     std::vector<int> strides = params->strides;
@@ -375,8 +350,7 @@ Yolov5segParams *init(const std::string config_path, const std::string function_
     std::vector<xt::xarray<float>> anchor_grids;
     int num_anchors = 0;
     // create grid and anchor grid
-    for (uint index = 0; index < outputs_size.size(); index++)
-    {
+    for (uint32_t index = 0; index < outputs_size.size(); index++) {
         anchors[index] /= strides[index];
         num_anchors = floor(anchors[index].size() / 2);
         auto both_grids = make_grid(anchors[index], strides[index], outputs_size[index], outputs_size[index], num_anchors);

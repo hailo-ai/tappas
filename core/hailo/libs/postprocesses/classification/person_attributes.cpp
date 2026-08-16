@@ -11,6 +11,8 @@
 #include "xtensor/xadapt.hpp"
 #include "xtensor/xarray.hpp"
 
+using namespace common;
+
 #define RESNET_V1_18_PERSON_OUTPUT_LAYER_NAME "person_attr_resnet_v1_18/fc1"
 #define RESNET_V1_18_PERSON_THRESHOLD 0.7f
 
@@ -23,14 +25,13 @@ xt::xarray<float> get_attr_predictions_from_tensor(HailoTensorPtr outp_tensor)
     auto attr_predictions = xt::view(xscores, 0, 0, xt::all());
 
     // Calculate the face attributes values by sigmoid
-    common::sigmoid(attr_predictions.data(), attr_predictions.size());
+    sigmoid_inplace(attr_predictions.data(), attr_predictions.size());
     return attr_predictions;
 }
 
 void person_attributes_postprocess(HailoROIPtr roi, std::string output_layer_name)
 {
-    if (!roi->has_tensors())
-    {
+    if (!roi->has_tensors()) {
         return;
     }
 
@@ -41,17 +42,15 @@ void person_attributes_postprocess(HailoROIPtr roi, std::string output_layer_nam
     std::string label = "";
     std::string jde_tracker_name = tracker_name + "_" + roi->get_stream_id();
     auto unique_ids = hailo_common::get_hailo_unique_id(roi);
-    if (unique_ids.size() == 1)
-    {
+    if (unique_ids.size() == 1) {
         HailoTracker::GetInstance().remove_classifications_from_track(jde_tracker_name,
                                                                       unique_ids[0]->get_id(),
                                                                       std::string("person_attributes"));
     }
 
-    uint num_of_attributes = attr_predictions.shape()[0];
+    uint32_t num_of_attributes = attr_predictions.shape()[0];
     // Iterate over the attribute predictions
-    for (uint i = 0; i < num_of_attributes; i++)
-    {
+    for (uint32_t i = 0; i < num_of_attributes; i++) {
         // Get the confidence
         float confidence = attr_predictions(i);
         // Get the label from the peta labels
@@ -59,15 +58,12 @@ void person_attributes_postprocess(HailoROIPtr roi, std::string output_layer_nam
 
         // Filter confidence values by threshold
         HailoClassificationPtr classification;
-        if (label != "" && confidence > RESNET_V1_18_PERSON_THRESHOLD)
-        {
+        if (label != "" && confidence > RESNET_V1_18_PERSON_THRESHOLD) {
             classification = std::make_shared<HailoClassification>(std::string("person_attributes"),
                                                                    i,
                                                                    label,
                                                                    0.99f);
-        }
-        else if(label == "Male")
-        {
+        } else if(label == "Male") {
             classification = std::make_shared<HailoClassification>(std::string("person_attributes"),
                                                         i,
                                                         "Female",
@@ -77,12 +73,9 @@ void person_attributes_postprocess(HailoROIPtr roi, std::string output_layer_nam
         if (!classification)
             continue;
 
-        if (unique_ids.empty())
-        {
+        if (unique_ids.empty()) {
             hailo_common::add_object(roi, classification);
-        }
-        else if(unique_ids.size() == 1)
-        {
+        } else if(unique_ids.size() == 1) {
             // We are updating the tracker with the results.
             // No need to add the object to the ROI because it is followed by fakesing - end of sub-pipeline.
             HailoTracker::GetInstance().add_object_to_track(jde_tracker_name,

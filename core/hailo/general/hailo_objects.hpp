@@ -662,7 +662,7 @@ public:
 
     // Getters of DetectionObject.
 
-    float get_confidence()
+    float get_confidence() const
     {
         std::lock_guard<std::mutex> lock(*mutex);
         return m_confidence;
@@ -672,7 +672,7 @@ public:
         std::lock_guard<std::mutex> lock(*mutex);
         m_confidence = conf;
     }
-    std::string get_label()
+    std::string get_label() const
     {
         std::lock_guard<std::mutex> lock(*mutex);
         return m_label;
@@ -682,7 +682,7 @@ public:
         std::lock_guard<std::mutex> lock(*mutex);
         m_label = label;
     }
-    int get_class_id()
+    int get_class_id() const
     {
         std::lock_guard<std::mutex> lock(*mutex);
         return m_class_id;

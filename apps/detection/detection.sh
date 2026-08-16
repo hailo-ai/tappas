@@ -1,29 +1,32 @@
 #!/bin/bash
 set -e
 
-function export_xv_image_is_supported() {
-    # Check if an adapter that are accessible through the X-Video extension is found
-    if xvinfo | grep -q 'no adaptors present'; then
-        echo "No XV adaptors found, using ximagesink instead"
-        export XV_SUPPORTED=false
-    else
-        export XV_SUPPORTED=true
-    fi
-}
-
 function add_vaapi_fakedriver() {
     export LIBVA_DRIVER_NAME=fakedriver
 }
 
+function resolve_install_layout(){
+    # Debian/Ubuntu apt install:  /usr/lib/<arch>-linux-gnu/...
+    # Yocto (e.g. imx imx8mp):    /usr/lib/...           (no multiarch dir)
+    local arch_dir=/usr/lib/$(uname -m)-linux-gnu
+    if [ -d "$arch_dir/hailo/tappas/post_processes" ]; then
+        TAPPAS_LIB_PATH=$arch_dir
+        TAPPAS_GST_PLUGIN_PATH=$arch_dir/gstreamer-1.0
+        TAPPAS_POSTPROCESS_DIR=$arch_dir/hailo/tappas/post_processes
+    else
+        TAPPAS_LIB_PATH=/usr/lib
+        TAPPAS_GST_PLUGIN_PATH=/usr/lib/gstreamer-1.0
+        TAPPAS_POSTPROCESS_DIR=/usr/lib/hailo-post-processes
+    fi
+}
+
 function export_ld_library_path(){
-    TAPPAS_LIB_PATH=/usr/lib/$(uname -m)-linux-gnu
     ! [[ -n $LD_LIBRARY_PATH && $LD_LIBRARY_PATH =~ ${TAPPAS_LIB_PATH} ]] && \
         export LD_LIBRARY_PATH="${TAPPAS_LIB_PATH}:${LD_LIBRARY_PATH}"
     return 0
 }
 
 function export_gst_plugin_path(){
-    TAPPAS_GST_PLUGIN_PATH=/usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0
     ! [[ -n $GST_PLUGIN_PATH && $GST_PLUGIN_PATH =~ ${TAPPAS_GST_PLUGIN_PATH} ]] && \
         export GST_PLUGIN_PATH="${TAPPAS_GST_PLUGIN_PATH}:${GST_PLUGIN_PATH}"
     return 0
@@ -43,7 +46,7 @@ function init_variables() {
 
     script_dir=$(dirname $(realpath "$0"))
 
-    export_xv_image_is_supported
+    resolve_install_layout
     add_vaapi_fakedriver
     export_ld_library_path
     export_gst_plugin_path
@@ -53,7 +56,7 @@ function init_variables() {
         exit $return_code
     fi
 
-    readonly POSTPROCESS_DIR="/usr/lib/$(uname -m)-linux-gnu/hailo/tappas/post_processes"
+    readonly POSTPROCESS_DIR="$TAPPAS_POSTPROCESS_DIR"
     readonly RESOURCES_DIR_ROOT="$script_dir/resources"
 
     readonly DEFAULT_POSTPROCESS_SO="$POSTPROCESS_DIR/libyolo_hailortpp_post.so"
@@ -67,8 +70,7 @@ function init_variables() {
     default_hef_path="$resources_dir/$hailo_arch/yolov8m.hef"
 
 
-    video_sink_element=$([ "$XV_SUPPORTED" = "true" ] && echo "xvimagesink" || echo "ximagesink")
-    video_sink="fpsdisplaysink video-sink=$video_sink_element text-overlay=false"
+    video_sink="fpsdisplaysink video-sink=autovideosink text-overlay=false"
     postprocess_so=$DEFAULT_POSTPROCESS_SO
     network_arg=$DEFAULT_NETWORK_ARG
     network_name=$DEFAULT_NETWORK_NAME
@@ -106,6 +108,7 @@ function print_usage() {
     echo "  -i INPUT --input INPUT     Set the input source (default $input_source)"
     echo "  --show-fps                 Print fps"
     echo "  --print-gst-launch         Print the ready gst-launch command without running it"
+    echo "  --no-display               Discard frames at the sink (headless / no X server)"
     echo "  --tcp-address              Used for TAPPAS GUI, switchs the sink to TCP client"
     exit 0
 }
@@ -149,6 +152,8 @@ function parse_args() {
         elif [ "$1" = "--show-fps" ]; then
             echo "Printing fps"
             additional_parameters="-v | grep -e hailo_display -e hailodevicestats"
+        elif [ "$1" = "--no-display" ]; then
+            video_sink="fakesink"
         elif [ "$1" = "--input" ] || [ "$1" == "-i" ]; then
             input_source="$2"
             shift
