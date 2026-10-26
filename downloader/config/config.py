@@ -3,11 +3,11 @@ from pathlib import Path
 
 TAPPAS_VERSION = "v5.0"
 HAILO8_VERSION = "v2.19.0"
-HAILO10_VERSION = "v5.4.0"
+HAILO10_VERSION = "v5.5.0"
 S3_BUCKET_TAPPAS = 'hailo-tappas'
 S3_BUCKET_MODEL_ZOO = 'hailo-model-zoo'
 S3_HAILO8_VERSION = "v2.19.0"
-S3_HAILO10_VERSION = "v5.4.0"
+S3_HAILO10_VERSION = "v5.5.0"
 
 CONFIG_PATH = Path(__file__).parent
 DOWNLOADER_PATH = CONFIG_PATH.parent
