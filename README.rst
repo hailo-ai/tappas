@@ -7,9 +7,9 @@ Hailo TAPPAS - Optimized Execution of Video-Processing Pipelines
    :width: 150
    :height: 20
 
-.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.24.0%20%7C%205.4.0-green
+.. |hailort| image:: https://img.shields.io/badge/HailoRT-4.24.0%20%7C%205.5.0-green
    :target: https://github.com/hailo-ai/hailort
-   :alt: HailoRT 4.24.0 | 5.4.0
+   :alt: HailoRT 4.24.0 | 5.5.0
    :height: 20
 
 
@@ -61,7 +61,7 @@ Prerequisites
 
 
 .. note::
-    This version is compatible with HailoRT v4.24.0 for Hailo-8 devices, and with HailoRT v5.4.0 for Hailo-10H devices.
+    This version is compatible with HailoRT v4.24.0 for Hailo-8 devices, and with HailoRT v5.5.0 for Hailo-10H devices.
 
 
 Installation
